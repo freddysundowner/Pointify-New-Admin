@@ -238,6 +238,20 @@ export const DeleteAdminResponse = zod.object({
 })
 
 
+export const ResetAdminPasswordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ResetAdminPasswordBody = zod.object({
+  "password": zod.string()
+})
+
+export const ResetAdminPasswordResponse = zod.object({
+  "reset": zod.boolean().optional(),
+  "error": zod.string().optional()
+})
+
+
 export const ListShopCategoriesResponseItem = zod.object({
   "_id": zod.string(),
   "name": zod.string().nullish()

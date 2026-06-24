@@ -166,6 +166,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResult"
 
+  /admins/{id}/reset-password:
+    post:
+      operationId: resetAdminPassword
+      tags: [admins]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminResetPassword"
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetResult"
+
   /shop-categories:
     get:
       operationId: listShopCategories
@@ -808,6 +828,18 @@ components:
         saleSmsEnabled: { type: boolean }
         saleSmsSender: { type: string }
         saleSmsTemplate: { type: string }
+
+    AdminResetPassword:
+      type: object
+      required: [password]
+      properties:
+        password: { type: string }
+
+    ResetResult:
+      type: object
+      properties:
+        reset: { type: boolean }
+        error: { type: string }
 
     AdminListResult:
       type: object

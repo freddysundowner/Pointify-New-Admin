@@ -77,6 +77,15 @@ export interface AdminUpdate {
   saleSmsTemplate?: string;
 }
 
+export interface AdminResetPassword {
+  password: string;
+}
+
+export interface ResetResult {
+  reset?: boolean;
+  error?: string;
+}
+
 export interface AdminListResult {
   data?: Admin[];
   count?: number;

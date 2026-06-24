@@ -8,6 +8,7 @@
 
 export * from './admin';
 export * from './adminListResult';
+export * from './adminResetPassword';
 export * from './adminSubscriptionListResult';
 export * from './adminUpdate';
 export * from './analyticsOverview';
@@ -56,6 +57,7 @@ export * from './productListResult';
 export * from './productUpdate';
 export * from './purchase';
 export * from './purchaseListResult';
+export * from './resetResult';
 export * from './sale';
 export * from './saleListResult';
 export * from './settingsInput';

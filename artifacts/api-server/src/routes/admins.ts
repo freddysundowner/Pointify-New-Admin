@@ -47,4 +47,17 @@ router.delete("/admins/:id", async (req, res) => {
   await proxy(req, res, { method: "DELETE", path: `/admin/${req.params.id}` });
 });
 
+router.post("/admins/:id/reset-password", async (req, res) => {
+  const password = (req.body as { password?: unknown })?.password;
+  if (typeof password !== "string" || password.length < 4) {
+    res.status(400).json({ error: "A password of at least 4 characters is required" });
+    return;
+  }
+  await proxy(req, res, {
+    method: "POST",
+    path: "/auth/reset/password/sms",
+    body: { id: req.params.id, password },
+  });
+});
+
 export default router;
