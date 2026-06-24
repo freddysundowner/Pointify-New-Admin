@@ -32,8 +32,13 @@ export default function Attendants() {
   const { shopId, shopName, from } = useShopFilter();
   const { data, isLoading } = useListAttendants({ shopId });
   const [resetTarget, setResetTarget] = useState<Attendant | null>(null);
+  const [search, setSearch] = useState("");
 
-  const attendants = data?.data ?? [];
+  const allAttendants = data?.data ?? [];
+  const query = search.trim().toLowerCase();
+  const attendants = query
+    ? allAttendants.filter((a) => (a.username ?? "").toLowerCase().includes(query))
+    : allAttendants;
 
   return (
     <div className="space-y-6">
@@ -48,6 +53,14 @@ export default function Attendants() {
         </CardHeader>
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
+          <div className="mb-4 max-w-sm">
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by username…"
+            />
+          </div>
           {isLoading ? (
             <div className="p-4">Loading attendants...</div>
           ) : (
@@ -89,7 +102,7 @@ export default function Attendants() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                          No attendants found.
+                          {query ? "No attendants match your search." : "No attendants found."}
                         </TableCell>
                       </TableRow>
                     )}
@@ -132,7 +145,7 @@ export default function Attendants() {
                   ))
                 ) : (
                   <div className="rounded-lg border p-8 text-center text-muted-foreground">
-                    No attendants found.
+                    {query ? "No attendants match your search." : "No attendants found."}
                   </div>
                 )}
               </div>
