@@ -230,7 +230,6 @@ export default function Shops() {
                       <TableHead>Owner</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Contact</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -254,13 +253,12 @@ export default function Shops() {
                             <TableCell>
                               <StatusBadge shop={shop} />
                             </TableCell>
-                            <TableCell>{shop.contact || "—"}</TableCell>
                           </TableRow>
                         );
                       })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                           No shops found.
                         </TableCell>
                       </TableRow>
@@ -290,15 +288,11 @@ export default function Shops() {
                               <dd className="text-xs text-muted-foreground">{owner.phone}</dd>
                             )}
                           </div>
-                          <div>
+                          <div className="col-span-2">
                             <dt className="text-xs text-muted-foreground">Status</dt>
                             <dd className="mt-0.5">
                               <StatusBadge shop={shop} />
                             </dd>
-                          </div>
-                          <div>
-                            <dt className="text-xs text-muted-foreground">Contact</dt>
-                            <dd>{shop.contact || "—"}</dd>
                           </div>
                         </dl>
                       </div>
