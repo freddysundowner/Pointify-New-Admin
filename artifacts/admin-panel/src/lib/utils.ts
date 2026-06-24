@@ -38,3 +38,21 @@ export function formatDate(value: unknown): string {
   if (Number.isNaN(d.getTime())) return "—"
   return dateFormatter.format(d)
 }
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-KE", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: "Africa/Nairobi",
+})
+
+/** Format a date+time value in EAT, e.g. 24 Jun 2026, 03:45 PM. Returns "—" when missing/invalid. */
+export function formatDateTime(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—"
+  const d = new Date(value as string | number | Date)
+  if (Number.isNaN(d.getTime())) return "—"
+  return dateTimeFormatter.format(d)
+}

@@ -415,8 +415,11 @@ export interface Sale {
   status?: string | null;
   /** @nullable */
   createAt?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   customerId?: GenericObject;
   shopId?: GenericObject;
+  attendantId?: GenericObject;
   [key: string]: unknown;
  }
 
@@ -434,9 +437,14 @@ export interface Purchase {
   /** @nullable */
   invoiceNo?: string | null;
   /** @nullable */
+  purchaseNo?: string | null;
+  /** @nullable */
   createAt?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   supplierId?: GenericObject;
   shopId?: GenericObject;
+  attendantId?: GenericObject;
   [key: string]: unknown;
  }
 

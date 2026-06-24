@@ -21,7 +21,10 @@ export interface Sale {
   status?: string | null;
   /** @nullable */
   createAt?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   customerId?: GenericObject;
   shopId?: GenericObject;
+  attendantId?: GenericObject;
   [key: string]: unknown;
  }

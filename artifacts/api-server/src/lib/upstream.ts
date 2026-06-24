@@ -133,10 +133,16 @@ export function normalizeList(raw: unknown): NormalizedList {
       }
       return undefined;
     };
+    const count =
+      num(o["count"], o["total"], o["totalAdmins"], o["totalShops"], o["totalDocs"], o["totalDoc"]) ?? arr.length;
+    const limit = num(o["limit"]);
+    // Some upstream endpoints (e.g. purchases) return { total, page, limit } but
+    // no totalPages, so derive it from count/limit when we have a page size.
+    const derivedPages = limit && limit > 0 ? Math.ceil(count / limit) : undefined;
     return {
       data: arr,
-      count: num(o["count"], o["total"], o["totalAdmins"], o["totalShops"], o["totalDocs"], o["totalDoc"]) ?? arr.length,
-      totalPages: num(o["totalPages"], o["pages"]) ?? 1,
+      count,
+      totalPages: num(o["totalPages"], o["pages"]) ?? derivedPages ?? 1,
       currentPage: num(o["currentPage"], o["page"]) ?? 1,
     };
   }

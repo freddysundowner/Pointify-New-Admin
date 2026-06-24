@@ -855,8 +855,10 @@ export const ListSalesResponse = zod.object({
   "paymentType": zod.string().nullish(),
   "status": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
   "customerId": zod.record(zod.string(), zod.unknown()).optional(),
-  "shopId": zod.record(zod.string(), zod.unknown()).optional()
+  "shopId": zod.record(zod.string(), zod.unknown()).optional(),
+  "attendantId": zod.record(zod.string(), zod.unknown()).optional()
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),
@@ -876,8 +878,10 @@ export const GetSaleResponse = zod.object({
   "paymentType": zod.string().nullish(),
   "status": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
   "customerId": zod.record(zod.string(), zod.unknown()).optional(),
-  "shopId": zod.record(zod.string(), zod.unknown()).optional()
+  "shopId": zod.record(zod.string(), zod.unknown()).optional(),
+  "attendantId": zod.record(zod.string(), zod.unknown()).optional()
 })
 
 
@@ -893,9 +897,12 @@ export const ListPurchasesResponse = zod.object({
   "_id": zod.string(),
   "totalAmount": zod.number().nullish(),
   "invoiceNo": zod.string().nullish(),
+  "purchaseNo": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
   "supplierId": zod.record(zod.string(), zod.unknown()).optional(),
-  "shopId": zod.record(zod.string(), zod.unknown()).optional()
+  "shopId": zod.record(zod.string(), zod.unknown()).optional(),
+  "attendantId": zod.record(zod.string(), zod.unknown()).optional()
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),

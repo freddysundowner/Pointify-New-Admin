@@ -1,18 +1,36 @@
+import { useState } from "react";
 import { useListSales } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
-import { formatDate } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
+
+const PAGE_SIZE = 20;
+
+function getShopName(shop: unknown): string {
+  if (!shop) return "N/A";
+  if (typeof shop === "string") return shop;
+  const s = shop as { name?: string; _id?: string };
+  return s.name || s._id || "N/A";
+}
+
+function getAttendantName(attendant: unknown): string {
+  if (!attendant) return "—";
+  if (typeof attendant === "string") return attendant;
+  const a = attendant as { username?: string; _id?: string };
+  return a.username || a._id || "—";
+}
 
 export default function Sales() {
   const { shopId, shopName, from } = useShopFilter();
-  const { data, isLoading } = useListSales({ page: 1, limit: 20, shopId });
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching } = useListSales({ page, limit: PAGE_SIZE, shopId });
 
-  const getShopName = (shop: any) => {
-    if (!shop) return "N/A";
-    return typeof shop === "string" ? shop : shop.name || shop._id;
-  };
+  const sales = data?.data ?? [];
+  const totalPages = Math.max(1, data?.totalPages ?? 1);
+  const currentPage = data?.currentPage ?? page;
 
   return (
     <div className="space-y-6">
@@ -38,31 +56,43 @@ export default function Sales() {
                     <TableRow>
                       <TableHead>Receipt No</TableHead>
                       <TableHead>Shop</TableHead>
+                      <TableHead>Attendant</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Date &amp; Time</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data?.data?.map((sale) => (
-                      <TableRow key={sale._id}>
-                        <TableCell className="font-medium">{sale.receiptNo}</TableCell>
-                        <TableCell>{getShopName(sale.shopId)}</TableCell>
-                        <TableCell>{sale.totalAmount}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{sale.status}</Badge>
+                    {sales.length ? (
+                      sales.map((sale) => (
+                        <TableRow key={sale._id}>
+                          <TableCell className="font-medium">{sale.receiptNo || "—"}</TableCell>
+                          <TableCell>{getShopName(sale.shopId)}</TableCell>
+                          <TableCell>{getAttendantName(sale.attendantId)}</TableCell>
+                          <TableCell>{sale.totalAmount}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{sale.status}</Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatDateTime(sale.createdAt ?? sale.createAt)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                          No sales found.
                         </TableCell>
-                        <TableCell>{formatDate(sale.createAt)}</TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
               {/* Mobile: stacked cards */}
               <div className="space-y-3 md:hidden">
-                {data?.data?.length ? (
-                  data.data.map((sale) => (
+                {sales.length ? (
+                  sales.map((sale) => (
                     <div
                       key={sale._id}
                       className="rounded-lg border bg-card p-4 shadow-sm"
@@ -84,8 +114,12 @@ export default function Sales() {
                           <dd>{sale.totalAmount}</dd>
                         </div>
                         <div>
-                          <dt className="text-xs text-muted-foreground">Date</dt>
-                          <dd>{formatDate(sale.createAt)}</dd>
+                          <dt className="text-xs text-muted-foreground">Attendant</dt>
+                          <dd>{getAttendantName(sale.attendantId)}</dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-xs text-muted-foreground">Date &amp; Time</dt>
+                          <dd>{formatDateTime(sale.createdAt ?? sale.createAt)}</dd>
                         </div>
                       </dl>
                     </div>
@@ -95,6 +129,29 @@ export default function Sales() {
                     No sales found.
                   </div>
                 )}
+              </div>
+
+              {/* Pagination */}
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1 || isFetching}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages || isFetching}
+                >
+                  Next
+                </Button>
               </div>
             </>
           )}
