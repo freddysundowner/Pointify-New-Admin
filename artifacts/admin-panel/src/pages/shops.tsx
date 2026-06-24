@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListShops,
@@ -145,24 +145,58 @@ function StatusBadge({ shop }: { shop: Shop }) {
 }
 
 export default function Shops() {
-  const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [type, setType] = useState<TypeFilter>("all");
+  // The list state (page + filters) lives in the URL so that navigating into a
+  // shop's data and back returns the operator to the exact same view.
+  const [location, navigate] = useLocation();
+  const searchString = useSearch();
+  const sp = new URLSearchParams(searchString);
+  const page = Math.max(1, Number(sp.get("page")) || 1);
+  const search = sp.get("name") ?? "";
+  const status = (sp.get("status") as StatusFilter) || "all";
+  const type = (sp.get("type") as TypeFilter) || "all";
+
+  const [searchInput, setSearchInput] = useState(search);
   const [viewShop, setViewShop] = useState<Shop | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Shop | null>(null);
 
-  // Debounce the shop-name search so we don't hit upstream on every keystroke.
+  // Compose a new URL from the current query plus overrides, dropping defaults.
+  const buildUrl = (overrides: Record<string, string | number | undefined>) => {
+    const next = new URLSearchParams(searchString);
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === undefined || v === "" || v === "all" || (k === "page" && Number(v) <= 1)) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    }
+    const qs = next.toString();
+    return qs ? `${location}?${qs}` : location;
+  };
+  const goto = (overrides: Record<string, string | number | undefined>) =>
+    navigate(buildUrl(overrides));
+
+  // Debounce the shop-name search so we don't hit upstream on every keystroke,
+  // then commit the value to the URL (resetting to the first page). We read the
+  // live query at fire time (not a stale closure) so a filter the user changed
+  // mid-debounce is preserved.
   useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput.trim()), 350);
+    const trimmed = searchInput.trim();
+    const t = setTimeout(() => {
+      const next = new URLSearchParams(window.location.search);
+      if ((next.get("name") ?? "") === trimmed) return;
+      if (trimmed) next.set("name", trimmed);
+      else next.delete("name");
+      next.delete("page");
+      const qs = next.toString();
+      navigate(qs ? `${location}?${qs}` : location);
+    }, 350);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
-  // Any filter change resets back to the first page.
-  useEffect(() => {
-    setPage(1);
-  }, [search, status, type]);
+  // The Shops URL the operator is currently viewing, carried into shop-scoped
+  // pages so their "Back to Shops" returns here with the same page/filters.
+  const fromUrl = `${location}${searchString ? `?${searchString}` : ""}`;
 
   const params = {
     page,
@@ -205,9 +239,7 @@ export default function Shops() {
   const hasAnyFilter = Boolean(search || status !== "all" || type !== "all");
   const clearFilters = () => {
     setSearchInput("");
-    setSearch("");
-    setStatus("all");
-    setType("all");
+    navigate(location);
   };
 
   const ownerLabel = (shop: Shop): { email: string; phone: string } => {
@@ -246,7 +278,7 @@ export default function Shops() {
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
+              <Select value={status} onValueChange={(v) => goto({ status: v, page: 1 })}>
                 <SelectTrigger className="sm:w-40">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
@@ -259,7 +291,7 @@ export default function Shops() {
             </div>
             <div className="space-y-1.5">
               <Label>Type</Label>
-              <Select value={type} onValueChange={(v) => setType(v as TypeFilter)}>
+              <Select value={type} onValueChange={(v) => goto({ type: v, page: 1 })}>
                 <SelectTrigger className="sm:w-40">
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
@@ -323,6 +355,7 @@ export default function Shops() {
                             <TableCell className="text-right">
                               <ShopActions
                                 shop={shop}
+                                from={fromUrl}
                                 onView={() => setViewShop(shop)}
                                 onDelete={() => setDeleteTarget(shop)}
                               />
@@ -354,6 +387,7 @@ export default function Shops() {
                             <TypeBadge shop={shop} />
                             <ShopActions
                               shop={shop}
+                              from={fromUrl}
                               onView={() => setViewShop(shop)}
                               onDelete={() => setDeleteTarget(shop)}
                             />
@@ -396,7 +430,7 @@ export default function Shops() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => goto({ page: page - 1 })}
                     disabled={currentPage <= 1 || isFetching}
                   >
                     <ChevronLeft className="mr-1 h-4 w-4" />
@@ -408,7 +442,7 @@ export default function Shops() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() => goto({ page: Math.min(totalPages, page + 1) })}
                     disabled={currentPage >= totalPages || isFetching}
                   >
                     Next
@@ -457,10 +491,12 @@ export default function Shops() {
 
 function ShopActions({
   shop,
+  from,
   onView,
   onDelete,
 }: {
   shop: Shop;
+  from?: string;
   onView: () => void;
   onDelete: () => void;
 }) {
@@ -482,31 +518,31 @@ function ShopActions({
           Browse shop data
         </DropdownMenuLabel>
         <DropdownMenuItem asChild>
-          <Link href={shopScopedHref("/products", shop)}>
+          <Link href={shopScopedHref("/products", shop, from)}>
             <Package className="mr-2 h-4 w-4" />
             Products
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={shopScopedHref("/sales", shop)}>
+          <Link href={shopScopedHref("/sales", shop, from)}>
             <Receipt className="mr-2 h-4 w-4" />
             Sales
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={shopScopedHref("/purchases", shop)}>
+          <Link href={shopScopedHref("/purchases", shop, from)}>
             <ShoppingCart className="mr-2 h-4 w-4" />
             Purchases
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={shopScopedHref("/subscriptions", shop)}>
+          <Link href={shopScopedHref("/subscriptions", shop, from)}>
             <CreditCard className="mr-2 h-4 w-4" />
             Subscriptions
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={shopScopedHref("/attendants", shop)}>
+          <Link href={shopScopedHref("/attendants", shop, from)}>
             <Users className="mr-2 h-4 w-4" />
             Attendants
           </Link>

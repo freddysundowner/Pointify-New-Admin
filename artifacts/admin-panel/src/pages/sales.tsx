@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Sales() {
-  const { shopId, shopName } = useShopFilter();
+  const { shopId, shopName, from } = useShopFilter();
   const { data, isLoading } = useListSales({ page: 1, limit: 20, shopId });
 
   const getShopName = (shop: any) => {
@@ -25,7 +25,7 @@ export default function Sales() {
           <CardTitle>Sales List</CardTitle>
         </CardHeader>
         <CardContent>
-          {shopId && <ShopFilterBanner shopName={shopName} />}
+          {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
           {isLoading ? (
             <div className="p-4">Loading sales...</div>
           ) : (

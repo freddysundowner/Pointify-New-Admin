@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Attendants() {
-  const { shopId, shopName } = useShopFilter();
+  const { shopId, shopName, from } = useShopFilter();
   const { data, isLoading } = useListAttendants({ shopId });
 
   const getShopName = (shop: any) => {
@@ -24,7 +24,7 @@ export default function Attendants() {
           <CardTitle>Attendants List</CardTitle>
         </CardHeader>
         <CardContent>
-          {shopId && <ShopFilterBanner shopName={shopName} />}
+          {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
           {isLoading ? (
             <div className="p-4">Loading attendants...</div>
           ) : (

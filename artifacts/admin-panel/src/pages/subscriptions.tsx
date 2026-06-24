@@ -6,7 +6,7 @@ import { formatKes } from "@/lib/utils";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Subscriptions() {
-  const { shopId, shopName } = useShopFilter();
+  const { shopId, shopName, from } = useShopFilter();
   const { data, isLoading } = useListSubscriptions({ page: 1, limit: 20, shop: shopId });
 
   const getShopName = (shop: any) => {
@@ -26,7 +26,7 @@ export default function Subscriptions() {
           <CardTitle>Subscriptions List</CardTitle>
         </CardHeader>
         <CardContent>
-          {shopId && <ShopFilterBanner shopName={shopName} />}
+          {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
           {isLoading ? (
             <div className="p-4">Loading subscriptions...</div>
           ) : (
