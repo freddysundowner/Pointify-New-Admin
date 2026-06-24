@@ -11,4 +11,5 @@ shopid?: string;
 page?: number;
 limit?: number;
 name?: string;
+shop?: string;
 };

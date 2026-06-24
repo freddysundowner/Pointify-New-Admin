@@ -172,6 +172,23 @@ export interface ProductCategory {
   [key: string]: unknown;
  }
 
+export interface Batch {
+  _id: string;
+  /** @nullable */
+  batchCode?: string | null;
+  /** @nullable */
+  quantity?: number | null;
+  /** @nullable */
+  totalQuantity?: number | null;
+  /** @nullable */
+  buyingPrice?: number | null;
+  /** @nullable */
+  expirationDate?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+  [key: string]: unknown;
+ }
+
 export interface Product {
   _id: string;
   /** @nullable */
@@ -192,8 +209,18 @@ export interface Product {
   measure?: string | null;
   /** @nullable */
   manufacturer?: string | null;
+  /** @nullable */
+  expiryDate?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
   shopId?: GenericObject;
+  supplierId?: GenericObject;
   productCategoryId?: GenericObject;
+  batches?: Batch[];
   [key: string]: unknown;
  }
 
@@ -633,6 +660,7 @@ shopid?: string;
 page?: number;
 limit?: number;
 name?: string;
+shop?: string;
 };
 
 export type ListAttendantsParams = {

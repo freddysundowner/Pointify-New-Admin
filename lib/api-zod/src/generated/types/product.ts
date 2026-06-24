@@ -5,6 +5,7 @@
  * Pointify super-admin panel API (proxies the Pointify POS API)
  * OpenAPI spec version: 0.1.0
  */
+import type { Batch } from './batch';
 import type { GenericObject } from './genericObject';
 
 export interface Product {
@@ -27,7 +28,17 @@ export interface Product {
   measure?: string | null;
   /** @nullable */
   manufacturer?: string | null;
+  /** @nullable */
+  expiryDate?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
   shopId?: GenericObject;
+  supplierId?: GenericObject;
   productCategoryId?: GenericObject;
+  batches?: Batch[];
   [key: string]: unknown;
  }

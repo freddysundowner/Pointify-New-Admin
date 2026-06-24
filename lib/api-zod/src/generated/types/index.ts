@@ -16,6 +16,7 @@ export * from './attendant';
 export * from './attendantInput';
 export * from './attendantListResult';
 export * from './attendantUpdate';
+export * from './batch';
 export * from './bulkSmsInput';
 export * from './bulkSmsInputUserType';
 export * from './bulkSmsResult';

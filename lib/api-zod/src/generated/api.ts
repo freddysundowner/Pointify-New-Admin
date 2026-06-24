@@ -457,7 +457,8 @@ export const ListProductsQueryParams = zod.object({
   "shopid": zod.coerce.string().optional(),
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
-  "name": zod.coerce.string().optional()
+  "name": zod.coerce.string().optional(),
+  "shop": zod.coerce.string().optional()
 })
 
 export const ListProductsResponse = zod.object({
@@ -472,8 +473,22 @@ export const ListProductsResponse = zod.object({
   "barcode": zod.string().nullish(),
   "measure": zod.string().nullish(),
   "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
   "shopId": zod.record(zod.string(), zod.unknown()).optional(),
-  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional()
+  "supplierId": zod.record(zod.string(), zod.unknown()).optional(),
+  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
+  "batches": zod.array(zod.object({
+  "_id": zod.string(),
+  "batchCode": zod.string().nullish(),
+  "quantity": zod.number().nullish(),
+  "totalQuantity": zod.number().nullish(),
+  "buyingPrice": zod.number().nullish(),
+  "expirationDate": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})).optional()
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),
@@ -506,8 +521,22 @@ export const CreateProductResponse = zod.object({
   "barcode": zod.string().nullish(),
   "measure": zod.string().nullish(),
   "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
   "shopId": zod.record(zod.string(), zod.unknown()).optional(),
-  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional()
+  "supplierId": zod.record(zod.string(), zod.unknown()).optional(),
+  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
+  "batches": zod.array(zod.object({
+  "_id": zod.string(),
+  "batchCode": zod.string().nullish(),
+  "quantity": zod.number().nullish(),
+  "totalQuantity": zod.number().nullish(),
+  "buyingPrice": zod.number().nullish(),
+  "expirationDate": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})).optional()
 })
 
 
@@ -526,8 +555,22 @@ export const GetProductResponse = zod.object({
   "barcode": zod.string().nullish(),
   "measure": zod.string().nullish(),
   "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
   "shopId": zod.record(zod.string(), zod.unknown()).optional(),
-  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional()
+  "supplierId": zod.record(zod.string(), zod.unknown()).optional(),
+  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
+  "batches": zod.array(zod.object({
+  "_id": zod.string(),
+  "batchCode": zod.string().nullish(),
+  "quantity": zod.number().nullish(),
+  "totalQuantity": zod.number().nullish(),
+  "buyingPrice": zod.number().nullish(),
+  "expirationDate": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})).optional()
 })
 
 
@@ -559,8 +602,22 @@ export const UpdateProductResponse = zod.object({
   "barcode": zod.string().nullish(),
   "measure": zod.string().nullish(),
   "manufacturer": zod.string().nullish(),
+  "expiryDate": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
   "shopId": zod.record(zod.string(), zod.unknown()).optional(),
-  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional()
+  "supplierId": zod.record(zod.string(), zod.unknown()).optional(),
+  "productCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
+  "batches": zod.array(zod.object({
+  "_id": zod.string(),
+  "batchCode": zod.string().nullish(),
+  "quantity": zod.number().nullish(),
+  "totalQuantity": zod.number().nullish(),
+  "buyingPrice": zod.number().nullish(),
+  "expirationDate": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})).optional()
 })
 
 

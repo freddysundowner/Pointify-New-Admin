@@ -135,8 +135,8 @@ export function normalizeList(raw: unknown): NormalizedList {
     };
     return {
       data: arr,
-      count: num(o["count"], o["total"], o["totalAdmins"], o["totalShops"], o["totalDocs"]) ?? arr.length,
-      totalPages: num(o["totalPages"]) ?? 1,
+      count: num(o["count"], o["total"], o["totalAdmins"], o["totalShops"], o["totalDocs"], o["totalDoc"]) ?? arr.length,
+      totalPages: num(o["totalPages"], o["pages"]) ?? 1,
       currentPage: num(o["currentPage"], o["page"]) ?? 1,
     };
   }

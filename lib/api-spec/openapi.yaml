@@ -364,6 +364,7 @@ paths:
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
         - { name: name, in: query, schema: { type: string } }
+        - { name: shop, in: query, schema: { type: string } }
       responses:
         "200":
           description: Products
@@ -956,6 +957,19 @@ components:
         _id: { type: string }
         name: { type: ["string", "null"] }
 
+    Batch:
+      type: object
+      additionalProperties: true
+      required: [_id]
+      properties:
+        _id: { type: string }
+        batchCode: { type: ["string", "null"] }
+        quantity: { type: ["number", "null"] }
+        totalQuantity: { type: ["number", "null"] }
+        buyingPrice: { type: ["number", "null"] }
+        expirationDate: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"] }
+
     Product:
       type: object
       additionalProperties: true
@@ -971,8 +985,16 @@ components:
         barcode: { type: ["string", "null"] }
         measure: { type: ["string", "null"] }
         manufacturer: { type: ["string", "null"] }
+        expiryDate: { type: ["string", "null"] }
+        date: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"] }
+        updatedAt: { type: ["string", "null"] }
         shopId: { $ref: "#/components/schemas/GenericObject" }
+        supplierId: { $ref: "#/components/schemas/GenericObject" }
         productCategoryId: { $ref: "#/components/schemas/GenericObject" }
+        batches:
+          type: array
+          items: { $ref: "#/components/schemas/Batch" }
 
     ProductInput:
       type: object

@@ -4,3 +4,4 @@
 - [Responsive list-page pattern](responsive-list-pages.md) — admin-panel list pages: desktop `<Table>` (hidden md:block) + mobile card list (md:hidden) from same data; keep both in sync.
 - [Shops list upstream constraints](shops-list-upstream.md) — /shop/ supports name/status/type/ownerid only; owner projected to email+phone (no name); count needs totalShops.
 - [Upstream shop-filter params](shop-filter-params.md) — each list endpoint uses a different key (products=shopid, sales/purchases/attendants=shopId, subscriptions=shop); wrong name silently returns the full list.
+- [Pointify products upstream](pointify-products-upstream.md) — admin list uses /product/admin/products (name/shop/shopid); products have no updatedAt (only `date`); batches only via getProductById.

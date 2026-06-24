@@ -20,9 +20,13 @@ router.delete("/product-categories/:id", async (req, res) => {
   await proxy(req, res, { method: "DELETE", path: `/product/category/${req.params.id}` });
 });
 
-// Products
+// Products. Use the admin list endpoint which supports searching by product
+// name (`name`), shop name (`shop`), and exact shop id (`shopid`).
 router.get("/products", async (req, res) => {
-  await proxyList(req, res, { path: "/product/", query: req.query as Record<string, unknown> });
+  await proxyList(req, res, {
+    path: "/product/admin/products",
+    query: req.query as Record<string, unknown>,
+  });
 });
 
 router.post("/products", async (req, res) => {
