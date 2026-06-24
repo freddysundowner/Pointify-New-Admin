@@ -298,8 +298,14 @@ function ProductInventory({ product }: { product: Product }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <Boxes className="h-4 w-4 text-primary" />
-        Inventory
+        <Boxes className="h-4 w-4 shrink-0 text-primary" />
+        <span>
+          Inventory
+          <span className="text-muted-foreground"> · </span>
+          <span className="font-semibold">
+            {detail.name || product.name || "—"}
+          </span>
+        </span>
       </div>
 
       {/* Stock summary from the product record. */}
