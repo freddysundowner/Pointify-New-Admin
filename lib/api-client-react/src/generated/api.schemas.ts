@@ -396,6 +396,11 @@ export interface AttendantUpdate {
   shopId?: string;
 }
 
+export interface AttendantPasswordReset {
+  password: string;
+  phone?: string;
+}
+
 export interface Sale {
   _id: string;
   /** @nullable */
@@ -802,6 +807,10 @@ year: number;
 export type ListAttendantsParams = {
 shopId?: string;
 adminId?: string;
+};
+
+export type ResetAttendantPassword200 = {
+  reset?: boolean;
 };
 
 export type ListSalesParams = {

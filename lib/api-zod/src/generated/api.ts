@@ -824,6 +824,20 @@ export const DeleteAttendantResponse = zod.object({
 })
 
 
+export const ResetAttendantPasswordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ResetAttendantPasswordBody = zod.object({
+  "password": zod.string(),
+  "phone": zod.string().optional()
+})
+
+export const ResetAttendantPasswordResponse = zod.object({
+  "reset": zod.boolean().optional()
+})
+
+
 export const ListSalesQueryParams = zod.object({
   "shopId": zod.coerce.string().optional(),
   "page": zod.coerce.number().optional(),

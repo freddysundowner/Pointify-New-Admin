@@ -29,6 +29,7 @@ import type {
   Attendant,
   AttendantInput,
   AttendantListResult,
+  AttendantPasswordReset,
   AttendantUpdate,
   BulkSmsInput,
   BulkSmsResult,
@@ -66,6 +67,7 @@ import type {
   ProductUpdate,
   PurchaseHistoryResult,
   PurchaseListResult,
+  ResetAttendantPassword200,
   ResetResult,
   Sale,
   SaleListResult,
@@ -2586,6 +2588,72 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeleteAttendantMutationOptions(options));
+    }
+
+export const getResetAttendantPasswordUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendants/${id}/reset-password`
+}
+
+export const resetAttendantPassword = async (id: string,
+    attendantPasswordReset: AttendantPasswordReset, options?: RequestInit): Promise<ResetAttendantPassword200> => {
+
+  return customFetch<ResetAttendantPassword200>(getResetAttendantPasswordUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      attendantPasswordReset,)
+  }
+);}
+
+
+
+
+export const getResetAttendantPasswordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAttendantPassword>>, TError,{id: string;data: BodyType<AttendantPasswordReset>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetAttendantPassword>>, TError,{id: string;data: BodyType<AttendantPasswordReset>}, TContext> => {
+
+const mutationKey = ['resetAttendantPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetAttendantPassword>>, {id: string;data: BodyType<AttendantPasswordReset>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  resetAttendantPassword(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetAttendantPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof resetAttendantPassword>>>
+    export type ResetAttendantPasswordMutationBody = BodyType<AttendantPasswordReset>
+    export type ResetAttendantPasswordMutationError = ErrorType<unknown>
+
+    export const useResetAttendantPassword = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAttendantPassword>>, TError,{id: string;data: BodyType<AttendantPasswordReset>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetAttendantPassword>>,
+        TError,
+        {id: string;data: BodyType<AttendantPasswordReset>},
+        TContext
+      > => {
+      return useMutation(getResetAttendantPasswordMutationOptions(options));
     }
 
 export const getListSalesUrl = (params?: ListSalesParams,) => {

@@ -7,3 +7,4 @@
 - [Pointify products upstream](pointify-products-upstream.md) — admin list uses /product/admin/products (name/shop/shopid); products have no updatedAt (only `date`); batches only via getProductById.
 - [Orval params name collision](orval-params-collision.md) — never mix a path param + required query params in one spec path; pass id as a query param to avoid a zod/type `<Op>Params` clash that breaks api-zod codegen.
 - [Admin edit-form semantics](admin-edit-forms.md) — edit forms: text sends "" to clear, numbers omit when blank, category refs send null to detach (nullable spec); category lists are global.
+- [Upstream attendant reset-password](upstream-attendant-reset.md) — attendant "userId" = uniqueDigits; reset proxies PUT /attendants/reset/password/sms/:id reading id from BODY, SMSs new password.

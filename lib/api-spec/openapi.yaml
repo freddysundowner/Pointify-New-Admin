@@ -561,6 +561,27 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResult" }
 
+  /attendants/{id}/reset-password:
+    post:
+      operationId: resetAttendantPassword
+      tags: [attendants]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AttendantPasswordReset" }
+      responses:
+        "200":
+          description: Password reset; the new password is sent to the attendant by SMS
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reset: { type: boolean }
+
   /sales:
     get:
       operationId: listSales
@@ -1229,6 +1250,14 @@ components:
         email: { type: string }
         password: { type: string }
         shopId: { type: string }
+
+    AttendantPasswordReset:
+      type: object
+      required: [password]
+      properties:
+        password: { type: string }
+        # Optional fallback number used only if the attendant has no phone on file.
+        phone: { type: string }
 
     Sale:
       type: object
