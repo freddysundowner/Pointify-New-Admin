@@ -1,0 +1,14 @@
+const express = require("express");
+const router = express.Router();
+const requestsController = require("../controllers/stockrequests");
+router.post("/", requestsController.createRequest);
+router.get("/:id", requestsController.getRequestById);
+router.put("/:id", requestsController.updateRequest);
+router.put("/delete/item/:id", requestsController.deleteRequestItem);
+router.delete("/:id", requestsController.deleteRequest);
+router.get("/", requestsController.getRequestByShopId);
+router.get("/product/:productId", requestsController.getRequestByProductId);
+router.put("/request/approve/:id", requestsController.approveWareHouseRequests);
+router.put("/request/accept/:id", requestsController.acceptOrder);
+router.put("/request/status/:id", requestsController.statusOrder);
+module.exports = router;
