@@ -520,71 +520,93 @@ function PackageForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="p-amount">Amount (KES)</Label>
-            <Input
-              id="p-amount"
-              type="number"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="p-amountusd">Amount (USD)</Label>
-            <Input
-              id="p-amountusd"
-              type="number"
-              inputMode="decimal"
-              value={amountusd}
-              onChange={(e) => setAmountusd(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3 rounded-lg border border-dashed p-3">
-          <p className="text-sm font-medium">New pricing</p>
-          <p className="text-xs text-muted-foreground">
-            Applied to customers on the new pricing group.
-          </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="p-newamount">New amount (KES)</Label>
-              <Input
-                id="p-newamount"
-                type="number"
-                inputMode="decimal"
-                value={newAmount}
-                onChange={(e) => setNewAmount(e.target.value)}
-              />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-3 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Current pricing</p>
+              <p className="text-xs text-muted-foreground">
+                What customers on the old pricing group pay.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="p-newamountusd">New amount (USD)</Label>
-              <Input
-                id="p-newamountusd"
-                type="number"
-                inputMode="decimal"
-                value={newAmountusd}
-                onChange={(e) => setNewAmountusd(e.target.value)}
-              />
-            </div>
-            {mode !== "create" && (
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="p-newmaxshops">New max shops</Label>
+                <Label htmlFor="p-amount">Amount (KES)</Label>
                 <Input
-                  id="p-newmaxshops"
+                  id="p-amount"
                   type="number"
-                  inputMode="numeric"
-                  value={newMaxShops}
-                  onChange={(e) => setNewMaxShops(e.target.value)}
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="p-amountusd">Amount (USD)</Label>
+                <Input
+                  id="p-amountusd"
+                  type="number"
+                  inputMode="decimal"
+                  value={amountusd}
+                  onChange={(e) => setAmountusd(e.target.value)}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="p-maxshops">Max shops</Label>
+                <Input
+                  id="p-maxshops"
+                  type="number"
+                  inputMode="numeric"
+                  value={maxShops}
+                  onChange={(e) => setMaxShops(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-dashed p-3">
+            <div>
+              <p className="text-sm font-medium">New pricing</p>
+              <p className="text-xs text-muted-foreground">
+                Applied to customers on the new pricing group.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="p-newamount">New amount (KES)</Label>
+                <Input
+                  id="p-newamount"
+                  type="number"
+                  inputMode="decimal"
+                  value={newAmount}
+                  onChange={(e) => setNewAmount(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-newamountusd">New amount (USD)</Label>
+                <Input
+                  id="p-newamountusd"
+                  type="number"
+                  inputMode="decimal"
+                  value={newAmountusd}
+                  onChange={(e) => setNewAmountusd(e.target.value)}
+                />
+              </div>
+              {mode !== "create" && (
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="p-newmaxshops">New max shops</Label>
+                  <Input
+                    id="p-newmaxshops"
+                    type="number"
+                    inputMode="numeric"
+                    value={newMaxShops}
+                    onChange={(e) => setNewMaxShops(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="p-duration">Duration</Label>
             <Input
@@ -609,16 +631,6 @@ function PackageForm({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="p-maxshops">Max shops</Label>
-            <Input
-              id="p-maxshops"
-              type="number"
-              inputMode="numeric"
-              value={maxShops}
-              onChange={(e) => setMaxShops(e.target.value)}
-            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="p-discount">Discount (%)</Label>
