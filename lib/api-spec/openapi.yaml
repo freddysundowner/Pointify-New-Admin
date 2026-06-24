@@ -87,6 +87,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalyticsOverview"
 
+  /statistics:
+    get:
+      operationId: getStatistics
+      tags: [analytics]
+      summary: Comprehensive platform business statistics
+      responses:
+        "200":
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatisticsResult"
+
   /admins:
     get:
       operationId: listAdmins
@@ -1543,6 +1556,109 @@ components:
         activeShops: { type: number }
         expiredShops: { type: number }
         trialShops: { type: number }
+
+    MoneyBucket:
+      type: object
+      properties:
+        amount: { type: number }
+        count: { type: number }
+
+    TrendPoint:
+      type: object
+      properties:
+        month: { type: string }
+        label: { type: string }
+        count: { type: number }
+        amount: { type: number }
+
+    PackageStat:
+      type: object
+      properties:
+        name: { type: string }
+        type: { type: string }
+        activeSubscriptions: { type: number }
+        revenue: { type: number }
+
+    TopShopStat:
+      type: object
+      properties:
+        shopId: { type: ["string", "null"] }
+        name: { type: string }
+        revenue: { type: number }
+        sales: { type: number }
+
+    StatisticsResult:
+      type: object
+      properties:
+        currency: { type: string }
+        generatedAt: { type: string }
+        revenue:
+          type: object
+          properties:
+            today: { $ref: "#/components/schemas/MoneyBucket" }
+            yesterday: { $ref: "#/components/schemas/MoneyBucket" }
+            thisWeek: { $ref: "#/components/schemas/MoneyBucket" }
+            thisMonth: { $ref: "#/components/schemas/MoneyBucket" }
+            lastMonth: { $ref: "#/components/schemas/MoneyBucket" }
+            thisYear: { $ref: "#/components/schemas/MoneyBucket" }
+            allTime: { $ref: "#/components/schemas/MoneyBucket" }
+            mrr: { type: number }
+        revenueTrend:
+          type: array
+          items: { $ref: "#/components/schemas/TrendPoint" }
+        gmv:
+          type: object
+          properties:
+            today: { $ref: "#/components/schemas/MoneyBucket" }
+            thisMonth: { $ref: "#/components/schemas/MoneyBucket" }
+            allTime: { $ref: "#/components/schemas/MoneyBucket" }
+        salesTrend:
+          type: array
+          items: { $ref: "#/components/schemas/TrendPoint" }
+        users:
+          type: object
+          properties:
+            total: { type: number }
+            newThisMonth: { type: number }
+            newToday: { type: number }
+            paying: { type: number }
+            trial: { type: number }
+        userTrend:
+          type: array
+          items: { $ref: "#/components/schemas/TrendPoint" }
+        shops:
+          type: object
+          properties:
+            total: { type: number }
+            newThisMonth: { type: number }
+            productionActive: { type: number }
+            productionExpired: { type: number }
+            trialActive: { type: number }
+            trialExpired: { type: number }
+        subscriptions:
+          type: object
+          properties:
+            active: { type: number }
+            expired: { type: number }
+            expiringSoon: { type: number }
+            newThisMonth: { type: number }
+        packages:
+          type: array
+          items: { $ref: "#/components/schemas/PackageStat" }
+        topShops:
+          type: array
+          items: { $ref: "#/components/schemas/TopShopStat" }
+        sms:
+          type: object
+          properties:
+            sentThisMonth: { type: number }
+            failedThisMonth: { type: number }
+            creditsUsedThisMonth: { type: number }
+            sentAllTime: { type: number }
+        catalog:
+          type: object
+          properties:
+            products: { type: number }
 
     SmsLog:
       type: object

@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
-  useGetAnalyticsOverview,
+  useGetStatistics,
   useListAdmins,
   useListAdminShops,
   useListUserPackages,
@@ -10,12 +10,19 @@ import {
   getListUserPackagesQueryKey,
   getListAdminsQueryKey,
 } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -38,9 +45,13 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -58,6 +69,13 @@ import {
   Check,
   ChevronsUpDown,
   Loader2,
+  Repeat,
+  ShoppingCart,
+  MessageSquare,
+  AlertTriangle,
+  Package as PackageIcon,
+  Boxes,
+  UserPlus,
 } from "lucide-react";
 import { formatKes, formatNumber } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -71,44 +89,52 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
+const compactKes = (v: number): string => {
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `KES ${(v / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `KES ${(v / 1_000).toFixed(1)}K`;
+  return formatKes(v);
+};
+
+function deltaPct(current: number, previous: number): number | null {
+  if (previous <= 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
 export default function Statistics() {
-  const { data: analytics, isLoading } = useGetAnalyticsOverview();
+  const { data: stats, isLoading, isError, refetch } = useGetStatistics();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
 
-  const revenue = analytics?.revenue ?? {};
-  const shops = analytics?.shops ?? {};
+  const revenue = stats?.revenue ?? {};
+  const gmv = stats?.gmv ?? {};
+  const users = stats?.users ?? {};
+  const shops = stats?.shops ?? {};
+  const subscriptions = stats?.subscriptions ?? {};
+  const sms = stats?.sms ?? {};
+  const catalog = stats?.catalog ?? {};
 
-  const allTime = revenue.allTime ?? {};
-  const thisMonth = revenue.thisMonth ?? {};
-  const lastMonth = revenue.lastMonth ?? {};
+  const monthRevenue = num(revenue.thisMonth?.amount);
+  const lastMonthRevenue = num(revenue.lastMonth?.amount);
+  const revenueDelta = deltaPct(monthRevenue, lastMonthRevenue);
 
-  const monthRevenue = num(thisMonth.revenue);
-  const lastMonthRevenue = num(lastMonth.revenue);
-  const monthDelta =
-    lastMonthRevenue > 0
-      ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-      : null;
-  const monthUp = monthDelta === null || monthDelta >= 0;
-
-  const totalUsers = num(analytics?.totalUsers);
-  const payingUsers = num(analytics?.payingUsers);
-  const activeShops = num(analytics?.activeShops);
-  const trialShops = num(analytics?.trialShops);
-  const expiredShops = num(analytics?.expiredShops);
+  const revenueTrend = (stats?.revenueTrend ?? []).map((p) => ({
+    label: p.label ?? p.month ?? "",
+    value: num(p.amount),
+  }));
+  const salesTrend = (stats?.salesTrend ?? []).map((p) => ({
+    label: p.label ?? p.month ?? "",
+    value: num(p.amount),
+  }));
+  const userTrend = (stats?.userTrend ?? []).map((p) => ({
+    label: p.label ?? p.month ?? "",
+    value: num(p.count),
+  }));
 
   const productionActive = num(shops.productionActive);
   const productionExpired = num(shops.productionExpired);
   const trialActive = num(shops.trialActive);
   const trialExpired = num(shops.trialExpired);
-
-  const revenueChart = [
-    { label: "Today", revenue: num(revenue.today?.revenue) },
-    { label: "Yesterday", revenue: num(revenue.yesterday?.revenue) },
-    { label: "This Week", revenue: num(revenue.thisWeek?.revenue) },
-    { label: "This Month", revenue: monthRevenue },
-    { label: "Last Month", revenue: lastMonthRevenue },
-  ];
 
   const subRows = [
     { label: "Production · Active", value: productionActive, tone: "text-emerald-600" },
@@ -117,13 +143,16 @@ export default function Statistics() {
     { label: "Trial · Expired", value: trialExpired, tone: "text-rose-600" },
   ];
 
+  const packages = stats?.packages ?? [];
+  const topShops = stats?.topShops ?? [];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
           <p className="text-muted-foreground">
-            Business performance, payouts and payment prompts.
+            Platform-wide performance, growth, payouts and payment prompts.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -139,77 +168,124 @@ export default function Statistics() {
       </div>
 
       {isLoading ? (
-        <div className="p-8 text-muted-foreground">Loading statistics…</div>
+        <StatisticsSkeleton />
+      ) : isError ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <p className="font-medium">Couldn't load statistics</p>
+              <p className="text-sm text-muted-foreground">
+                The statistics service may not be available yet.
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
+          {/* Primary KPIs */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">All-time Revenue</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatKes(allTime.revenue)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {formatNumber(allTime.count)} payments
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Revenue This Month</CardTitle>
-                <Receipt className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatKes(monthRevenue)}</div>
-                <p className="flex items-center gap-1 text-xs">
-                  {monthDelta === null ? (
+            <KpiCard
+              title="Revenue This Month"
+              icon={<Receipt className="h-4 w-4 text-muted-foreground" />}
+              value={formatKes(monthRevenue)}
+              footer={
+                revenueDelta === null ? (
+                  <span className="text-muted-foreground">vs last month</span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <span
+                      className={`flex items-center gap-1 ${
+                        revenueDelta >= 0 ? "text-emerald-600" : "text-rose-600"
+                      }`}
+                    >
+                      {revenueDelta >= 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {Math.abs(revenueDelta).toFixed(1)}%
+                    </span>
                     <span className="text-muted-foreground">vs last month</span>
-                  ) : (
-                    <>
-                      <span
-                        className={`flex items-center gap-1 ${
-                          monthUp ? "text-emerald-600" : "text-rose-600"
-                        }`}
-                      >
-                        {monthUp ? (
-                          <TrendingUp className="h-3 w-3" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3" />
-                        )}
-                        {Math.abs(monthDelta).toFixed(1)}%
-                      </span>
-                      <span className="text-muted-foreground">vs last month</span>
-                    </>
-                  )}
-                </p>
-              </CardContent>
-            </Card>
+                  </span>
+                )
+              }
+            />
+            <KpiCard
+              title="All-time Revenue"
+              icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
+              value={formatKes(revenue.allTime?.amount)}
+              footer={`${formatNumber(revenue.allTime?.count)} subscription payments`}
+            />
+            <KpiCard
+              title="Active Subscription Value"
+              icon={<Repeat className="h-4 w-4 text-muted-foreground" />}
+              value={formatKes(revenue.mrr)}
+              footer="Run-rate from active paid plans"
+            />
+            <KpiCard
+              title="Merchant Sales (This Month)"
+              icon={<ShoppingCart className="h-4 w-4 text-muted-foreground" />}
+              value={formatKes(gmv.thisMonth?.amount)}
+              footer={`${formatNumber(gmv.thisMonth?.count)} sales across all shops`}
+            />
+          </div>
 
+          {/* Secondary KPIs */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              title="Paying Customers"
+              icon={<Users className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(users.paying)}
+              footer={`of ${formatNumber(users.total)} users · ${formatNumber(
+                users.trial,
+              )} on trial`}
+            />
+            <KpiCard
+              title="Active Shops"
+              icon={<Store className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(productionActive + trialActive)}
+              footer={`${formatNumber(productionActive)} paid · ${formatNumber(
+                trialActive,
+              )} trial`}
+            />
+            <KpiCard
+              title="New Sign-ups (This Month)"
+              icon={<UserPlus className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(users.newThisMonth)}
+              footer={`${formatNumber(users.newToday)} today`}
+            />
+            <KpiCard
+              title="SMS Sent (This Month)"
+              icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(sms.sentThisMonth)}
+              footer={`${formatNumber(sms.creditsUsedThisMonth)} credits · ${formatNumber(
+                sms.failedThisMonth,
+              )} failed`}
+            />
+          </div>
+
+          {/* Trends */}
+          <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Shops</CardTitle>
-                <Store className="h-4 w-4 text-muted-foreground" />
+              <CardHeader>
+                <CardTitle>Subscription Revenue</CardTitle>
+                <CardDescription>Last 12 months</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatNumber(activeShops)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {formatNumber(trialShops)} on trial · {formatNumber(expiredShops)} expired
-                </p>
+                <TrendArea data={revenueTrend} money />
               </CardContent>
             </Card>
-
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Paying Customers</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+              <CardHeader>
+                <CardTitle>Merchant Sales Volume</CardTitle>
+                <CardDescription>Gross sales across all shops · last 12 months</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatNumber(payingUsers)}</div>
-                <p className="text-xs text-muted-foreground">
-                  of {formatNumber(totalUsers)} total users
-                </p>
+                <TrendBar data={salesTrend} money />
               </CardContent>
             </Card>
           </div>
@@ -217,35 +293,17 @@ export default function Statistics() {
           <div className="grid gap-4 lg:grid-cols-7">
             <Card className="lg:col-span-4">
               <CardHeader>
-                <CardTitle>Revenue by Period</CardTitle>
+                <CardTitle>Customer Growth</CardTitle>
+                <CardDescription>New sign-ups per month · last 12 months</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenueChart} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        fontSize={12}
-                        width={70}
-                        tickFormatter={(v) => formatKes(v)}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
-                        formatter={(value) => [formatKes(value as number), "Revenue"]}
-                      />
-                      <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                <TrendLine data={userTrend} />
               </CardContent>
             </Card>
 
             <Card className="lg:col-span-3">
               <CardHeader>
-                <CardTitle>Subscriptions</CardTitle>
+                <CardTitle>Shops by Subscription</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {subRows.map((row) => (
@@ -256,10 +314,131 @@ export default function Statistics() {
                 ))}
                 <div className="flex items-center justify-between border-t pt-3 text-sm">
                   <span className="text-muted-foreground">Total shops</span>
-                  <span className="font-semibold">
-                    {formatNumber(activeShops + expiredShops)}
-                  </span>
+                  <span className="font-semibold">{formatNumber(shops.total)}</span>
                 </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">New this month</span>
+                  <span className="font-semibold">{formatNumber(shops.newThisMonth)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Subscription health + catalog */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              title="Active Subscriptions"
+              icon={<Check className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(subscriptions.active)}
+              footer={`${formatNumber(subscriptions.newThisMonth)} new this month`}
+            />
+            <KpiCard
+              title="Expiring Soon"
+              icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(subscriptions.expiringSoon)}
+              footer="Within the next 7 days"
+              accent={num(subscriptions.expiringSoon) > 0 ? "warn" : undefined}
+            />
+            <KpiCard
+              title="Expired Subscriptions"
+              icon={<Repeat className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(subscriptions.expired)}
+              footer="Past their end date"
+            />
+            <KpiCard
+              title="Products Catalogued"
+              icon={<Boxes className="h-4 w-4 text-muted-foreground" />}
+              value={formatNumber(catalog.products)}
+              footer="Across all shops"
+            />
+          </div>
+
+          {/* Breakdown tables */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PackageIcon className="h-4 w-4" />
+                  Plans in Use
+                </CardTitle>
+                <CardDescription>Active subscriptions by plan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {packages.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    No active plans.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b pb-2 text-xs font-medium text-muted-foreground">
+                      <span>Plan</span>
+                      <span className="text-right">Active</span>
+                      <span className="text-right">Revenue</span>
+                    </div>
+                    {packages.map((pkg, i) => (
+                      <div
+                        key={`${pkg.name}-${i}`}
+                        className="grid grid-cols-[1fr_auto_auto] items-center gap-4 py-2 text-sm"
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <span className="truncate font-medium">{pkg.name || "Unknown"}</span>
+                          {pkg.type ? (
+                            <Badge variant="outline" className="capitalize">
+                              {pkg.type}
+                            </Badge>
+                          ) : null}
+                        </span>
+                        <span className="text-right font-semibold">
+                          {formatNumber(pkg.activeSubscriptions)}
+                        </span>
+                        <span className="text-right text-muted-foreground">
+                          {compactKes(num(pkg.revenue))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Store className="h-4 w-4" />
+                  Top Shops by Sales
+                </CardTitle>
+                <CardDescription>Highest gross sales all-time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {topShops.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    No sales recorded yet.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[1.5rem_1fr_auto_auto] gap-4 border-b pb-2 text-xs font-medium text-muted-foreground">
+                      <span>#</span>
+                      <span>Shop</span>
+                      <span className="text-right">Sales</span>
+                      <span className="text-right">Revenue</span>
+                    </div>
+                    {topShops.map((shop, i) => (
+                      <div
+                        key={shop.shopId ?? i}
+                        className="grid grid-cols-[1.5rem_1fr_auto_auto] items-center gap-4 py-2 text-sm"
+                      >
+                        <span className="text-muted-foreground">{i + 1}</span>
+                        <span className="truncate font-medium">{shop.name || "Unknown shop"}</span>
+                        <span className="text-right text-muted-foreground">
+                          {formatNumber(shop.sales)}
+                        </span>
+                        <span className="text-right font-semibold">
+                          {compactKes(num(shop.revenue))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -268,6 +447,179 @@ export default function Statistics() {
 
       <WithdrawDialog open={withdrawOpen} onClose={() => setWithdrawOpen(false)} />
       <PaymentPromptDialog open={promptOpen} onClose={() => setPromptOpen(false)} />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Presentation helpers                                                        */
+/* -------------------------------------------------------------------------- */
+
+function KpiCard({
+  title,
+  icon,
+  value,
+  footer,
+  accent,
+}: {
+  title: string;
+  icon: ReactNode;
+  value: ReactNode;
+  footer: ReactNode;
+  accent?: "warn";
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div
+          className={`text-2xl font-bold ${accent === "warn" ? "text-amber-600" : ""}`}
+        >
+          {value}
+        </div>
+        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          {footer}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+const chartTip = {
+  cursor: { fill: "hsl(var(--muted))", opacity: 0.4 },
+  contentStyle: {
+    borderRadius: "0.5rem",
+    border: "1px solid hsl(var(--border))",
+    background: "hsl(var(--background))",
+    fontSize: "12px",
+  },
+};
+
+function TrendArea({ data, money }: { data: Array<{ label: string; value: number }>; money?: boolean }) {
+  return (
+    <div className="h-[260px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+          <defs>
+            <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            fontSize={12}
+            width={56}
+            tickFormatter={(v) => (money ? compactKes(v) : formatNumber(v))}
+          />
+          <Tooltip
+            {...chartTip}
+            formatter={(v) => [money ? formatKes(v as number) : formatNumber(v as number), "Revenue"]}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            fill="url(#revFill)"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function TrendBar({ data, money }: { data: Array<{ label: string; value: number }>; money?: boolean }) {
+  return (
+    <div className="h-[260px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            fontSize={12}
+            width={56}
+            tickFormatter={(v) => (money ? compactKes(v) : formatNumber(v))}
+          />
+          <Tooltip
+            {...chartTip}
+            formatter={(v) => [money ? formatKes(v as number) : formatNumber(v as number), "Sales"]}
+          />
+          <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function TrendLine({ data }: { data: Array<{ label: string; value: number }> }) {
+  return (
+    <div className="h-[260px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            fontSize={12}
+            width={40}
+            allowDecimals={false}
+            tickFormatter={(v) => formatNumber(v)}
+          />
+          <Tooltip
+            {...chartTip}
+            formatter={(v) => [formatNumber(v as number), "New users"]}
+          />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function StatisticsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="pb-2">
+              <Skeleton className="h-4 w-28" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-7 w-24" />
+              <Skeleton className="mt-2 h-3 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[260px] w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

@@ -82,6 +82,7 @@ import type {
   ShopUpdate,
   SmsLogListResult,
   SmsTopupInput,
+  StatisticsResult,
   StockHistoryResult,
   Subscription,
   SubscriptionCreateInput,
@@ -321,6 +322,83 @@ export function useGetAnalyticsOverview<TData = Awaited<ReturnType<typeof getAna
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAnalyticsOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetStatisticsUrl = () => {
+
+
+
+
+  return `/api/statistics`
+}
+
+/**
+ * @summary Comprehensive platform business statistics
+ */
+export const getStatistics = async ( options?: RequestInit): Promise<StatisticsResult> => {
+
+  return customFetch<StatisticsResult>(getGetStatisticsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStatisticsQueryKey = () => {
+    return [
+    `/api/statistics`
+    ] as const;
+    }
+
+
+export const getGetStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof getStatistics>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStatistics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStatisticsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStatistics>>> = ({ signal }) => getStatistics({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStatistics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStatisticsQueryResult = NonNullable<Awaited<ReturnType<typeof getStatistics>>>
+export type GetStatisticsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Comprehensive platform business statistics
+ */
+
+export function useGetStatistics<TData = Awaited<ReturnType<typeof getStatistics>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStatistics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStatisticsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

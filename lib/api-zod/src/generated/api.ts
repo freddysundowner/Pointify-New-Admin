@@ -100,6 +100,120 @@ export const GetAnalyticsOverviewResponse = zod.object({
 
 
 /**
+ * @summary Comprehensive platform business statistics
+ */
+export const GetStatisticsResponse = zod.object({
+  "currency": zod.string().optional(),
+  "generatedAt": zod.string().optional(),
+  "revenue": zod.object({
+  "today": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "yesterday": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "thisWeek": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "thisMonth": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "lastMonth": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "thisYear": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "allTime": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "mrr": zod.number().optional()
+}).optional(),
+  "revenueTrend": zod.array(zod.object({
+  "month": zod.string().optional(),
+  "label": zod.string().optional(),
+  "count": zod.number().optional(),
+  "amount": zod.number().optional()
+})).optional(),
+  "gmv": zod.object({
+  "today": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "thisMonth": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional(),
+  "allTime": zod.object({
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+}).optional()
+}).optional(),
+  "salesTrend": zod.array(zod.object({
+  "month": zod.string().optional(),
+  "label": zod.string().optional(),
+  "count": zod.number().optional(),
+  "amount": zod.number().optional()
+})).optional(),
+  "users": zod.object({
+  "total": zod.number().optional(),
+  "newThisMonth": zod.number().optional(),
+  "newToday": zod.number().optional(),
+  "paying": zod.number().optional(),
+  "trial": zod.number().optional()
+}).optional(),
+  "userTrend": zod.array(zod.object({
+  "month": zod.string().optional(),
+  "label": zod.string().optional(),
+  "count": zod.number().optional(),
+  "amount": zod.number().optional()
+})).optional(),
+  "shops": zod.object({
+  "total": zod.number().optional(),
+  "newThisMonth": zod.number().optional(),
+  "productionActive": zod.number().optional(),
+  "productionExpired": zod.number().optional(),
+  "trialActive": zod.number().optional(),
+  "trialExpired": zod.number().optional()
+}).optional(),
+  "subscriptions": zod.object({
+  "active": zod.number().optional(),
+  "expired": zod.number().optional(),
+  "expiringSoon": zod.number().optional(),
+  "newThisMonth": zod.number().optional()
+}).optional(),
+  "packages": zod.array(zod.object({
+  "name": zod.string().optional(),
+  "type": zod.string().optional(),
+  "activeSubscriptions": zod.number().optional(),
+  "revenue": zod.number().optional()
+})).optional(),
+  "topShops": zod.array(zod.object({
+  "shopId": zod.string().nullish(),
+  "name": zod.string().optional(),
+  "revenue": zod.number().optional(),
+  "sales": zod.number().optional()
+})).optional(),
+  "sms": zod.object({
+  "sentThisMonth": zod.number().optional(),
+  "failedThisMonth": zod.number().optional(),
+  "creditsUsedThisMonth": zod.number().optional(),
+  "sentAllTime": zod.number().optional()
+}).optional(),
+  "catalog": zod.object({
+  "products": zod.number().optional()
+}).optional()
+})
+
+
+/**
  * @summary List platform users (shop owners)
  */
 export const ListAdminsQueryParams = zod.object({

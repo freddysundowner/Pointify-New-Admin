@@ -634,6 +634,102 @@ export interface AnalyticsOverview {
   trialShops?: number;
 }
 
+export interface MoneyBucket {
+  amount?: number;
+  count?: number;
+}
+
+export interface TrendPoint {
+  month?: string;
+  label?: string;
+  count?: number;
+  amount?: number;
+}
+
+export interface PackageStat {
+  name?: string;
+  type?: string;
+  activeSubscriptions?: number;
+  revenue?: number;
+}
+
+export interface TopShopStat {
+  /** @nullable */
+  shopId?: string | null;
+  name?: string;
+  revenue?: number;
+  sales?: number;
+}
+
+export type StatisticsResultRevenue = {
+  today?: MoneyBucket;
+  yesterday?: MoneyBucket;
+  thisWeek?: MoneyBucket;
+  thisMonth?: MoneyBucket;
+  lastMonth?: MoneyBucket;
+  thisYear?: MoneyBucket;
+  allTime?: MoneyBucket;
+  mrr?: number;
+};
+
+export type StatisticsResultGmv = {
+  today?: MoneyBucket;
+  thisMonth?: MoneyBucket;
+  allTime?: MoneyBucket;
+};
+
+export type StatisticsResultUsers = {
+  total?: number;
+  newThisMonth?: number;
+  newToday?: number;
+  paying?: number;
+  trial?: number;
+};
+
+export type StatisticsResultShops = {
+  total?: number;
+  newThisMonth?: number;
+  productionActive?: number;
+  productionExpired?: number;
+  trialActive?: number;
+  trialExpired?: number;
+};
+
+export type StatisticsResultSubscriptions = {
+  active?: number;
+  expired?: number;
+  expiringSoon?: number;
+  newThisMonth?: number;
+};
+
+export type StatisticsResultSms = {
+  sentThisMonth?: number;
+  failedThisMonth?: number;
+  creditsUsedThisMonth?: number;
+  sentAllTime?: number;
+};
+
+export type StatisticsResultCatalog = {
+  products?: number;
+};
+
+export interface StatisticsResult {
+  currency?: string;
+  generatedAt?: string;
+  revenue?: StatisticsResultRevenue;
+  revenueTrend?: TrendPoint[];
+  gmv?: StatisticsResultGmv;
+  salesTrend?: TrendPoint[];
+  users?: StatisticsResultUsers;
+  userTrend?: TrendPoint[];
+  shops?: StatisticsResultShops;
+  subscriptions?: StatisticsResultSubscriptions;
+  packages?: PackageStat[];
+  topShops?: TopShopStat[];
+  sms?: StatisticsResultSms;
+  catalog?: StatisticsResultCatalog;
+}
+
 export interface SmsLog {
   _id: string;
   /** @nullable */
