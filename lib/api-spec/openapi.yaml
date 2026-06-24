@@ -1378,6 +1378,8 @@ components:
         durationUnit: { type: string, enum: [days, weeks, months, years] }
         amount: { type: number }
         amountusd: { type: number }
+        newAmount: { type: number }
+        newAmountusd: { type: number }
         discount: { type: number }
         type: { type: string, enum: [trial, production] }
         maxShops: { type: number }
@@ -1397,6 +1399,9 @@ components:
         durationUnit: { type: string, enum: [days, weeks, months, years] }
         amount: { type: number }
         amountusd: { type: number }
+        newAmount: { type: number }
+        newAmountusd: { type: number }
+        newMaxShops: { type: number }
         discount: { type: number }
         type: { type: string, enum: [trial, production] }
         maxShops: { type: number }

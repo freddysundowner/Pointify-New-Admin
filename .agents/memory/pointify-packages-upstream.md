@@ -24,6 +24,11 @@ forced duration, newTitle masquerading as title).
   transformed list display.
 - `amount` editing won't visibly change production prices (formula-driven by `maxShops`);
   surface a note so operators aren't surprised.
-- Spec `PackageInput`/`PackageUpdate` carry `newTitle` and `order` (added for this); upstream
-  `updatePackage` also accepts `newAmount`, `newAmountusd`, `newMaxShops` (display overrides) —
-  not exposed in the admin UI by default.
+- Spec `PackageInput`/`PackageUpdate` carry `newTitle` and `order`. New-pricing-group fields
+  `newAmount`/`newAmountusd`/`newMaxShops` are exposed in the admin edit form.
+- **Create vs update field divergence (gotcha):** `createPackage` destructures and persists
+  `newAmount`+`newAmountusd` but NOT `newMaxShops`; `updatePackage` persists all three (plus
+  `newTitle`). So `newMaxShops` is EDIT-ONLY — `PackageInput` must omit it and the create UI
+  must hide it, else the value is silently dropped on create and the model default (2) applies.
+  **Why:** spec/UI promising a field the controller ignores = silent data loss. Always diff the
+  create vs update destructure lists in `controllers/package.js`, they are not identical.

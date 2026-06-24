@@ -16,6 +16,8 @@ export interface PackageInput {
   durationUnit: PackageInputDurationUnit;
   amount: number;
   amountusd: number;
+  newAmount?: number;
+  newAmountusd?: number;
   discount?: number;
   type: PackageInputType;
   maxShops?: number;

@@ -383,6 +383,9 @@ function PackageForm({
   const [status, setStatus] = useState(detail ? detail.status !== false : true);
   const [amount, setAmount] = useState(numStr(detail?.amount));
   const [amountusd, setAmountusd] = useState(numStr(detail?.amountusd));
+  const [newAmount, setNewAmount] = useState(numStr(detail?.newAmount));
+  const [newAmountusd, setNewAmountusd] = useState(numStr(detail?.newAmountusd));
+  const [newMaxShops, setNewMaxShops] = useState(numStr(detail?.newMaxShops));
   const [durationValue, setDurationValue] = useState(numStr(detail?.durationValue) || "30");
   const [durationUnit, setDurationUnit] = useState<DurationUnit>(initialUnit);
   const [maxShops, setMaxShops] = useState(numStr(detail?.maxShops));
@@ -427,6 +430,8 @@ function PackageForm({
       status,
       amount: amountNum,
       amountusd: amountUsdNum,
+      newAmount: optionalNum(newAmount),
+      newAmountusd: optionalNum(newAmountusd),
       durationValue: durationNum,
       durationUnit,
       maxShops: optionalNum(maxShops),
@@ -452,7 +457,7 @@ function PackageForm({
 
     if (!detail) return;
     update.mutate(
-      { id: detail._id, data: base as PackageUpdate },
+      { id: detail._id, data: { ...base, newMaxShops: optionalNum(newMaxShops) } as PackageUpdate },
       {
         onSuccess: () => {
           toast({ title: "Package updated" });
@@ -535,6 +540,47 @@ function PackageForm({
               value={amountusd}
               onChange={(e) => setAmountusd(e.target.value)}
             />
+          </div>
+        </div>
+
+        <div className="space-y-3 rounded-lg border border-dashed p-3">
+          <p className="text-sm font-medium">New pricing</p>
+          <p className="text-xs text-muted-foreground">
+            Applied to customers on the new pricing group.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="p-newamount">New amount (KES)</Label>
+              <Input
+                id="p-newamount"
+                type="number"
+                inputMode="decimal"
+                value={newAmount}
+                onChange={(e) => setNewAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-newamountusd">New amount (USD)</Label>
+              <Input
+                id="p-newamountusd"
+                type="number"
+                inputMode="decimal"
+                value={newAmountusd}
+                onChange={(e) => setNewAmountusd(e.target.value)}
+              />
+            </div>
+            {mode !== "create" && (
+              <div className="space-y-2">
+                <Label htmlFor="p-newmaxshops">New max shops</Label>
+                <Input
+                  id="p-newmaxshops"
+                  type="number"
+                  inputMode="numeric"
+                  value={newMaxShops}
+                  onChange={(e) => setNewMaxShops(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
 

@@ -16,6 +16,9 @@ export interface PackageUpdate {
   durationUnit?: PackageUpdateDurationUnit;
   amount?: number;
   amountusd?: number;
+  newAmount?: number;
+  newAmountusd?: number;
+  newMaxShops?: number;
   discount?: number;
   type?: PackageUpdateType;
   maxShops?: number;
