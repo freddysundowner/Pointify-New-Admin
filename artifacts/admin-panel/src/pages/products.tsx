@@ -503,11 +503,13 @@ function ProductEditForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NO_CATEGORY}>No category</SelectItem>
-              {(categories ?? []).map((c) => (
-                <SelectItem key={c._id} value={c._id}>
-                  {c.name || c._id}
-                </SelectItem>
-              ))}
+              {(categories ?? [])
+                .filter((c) => c._id)
+                .map((c) => (
+                  <SelectItem key={c._id} value={c._id}>
+                    {c.name || c._id}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
