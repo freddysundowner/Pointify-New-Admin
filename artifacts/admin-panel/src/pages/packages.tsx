@@ -2,6 +2,7 @@ import { useListPackages } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatKes } from "@/lib/utils";
 
 export default function Packages() {
   const { data, isLoading } = useListPackages();
@@ -37,7 +38,7 @@ export default function Packages() {
                     <TableCell className="font-medium">{pkg.title}</TableCell>
                     <TableCell>{pkg.type}</TableCell>
                     <TableCell>{pkg.durationValue} {pkg.durationUnit}</TableCell>
-                    <TableCell>{pkg.amount}</TableCell>
+                    <TableCell>{formatKes(pkg.amount)}</TableCell>
                     <TableCell>
                       <Badge variant={pkg.status ? "default" : "secondary"}>
                         {pkg.status ? "Active" : "Inactive"}

@@ -3,6 +3,7 @@ import { useListSubscriptions } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatKes } from "@/lib/utils";
 
 export default function Subscriptions() {
   const [page, setPage] = useState(1);
@@ -43,7 +44,7 @@ export default function Subscriptions() {
                   <TableRow key={sub._id}>
                     <TableCell className="font-medium">{getShopName(sub.shop)}</TableCell>
                     <TableCell>{sub.type}</TableCell>
-                    <TableCell>{sub.amount}</TableCell>
+                    <TableCell>{formatKes(sub.amount)}</TableCell>
                     <TableCell>
                       <Badge variant={sub.status ? "default" : "destructive"}>
                         {sub.status ? "Active" : "Inactive"}
