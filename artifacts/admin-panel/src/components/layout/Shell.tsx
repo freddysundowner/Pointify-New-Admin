@@ -56,8 +56,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-muted/20">
-        <Sidebar variant="inset" collapsible="icon">
+      <div className="flex min-h-screen w-full bg-muted/40">
+        <Sidebar collapsible="icon">
           <SidebarHeader className="flex h-16 items-center border-b border-sidebar-border px-4 py-0">
             <div className="flex items-center gap-2 font-bold text-sidebar-primary-foreground tracking-tight">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -135,7 +135,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {/* Additional header items could go here */}
           </header>
           
-          <main className="flex-1 overflow-y-auto bg-muted/10 p-6">
+          <main className="flex-1 overflow-y-auto p-6">
             <div className="mx-auto max-w-7xl">
               {children}
             </div>
