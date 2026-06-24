@@ -2,7 +2,7 @@ import { useListSubscriptions } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatKes } from "@/lib/utils";
+import { formatKes, formatDate } from "@/lib/utils";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Subscriptions() {
@@ -54,7 +54,7 @@ export default function Subscriptions() {
                             {sub.status ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{sub.endDate ? new Date(sub.endDate).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{formatDate(sub.endDate)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -92,7 +92,7 @@ export default function Subscriptions() {
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">End Date</dt>
-                          <dd>{sub.endDate ? new Date(sub.endDate).toLocaleDateString() : 'N/A'}</dd>
+                          <dd>{formatDate(sub.endDate)}</dd>
                         </div>
                       </dl>
                     </div>

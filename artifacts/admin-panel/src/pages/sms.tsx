@@ -3,6 +3,7 @@ import { useListSmsLogs } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
 
 export default function SMS() {
   const [page, setPage] = useState(1);
@@ -45,7 +46,7 @@ export default function SMS() {
                           <Badge variant="outline">{log.status}</Badge>
                         </TableCell>
                         <TableCell>{log.smsType}</TableCell>
-                        <TableCell>{log.createdAt ? new Date(log.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{formatDate(log.createdAt)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -74,7 +75,7 @@ export default function SMS() {
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Date</dt>
-                          <dd>{log.createdAt ? new Date(log.createdAt).toLocaleDateString() : 'N/A'}</dd>
+                          <dd>{formatDate(log.createdAt)}</dd>
                         </div>
                       </dl>
                     </div>

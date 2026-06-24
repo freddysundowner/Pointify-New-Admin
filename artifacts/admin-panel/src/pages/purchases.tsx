@@ -2,6 +2,7 @@ import { useListPurchases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
+import { formatDate } from "@/lib/utils";
 
 export default function Purchases() {
   const { shopId, shopName, from } = useShopFilter();
@@ -46,7 +47,7 @@ export default function Purchases() {
                         <TableCell className="font-medium">{purchase.invoiceNo}</TableCell>
                         <TableCell>{getShopName(purchase.shopId)}</TableCell>
                         <TableCell>{purchase.totalAmount}</TableCell>
-                        <TableCell>{purchase.createAt ? new Date(purchase.createAt).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{formatDate(purchase.createAt)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -78,7 +79,7 @@ export default function Purchases() {
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Date</dt>
-                          <dd>{purchase.createAt ? new Date(purchase.createAt).toLocaleDateString() : 'N/A'}</dd>
+                          <dd>{formatDate(purchase.createAt)}</dd>
                         </div>
                       </dl>
                     </div>

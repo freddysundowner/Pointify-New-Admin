@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
+import { formatDate } from "@/lib/utils";
 
 export default function Sales() {
   const { shopId, shopName, from } = useShopFilter();
@@ -51,7 +52,7 @@ export default function Sales() {
                         <TableCell>
                           <Badge variant="outline">{sale.status}</Badge>
                         </TableCell>
-                        <TableCell>{sale.createAt ? new Date(sale.createAt).toLocaleDateString() : 'N/A'}</TableCell>
+                        <TableCell>{formatDate(sale.createAt)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -84,7 +85,7 @@ export default function Sales() {
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Date</dt>
-                          <dd>{sale.createAt ? new Date(sale.createAt).toLocaleDateString() : 'N/A'}</dd>
+                          <dd>{formatDate(sale.createAt)}</dd>
                         </div>
                       </dl>
                     </div>
