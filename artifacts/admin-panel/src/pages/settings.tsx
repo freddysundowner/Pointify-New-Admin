@@ -2,6 +2,7 @@ import { useGetSettings } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Empty,
   EmptyHeader,
@@ -186,24 +187,33 @@ export default function Settings() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <Tabs defaultValue={groups[0]?.[0]} className="space-y-6">
+          <TabsList className="flex h-auto flex-wrap justify-start gap-1">
+            {groups.map(([name]) => (
+              <TabsTrigger key={name} value={name}>
+                {humanize(name)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {groups.map(([name, value]) => (
-            <Card key={name}>
-              <CardHeader>
-                <CardTitle>{humanize(name)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isPlainObject(value) || Array.isArray(value) ? (
-                  <ValueRenderer value={value} />
-                ) : (
-                  <div className="text-sm">
-                    <PrimitiveValue value={value} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <TabsContent key={name} value={name} className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{humanize(name)}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isPlainObject(value) || Array.isArray(value) ? (
+                    <ValueRenderer value={value} />
+                  ) : (
+                    <div className="text-sm">
+                      <PrimitiveValue value={value} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           ))}
-        </div>
+        </Tabs>
       )}
     </div>
   );
