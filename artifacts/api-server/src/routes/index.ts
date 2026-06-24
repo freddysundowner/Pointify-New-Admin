@@ -10,6 +10,7 @@ import salesRouter from "./sales";
 import purchasesRouter from "./purchases";
 import packagesRouter from "./packages";
 import subscriptionsRouter from "./subscriptions";
+import paymentsRouter from "./payments";
 import smsRouter from "./sms";
 import settingsRouter from "./settings";
 
@@ -26,6 +27,7 @@ router.use(salesRouter);
 router.use(purchasesRouter);
 router.use(packagesRouter);
 router.use(subscriptionsRouter);
+router.use(paymentsRouter);
 router.use(smsRouter);
 router.use(settingsRouter);
 

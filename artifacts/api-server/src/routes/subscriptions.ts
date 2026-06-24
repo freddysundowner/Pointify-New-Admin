@@ -7,6 +7,10 @@ router.get("/subscriptions", async (req, res) => {
   await proxyList(req, res, { path: "/subscriptions/", query: req.query as Record<string, unknown> });
 });
 
+router.post("/subscriptions", async (req, res) => {
+  await proxy(req, res, { method: "POST", path: "/subscriptions/", body: req.body });
+});
+
 router.get("/subscriptions/summary", async (req, res) => {
   try {
     const result = await upstreamFetch({

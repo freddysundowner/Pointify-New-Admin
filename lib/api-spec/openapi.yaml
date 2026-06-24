@@ -708,7 +708,53 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResult" }
 
+  /packages/for-user:
+    get:
+      operationId: listUserPackages
+      tags: [packages]
+      summary: Packages priced for a specific user (reflects old/new pricing group)
+      parameters:
+        - { name: id, in: query, required: true, description: "User (admin) id to price packages for", schema: { type: string } }
+      responses:
+        "200":
+          description: Packages priced for the user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PackageListResult" }
+
+  /payments/withdraw:
+    post:
+      operationId: withdrawMpesa
+      tags: [payments]
+      summary: Send an M-Pesa B2C withdrawal request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WithdrawInput" }
+      responses:
+        "200":
+          description: Withdrawal result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WithdrawResult" }
+
   /subscriptions:
+    post:
+      operationId: createSubscription
+      tags: [subscriptions]
+      summary: Create a subscription and trigger an M-Pesa STK payment prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubscriptionCreateInput" }
+      responses:
+        "200":
+          description: Payment prompt result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubscriptionCreateResult" }
     get:
       operationId: listSubscriptions
       tags: [subscriptions]
@@ -1540,6 +1586,43 @@ components:
         count: { type: number }
         totalPages: { type: number }
         currentPage: { type: number }
+
+    WithdrawInput:
+      type: object
+      required: [amount, phonenumber, pin]
+      properties:
+        amount: { type: number }
+        phonenumber: { type: string }
+        pin: { type: string }
+
+    WithdrawResult:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: ["boolean", "null"] }
+        message: { type: ["string", "null"] }
+
+    SubscriptionCreateInput:
+      type: object
+      required: [userId, package, shops, phonenumber]
+      properties:
+        userId: { type: string }
+        package: { type: string }
+        shops:
+          type: array
+          items: { type: string }
+        phonenumber: { type: string }
+        paymentType: { type: string, enum: [mpesa] }
+        startDate: { type: string }
+
+    SubscriptionCreateResult:
+      type: object
+      additionalProperties: true
+      properties:
+        subscriptionid: { type: ["string", "null"] }
+        status: { type: ["number", "boolean", "null"], description: "200 when the STK request was accepted; false on an upstream exception" }
+        message: { type: ["string", "null"], description: "'waiting' = prompt sent, 'failed' = gateway rejected" }
+        data: { type: object, additionalProperties: true }
 
     SmsTopupInput:
       type: object

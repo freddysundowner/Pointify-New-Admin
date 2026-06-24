@@ -7,6 +7,12 @@ router.get("/packages", async (req, res) => {
   await proxyList(req, res, { path: "/packages/", query: req.query as Record<string, unknown> });
 });
 
+// Packages priced for a specific user (reflects old/new pricing group).
+// Must precede /packages/:id so "for-user" is not treated as an id.
+router.get("/packages/for-user", async (req, res) => {
+  await proxyList(req, res, { path: "/packages/", query: { id: req.query.id } });
+});
+
 router.post("/packages", async (req, res) => {
   await proxy(req, res, { method: "POST", path: "/packages/", body: req.body });
 });

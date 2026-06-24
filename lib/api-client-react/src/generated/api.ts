@@ -52,6 +52,7 @@ import type {
   ListShopsParams,
   ListSmsLogsParams,
   ListSubscriptionsParams,
+  ListUserPackagesParams,
   LoginInput,
   LoginResult,
   MessageResult,
@@ -83,11 +84,15 @@ import type {
   SmsTopupInput,
   StockHistoryResult,
   Subscription,
+  SubscriptionCreateInput,
+  SubscriptionCreateResult,
   SubscriptionExtendInput,
   SubscriptionListResult,
   SubscriptionSummary,
   SubscriptionVerifyInput,
-  SubscriptionVerifyResult
+  SubscriptionVerifyResult,
+  WithdrawInput,
+  WithdrawResult
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -3220,6 +3225,232 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeletePackageMutationOptions(options));
+    }
+
+export const getListUserPackagesUrl = (params: ListUserPackagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/packages/for-user?${stringifiedParams}` : `/api/packages/for-user`
+}
+
+/**
+ * @summary Packages priced for a specific user (reflects old/new pricing group)
+ */
+export const listUserPackages = async (params: ListUserPackagesParams, options?: RequestInit): Promise<PackageListResult> => {
+
+  return customFetch<PackageListResult>(getListUserPackagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUserPackagesQueryKey = (params?: ListUserPackagesParams,) => {
+    return [
+    `/api/packages/for-user`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListUserPackagesQueryOptions = <TData = Awaited<ReturnType<typeof listUserPackages>>, TError = ErrorType<unknown>>(params: ListUserPackagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUserPackagesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserPackages>>> = ({ signal }) => listUserPackages(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserPackages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUserPackagesQueryResult = NonNullable<Awaited<ReturnType<typeof listUserPackages>>>
+export type ListUserPackagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Packages priced for a specific user (reflects old/new pricing group)
+ */
+
+export function useListUserPackages<TData = Awaited<ReturnType<typeof listUserPackages>>, TError = ErrorType<unknown>>(
+ params: ListUserPackagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUserPackagesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getWithdrawMpesaUrl = () => {
+
+
+
+
+  return `/api/payments/withdraw`
+}
+
+/**
+ * @summary Send an M-Pesa B2C withdrawal request
+ */
+export const withdrawMpesa = async (withdrawInput: WithdrawInput, options?: RequestInit): Promise<WithdrawResult> => {
+
+  return customFetch<WithdrawResult>(getWithdrawMpesaUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      withdrawInput,)
+  }
+);}
+
+
+
+
+export const getWithdrawMpesaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawMpesa>>, TError,{data: BodyType<WithdrawInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawMpesa>>, TError,{data: BodyType<WithdrawInput>}, TContext> => {
+
+const mutationKey = ['withdrawMpesa'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawMpesa>>, {data: BodyType<WithdrawInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  withdrawMpesa(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawMpesaMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawMpesa>>>
+    export type WithdrawMpesaMutationBody = BodyType<WithdrawInput>
+    export type WithdrawMpesaMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Send an M-Pesa B2C withdrawal request
+ */
+export const useWithdrawMpesa = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawMpesa>>, TError,{data: BodyType<WithdrawInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawMpesa>>,
+        TError,
+        {data: BodyType<WithdrawInput>},
+        TContext
+      > => {
+      return useMutation(getWithdrawMpesaMutationOptions(options));
+    }
+
+export const getCreateSubscriptionUrl = () => {
+
+
+
+
+  return `/api/subscriptions`
+}
+
+/**
+ * @summary Create a subscription and trigger an M-Pesa STK payment prompt
+ */
+export const createSubscription = async (subscriptionCreateInput: SubscriptionCreateInput, options?: RequestInit): Promise<SubscriptionCreateResult> => {
+
+  return customFetch<SubscriptionCreateResult>(getCreateSubscriptionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionCreateInput,)
+  }
+);}
+
+
+
+
+export const getCreateSubscriptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{data: BodyType<SubscriptionCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{data: BodyType<SubscriptionCreateInput>}, TContext> => {
+
+const mutationKey = ['createSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubscription>>, {data: BodyType<SubscriptionCreateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSubscription(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof createSubscription>>>
+    export type CreateSubscriptionMutationBody = BodyType<SubscriptionCreateInput>
+    export type CreateSubscriptionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a subscription and trigger an M-Pesa STK payment prompt
+ */
+export const useCreateSubscription = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{data: BodyType<SubscriptionCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSubscription>>,
+        TError,
+        {data: BodyType<SubscriptionCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSubscriptionMutationOptions(options));
     }
 
 export const getListSubscriptionsUrl = (params?: ListSubscriptionsParams,) => {

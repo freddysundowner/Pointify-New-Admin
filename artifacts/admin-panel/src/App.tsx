@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import Statistics from "@/pages/statistics";
 import Users from "@/pages/users";
 import UserShops from "@/pages/user-shops";
 import Shops from "@/pages/shops";
@@ -38,6 +39,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/"><ProtectedRoute component={Dashboard} /></Route>
+      <Route path="/statistics"><ProtectedRoute component={Statistics} /></Route>
       <Route path="/users"><ProtectedRoute component={Users} /></Route>
       <Route path="/users/:id/shops"><ProtectedRoute component={UserShops} /></Route>
       <Route path="/shops"><ProtectedRoute component={Shops} /></Route>

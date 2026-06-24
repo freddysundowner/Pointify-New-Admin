@@ -9,6 +9,7 @@
 - [Admin edit-form semantics](admin-edit-forms.md) — edit forms: text sends "" to clear, numbers omit when blank, category refs send null to detach (nullable spec); category lists are global.
 - [Upstream attendant reset-password](upstream-attendant-reset.md) — attendant "userId" = uniqueDigits; reset proxies PUT /attendants/reset/password/sms/:id reading id from BODY, SMSs new password.
 - [Upstream sales & purchases lists](upstream-sales-purchases-lists.md) — sales paginate on `page`; purchases need BOTH page+limit and omit totalPages (proxy derives it); real ts field is createdAt not createAt.
+- [M-Pesa money-op contracts](mpesa-money-op-contracts.md) — withdraw & createSubscription return failures inside HTTP 200; branch on body (status:false / message:"failed"), not status code.
 - [Pointify packages upstream](pointify-packages-upstream.md) — packages list is lossy/transformed (status:true only, newTitle||title, production amount=shop-tier formula, forced 30-day); edit MUST prefill from raw getById.
 - [Upstream subscriptions list](upstream-subscriptions-list.md) — filters: status/type/shop/shopname/invoiceNo/createAt(day)/expiry range(needs BOTH ends); pagination only when `page` sent (else bare array).
 - [Upstream attendants list](upstream-attendants-list.md) — list via /attendants/all/:id (id="admin"=all), supports page/limit/username; shopId NOT honored upstream yet; nested {pagination} shape.

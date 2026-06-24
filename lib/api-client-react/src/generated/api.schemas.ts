@@ -671,6 +671,55 @@ export interface PackageListResult {
   currentPage?: number;
 }
 
+export interface WithdrawInput {
+  amount: number;
+  phonenumber: string;
+  pin: string;
+}
+
+export interface WithdrawResult {
+  /** @nullable */
+  status?: boolean | null;
+  /** @nullable */
+  message?: string | null;
+  [key: string]: unknown;
+ }
+
+export type SubscriptionCreateInputPaymentType = typeof SubscriptionCreateInputPaymentType[keyof typeof SubscriptionCreateInputPaymentType];
+
+
+export const SubscriptionCreateInputPaymentType = {
+  mpesa: 'mpesa',
+} as const;
+
+export interface SubscriptionCreateInput {
+  userId: string;
+  package: string;
+  shops: string[];
+  phonenumber: string;
+  paymentType?: SubscriptionCreateInputPaymentType;
+  startDate?: string;
+}
+
+export type SubscriptionCreateResultData = { [key: string]: unknown };
+
+export interface SubscriptionCreateResult {
+  /** @nullable */
+  subscriptionid?: string | null;
+  /**
+     * 200 when the STK request was accepted; false on an upstream exception
+     * @nullable
+     */
+  status?: number | boolean | null;
+  /**
+     * 'waiting' = prompt sent, 'failed' = gateway rejected
+     * @nullable
+     */
+  message?: string | null;
+  data?: SubscriptionCreateResultData;
+  [key: string]: unknown;
+ }
+
 export interface SmsTopupInput {
   adminId: string;
   amount: number;
@@ -866,6 +915,13 @@ paymentType?: string;
 attendantId?: string;
 start?: string;
 end?: string;
+};
+
+export type ListUserPackagesParams = {
+/**
+ * User (admin) id to price packages for
+ */
+id: string;
 };
 
 export type ListSubscriptionsParams = {

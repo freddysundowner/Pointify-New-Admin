@@ -1047,6 +1047,69 @@ export const DeletePackageResponse = zod.object({
 })
 
 
+/**
+ * @summary Packages priced for a specific user (reflects old/new pricing group)
+ */
+export const ListUserPackagesQueryParams = zod.object({
+  "id": zod.coerce.string().describe('User (admin) id to price packages for')
+})
+
+export const ListUserPackagesResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "durationValue": zod.number().nullish(),
+  "durationUnit": zod.string().nullish(),
+  "amount": zod.number().nullish(),
+  "amountusd": zod.number().nullish(),
+  "discount": zod.number().nullish(),
+  "status": zod.boolean().nullish(),
+  "type": zod.string().nullish(),
+  "maxShops": zod.number().nullish(),
+  "features": zod.array(zod.string()).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * @summary Send an M-Pesa B2C withdrawal request
+ */
+export const WithdrawMpesaBody = zod.object({
+  "amount": zod.number(),
+  "phonenumber": zod.string(),
+  "pin": zod.string()
+})
+
+export const WithdrawMpesaResponse = zod.object({
+  "status": zod.boolean().nullish(),
+  "message": zod.string().nullish()
+})
+
+
+/**
+ * @summary Create a subscription and trigger an M-Pesa STK payment prompt
+ */
+export const CreateSubscriptionBody = zod.object({
+  "userId": zod.string(),
+  "package": zod.string(),
+  "shops": zod.array(zod.string()),
+  "phonenumber": zod.string(),
+  "paymentType": zod.enum(['mpesa']).optional(),
+  "startDate": zod.string().optional()
+})
+
+export const CreateSubscriptionResponse = zod.object({
+  "subscriptionid": zod.string().nullish(),
+  "status": zod.union([zod.number().describe('200 when the STK request was accepted; false on an upstream exception'),zod.boolean().describe('200 when the STK request was accepted; false on an upstream exception')]).nullish(),
+  "message": zod.string().nullish().describe('\'waiting\' = prompt sent, \'failed\' = gateway rejected'),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+
 export const ListSubscriptionsQueryParams = zod.object({
   "status": zod.enum(['Active', 'Expired', 'Cancelled']).optional(),
   "type": zod.enum(['trial', 'production']).optional(),
