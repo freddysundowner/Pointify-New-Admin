@@ -17,27 +17,39 @@ router.get("/analytics/overview", async (req, res) => {
   try {
     const [summaryRes, shopStatsRes, adminsRes] = await Promise.all([
       upstreamFetch({ method: "GET", path: "/subscriptions/summary/stats", authHeader }),
-      upstreamFetch({ method: "GET", path: "/shop/stats/metrics", authHeader }),
+      // Authoritative subscription/shop breakdown: classifies by package.type
+      // (trial | production) and treats a shop as active only when its subscription
+      // is paid and within its start/end dates. The shop/stats/metrics endpoint is
+      // unreliable for trials, so we use this one.
+      upstreamFetch({ method: "GET", path: "/subscriptions/shop/stats", authHeader }),
       upstreamFetch({ method: "GET", path: "/admin/", query: { page: 1, limit: 1 }, authHeader }),
     ]);
 
     const revenue = asRecord(asRecord(summaryRes.data)["data"]);
-    const shopStats = asRecord(asRecord(shopStatsRes.data)["data"]);
     const totalUsers = normalizeList(adminsRes.data).count;
 
-    const productionActive = num(shopStats["productionActive"]);
-    const productionExpired = num(shopStats["productionExpired"]);
-    const trialActive = num(shopStats["trialActive"]);
-    const trialExpired = num(shopStats["trialExpired"]);
+    const stats = asRecord(shopStatsRes.data);
+    const shopActive = asRecord(asRecord(stats["shops"])["active"]);
+    const shopExpired = asRecord(asRecord(stats["shops"])["expired"]);
+    const userActive = asRecord(asRecord(stats["users"])["active"]);
 
-    const activeShops = productionActive + trialActive;
-    const expiredShops = productionExpired + trialExpired;
+    const productionActive = num(shopActive["production"]);
+    const productionExpired = num(shopExpired["production"]);
+    const trialActive = num(shopActive["trial"]);
+    const trialExpired = num(shopExpired["trial"]);
+
+    const activeShops = num(shopActive["total"]) || productionActive + trialActive;
+    const expiredShops = num(shopExpired["total"]) || productionExpired + trialExpired;
     const trialShops = trialActive + trialExpired;
+    const totalShops = activeShops + expiredShops;
+
+    // Paying customers = shop owners with at least one active production subscription.
+    const payingUsers = num(userActive["production"]);
 
     res.status(200).json({
       revenue,
       shops: {
-        totalShops: num(shopStats["totalShops"]),
+        totalShops,
         productionActive,
         productionExpired,
         trialActive,
@@ -46,12 +58,9 @@ router.get("/analytics/overview", async (req, res) => {
         activeShops,
         expiredShops,
         trialShops,
-        shopsThisMonth: num(shopStats["shopsThisMonth"]),
-        shopsLastMonth: num(shopStats["shopsLastMonth"]),
-        growthRate: num(shopStats["growthRate"]),
       },
       totalUsers,
-      payingUsers: productionActive,
+      payingUsers,
       activeShops,
       expiredShops,
       trialShops,
