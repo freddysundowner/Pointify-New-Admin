@@ -947,6 +947,7 @@ export const ListPackagesResponse = zod.object({
 
 export const CreatePackageBody = zod.object({
   "title": zod.string(),
+  "newTitle": zod.string().optional(),
   "description": zod.string().optional(),
   "durationValue": zod.number(),
   "durationUnit": zod.enum(['days', 'weeks', 'months', 'years']),
@@ -955,6 +956,7 @@ export const CreatePackageBody = zod.object({
   "discount": zod.number().optional(),
   "type": zod.enum(['trial', 'production']),
   "maxShops": zod.number().optional(),
+  "order": zod.number().optional(),
   "status": zod.boolean().optional(),
   "features": zod.array(zod.string()).optional()
 })
@@ -1001,6 +1003,7 @@ export const UpdatePackageParams = zod.object({
 
 export const UpdatePackageBody = zod.object({
   "title": zod.string().optional(),
+  "newTitle": zod.string().optional(),
   "description": zod.string().optional(),
   "durationValue": zod.number().optional(),
   "durationUnit": zod.enum(['days', 'weeks', 'months', 'years']).optional(),
@@ -1009,6 +1012,7 @@ export const UpdatePackageBody = zod.object({
   "discount": zod.number().optional(),
   "type": zod.enum(['trial', 'production']).optional(),
   "maxShops": zod.number().optional(),
+  "order": zod.number().optional(),
   "status": zod.boolean().optional(),
   "features": zod.array(zod.string()).optional()
 })

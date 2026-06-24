@@ -10,6 +10,7 @@ import type { PackageInputType } from './packageInputType';
 
 export interface PackageInput {
   title: string;
+  newTitle?: string;
   description?: string;
   durationValue: number;
   durationUnit: PackageInputDurationUnit;
@@ -18,6 +19,7 @@ export interface PackageInput {
   discount?: number;
   type: PackageInputType;
   maxShops?: number;
+  order?: number;
   status?: boolean;
   features?: string[];
 }

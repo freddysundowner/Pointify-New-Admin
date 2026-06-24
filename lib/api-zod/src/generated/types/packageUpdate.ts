@@ -10,6 +10,7 @@ import type { PackageUpdateType } from './packageUpdateType';
 
 export interface PackageUpdate {
   title?: string;
+  newTitle?: string;
   description?: string;
   durationValue?: number;
   durationUnit?: PackageUpdateDurationUnit;
@@ -18,6 +19,7 @@ export interface PackageUpdate {
   discount?: number;
   type?: PackageUpdateType;
   maxShops?: number;
+  order?: number;
   status?: boolean;
   features?: string[];
 }

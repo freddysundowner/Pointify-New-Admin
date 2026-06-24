@@ -501,6 +501,7 @@ export const PackageInputType = {
 
 export interface PackageInput {
   title: string;
+  newTitle?: string;
   description?: string;
   durationValue: number;
   durationUnit: PackageInputDurationUnit;
@@ -509,6 +510,7 @@ export interface PackageInput {
   discount?: number;
   type: PackageInputType;
   maxShops?: number;
+  order?: number;
   status?: boolean;
   features?: string[];
 }
@@ -533,6 +535,7 @@ export const PackageUpdateType = {
 
 export interface PackageUpdate {
   title?: string;
+  newTitle?: string;
   description?: string;
   durationValue?: number;
   durationUnit?: PackageUpdateDurationUnit;
@@ -541,6 +544,7 @@ export interface PackageUpdate {
   discount?: number;
   type?: PackageUpdateType;
   maxShops?: number;
+  order?: number;
   status?: boolean;
   features?: string[];
 }

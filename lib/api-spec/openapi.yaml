@@ -1350,6 +1350,7 @@ components:
       required: [title, durationValue, durationUnit, amount, amountusd, type]
       properties:
         title: { type: string }
+        newTitle: { type: string }
         description: { type: string }
         durationValue: { type: number }
         durationUnit: { type: string, enum: [days, weeks, months, years] }
@@ -1358,6 +1359,7 @@ components:
         discount: { type: number }
         type: { type: string, enum: [trial, production] }
         maxShops: { type: number }
+        order: { type: number }
         status: { type: boolean }
         features:
           type: array
@@ -1367,6 +1369,7 @@ components:
       type: object
       properties:
         title: { type: string }
+        newTitle: { type: string }
         description: { type: string }
         durationValue: { type: number }
         durationUnit: { type: string, enum: [days, weeks, months, years] }
@@ -1375,6 +1378,7 @@ components:
         discount: { type: number }
         type: { type: string, enum: [trial, production] }
         maxShops: { type: number }
+        order: { type: number }
         status: { type: boolean }
         features:
           type: array
