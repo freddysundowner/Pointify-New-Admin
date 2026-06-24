@@ -5,3 +5,4 @@
 - [Shops list upstream constraints](shops-list-upstream.md) — /shop/ supports name/status/type/ownerid only; owner projected to email+phone (no name); count needs totalShops.
 - [Upstream shop-filter params](shop-filter-params.md) — each list endpoint uses a different key (products=shopid, sales/purchases/attendants=shopId, subscriptions=shop); wrong name silently returns the full list.
 - [Pointify products upstream](pointify-products-upstream.md) — admin list uses /product/admin/products (name/shop/shopid); products have no updatedAt (only `date`); batches only via getProductById.
+- [Orval params name collision](orval-params-collision.md) — never mix a path param + required query params in one spec path; pass id as a query param to avoid a zod/type `<Op>Params` clash that breaks api-zod codegen.

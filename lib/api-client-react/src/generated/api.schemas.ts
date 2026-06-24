@@ -258,6 +258,91 @@ export interface ProductListResult {
   currentPage?: number;
 }
 
+export interface StockMovement {
+  /** @nullable */
+  type?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  performedBy?: string | null;
+  /** @nullable */
+  quantity?: number | null;
+  [key: string]: unknown;
+ }
+
+export interface StockHistoryResult {
+  data?: StockMovement[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface SalesHistoryItem {
+  /** @nullable */
+  receiptNo?: string | null;
+  /** @nullable */
+  customer?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  paymentType?: string | null;
+  /** @nullable */
+  total?: string | number | null;
+  /** @nullable */
+  units?: number | null;
+  /** @nullable */
+  unitPrice?: string | number | null;
+  [key: string]: unknown;
+ }
+
+export interface SalesHistoryResult {
+  data?: SalesHistoryItem[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface PurchaseHistoryItem {
+  /** @nullable */
+  receiptNo?: string | null;
+  /** @nullable */
+  supplier?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  paymentType?: string | null;
+  /** @nullable */
+  total?: string | number | null;
+  /** @nullable */
+  units?: number | null;
+  /** @nullable */
+  unitPrice?: string | number | null;
+  [key: string]: unknown;
+ }
+
+export interface PurchaseHistoryResult {
+  data?: PurchaseHistoryItem[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface ProductHistorySummary {
+  /** @nullable */
+  totalSales?: number | null;
+  /** @nullable */
+  totalUnitsSold?: number | null;
+  /** @nullable */
+  totalStockIn?: number | null;
+  /** @nullable */
+  totalStockOut?: number | null;
+  /** @nullable */
+  netMovement?: number | null;
+  [key: string]: unknown;
+ }
+
 export interface Attendant {
   _id: string;
   /** @nullable */
@@ -661,6 +746,36 @@ page?: number;
 limit?: number;
 name?: string;
 shop?: string;
+};
+
+export type ListProductStockHistoryParams = {
+productId: string;
+month: number;
+year: number;
+page?: number;
+limit?: number;
+};
+
+export type ListProductSalesHistoryParams = {
+productId: string;
+month: number;
+year: number;
+page?: number;
+limit?: number;
+};
+
+export type ListProductPurchasesHistoryParams = {
+productId: string;
+month: number;
+year: number;
+page?: number;
+limit?: number;
+};
+
+export type GetProductHistorySummaryParams = {
+productId: string;
+month: number;
+year: number;
 };
 
 export type ListAttendantsParams = {

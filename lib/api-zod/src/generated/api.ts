@@ -630,6 +630,91 @@ export const DeleteProductResponse = zod.object({
 })
 
 
+export const ListProductStockHistoryQueryParams = zod.object({
+  "productId": zod.coerce.string(),
+  "month": zod.coerce.number(),
+  "year": zod.coerce.number(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListProductStockHistoryResponse = zod.object({
+  "data": zod.array(zod.object({
+  "type": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "performedBy": zod.string().nullish(),
+  "quantity": zod.number().nullish()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+export const ListProductSalesHistoryQueryParams = zod.object({
+  "productId": zod.coerce.string(),
+  "month": zod.coerce.number(),
+  "year": zod.coerce.number(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListProductSalesHistoryResponse = zod.object({
+  "data": zod.array(zod.object({
+  "receiptNo": zod.string().nullish(),
+  "customer": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "paymentType": zod.string().nullish(),
+  "total": zod.union([zod.string(),zod.number()]).nullish(),
+  "units": zod.number().nullish(),
+  "unitPrice": zod.union([zod.string(),zod.number()]).nullish()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+export const ListProductPurchasesHistoryQueryParams = zod.object({
+  "productId": zod.coerce.string(),
+  "month": zod.coerce.number(),
+  "year": zod.coerce.number(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListProductPurchasesHistoryResponse = zod.object({
+  "data": zod.array(zod.object({
+  "receiptNo": zod.string().nullish(),
+  "supplier": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "paymentType": zod.string().nullish(),
+  "total": zod.union([zod.string(),zod.number()]).nullish(),
+  "units": zod.number().nullish(),
+  "unitPrice": zod.union([zod.string(),zod.number()]).nullish()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+export const GetProductHistorySummaryQueryParams = zod.object({
+  "productId": zod.coerce.string(),
+  "month": zod.coerce.number(),
+  "year": zod.coerce.number()
+})
+
+export const GetProductHistorySummaryResponse = zod.object({
+  "totalSales": zod.number().nullish(),
+  "totalUnitsSold": zod.number().nullish(),
+  "totalStockIn": zod.number().nullish(),
+  "totalStockOut": zod.number().nullish(),
+  "netMovement": zod.number().nullish()
+})
+
+
 export const ListAttendantsQueryParams = zod.object({
   "shopId": zod.coerce.string().optional(),
   "adminId": zod.coerce.string().optional()

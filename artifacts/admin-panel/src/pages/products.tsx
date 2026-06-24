@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import {
   useListProducts,
   useGetProduct,
+  useListProductStockHistory,
+  useListProductSalesHistory,
+  useListProductPurchasesHistory,
+  useGetProductHistorySummary,
   type Product,
   type Batch,
 } from "@workspace/api-client-react";
@@ -19,14 +23,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   ChevronDown,
   ChevronRight,
   Search,
   Boxes,
   Loader2,
+  MoreHorizontal,
+  History,
 } from "lucide-react";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
-import { formatKes, formatDate } from "@/lib/utils";
+import { formatKes, formatNumber, formatDate } from "@/lib/utils";
 
 function getShopName(shop: unknown): string {
   if (!shop) return "N/A";
@@ -134,6 +163,7 @@ export default function Products() {
                       <TableHead>Quantity</TableHead>
                       <TableHead>Date added</TableHead>
                       <TableHead>Updated</TableHead>
+                      <TableHead className="w-12 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -144,7 +174,7 @@ export default function Products() {
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={7}
                           className="h-24 text-center text-muted-foreground"
                         >
                           No products found.
@@ -175,14 +205,55 @@ export default function Products() {
   );
 }
 
+function ProductActions({
+  product,
+  onToggleInventory,
+}: {
+  product: Product;
+  onToggleInventory: () => void;
+}) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Product actions"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onToggleInventory}>
+            <Boxes className="mr-2 h-4 w-4" />
+            View inventory
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setHistoryOpen(true)}>
+            <History className="mr-2 h-4 w-4" />
+            View history
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ProductHistoryDialog
+        product={product}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
+    </>
+  );
+}
+
 function ProductRow({ product }: { product: Product }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <TableRow
-        className="cursor-pointer"
-        onClick={() => setOpen((o) => !o)}
-      >
+      <TableRow className="cursor-pointer" onClick={() => setOpen((o) => !o)}>
         <TableCell className="align-middle">
           <Button
             variant="ghost"
@@ -219,10 +290,16 @@ function ProductRow({ product }: { product: Product }) {
         <TableCell className="text-muted-foreground">
           {formatDate(product.updatedAt)}
         </TableCell>
+        <TableCell className="text-right">
+          <ProductActions
+            product={product}
+            onToggleInventory={() => setOpen(true)}
+          />
+        </TableCell>
       </TableRow>
       {open && (
         <TableRow className="bg-muted/30 hover:bg-muted/30">
-          <TableCell colSpan={6} className="p-0">
+          <TableCell colSpan={7} className="p-0">
             <div className="px-6 py-4">
               <ProductInventory product={product} />
             </div>
@@ -244,9 +321,15 @@ function ProductCard({ product }: { product: Product }) {
             {getShopName(product.shopId)}
           </p>
         </div>
-        <Badge variant={stockBadgeVariant(product.quantity)} className="shrink-0">
-          {product.quantity ?? 0} in stock
-        </Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge variant={stockBadgeVariant(product.quantity)}>
+            {product.quantity ?? 0} in stock
+          </Badge>
+          <ProductActions
+            product={product}
+            onToggleInventory={() => setOpen(true)}
+          />
+        </div>
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <div>
@@ -369,6 +452,297 @@ function ProductInventory({ product }: { product: Product }) {
           No batch records for this product.
         </p>
       )}
+    </div>
+  );
+}
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function ProductHistoryDialog({
+  product,
+  open,
+  onOpenChange,
+}: {
+  product: Product;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+  const [tab, setTab] = useState("movements");
+
+  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+  const params = { productId: product._id, month, year };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] gap-4 overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-primary" />
+            Product history
+          </DialogTitle>
+          <DialogDescription>
+            {product.name || "—"} · {getShopName(product.shopId)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((m, i) => (
+                <SelectItem key={m} value={String(i + 1)}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+            <SelectTrigger className="w-28">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {open && <HistorySummary params={params} />}
+
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="movements">Movements</TabsTrigger>
+            <TabsTrigger value="sales">Sales</TabsTrigger>
+            <TabsTrigger value="purchases">Purchases</TabsTrigger>
+          </TabsList>
+          <TabsContent value="movements">
+            {open && tab === "movements" && <StockHistoryTab params={params} />}
+          </TabsContent>
+          <TabsContent value="sales">
+            {open && tab === "sales" && <SalesHistoryTab params={params} />}
+          </TabsContent>
+          <TabsContent value="purchases">
+            {open && tab === "purchases" && <PurchasesHistoryTab params={params} />}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type HistoryParams = { productId: string; month: number; year: number };
+
+function HistorySummary({ params }: { params: HistoryParams }) {
+  const { data, isLoading } = useGetProductHistorySummary(params);
+  const stats = [
+    { label: "Total sales", value: formatKes(data?.totalSales) },
+    { label: "Units sold", value: formatNumber(data?.totalUnitsSold) },
+    { label: "Stock in", value: formatNumber(data?.totalStockIn) },
+    { label: "Stock out", value: formatNumber(data?.totalStockOut) },
+    { label: "Net movement", value: formatNumber(data?.netMovement) },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      {stats.map((s) => (
+        <div key={s.label} className="rounded-lg border bg-muted/30 p-3">
+          <p className="text-xs text-muted-foreground">{s.label}</p>
+          <p className="text-base font-semibold">
+            {isLoading ? "…" : s.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HistoryStates({
+  isLoading,
+  isError,
+  isEmpty,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  isEmpty: boolean;
+}) {
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+        Loading…
+      </div>
+    );
+  if (isError)
+    return (
+      <p className="py-8 text-center text-sm text-destructive">
+        Could not load history.
+      </p>
+    );
+  if (isEmpty)
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        No records for this period.
+      </p>
+    );
+  return null;
+}
+
+function StockHistoryTab({ params }: { params: HistoryParams }) {
+  const { data, isLoading, isError } = useListProductStockHistory({
+    ...params,
+    limit: 100,
+  });
+  const rows = data?.data ?? [];
+  if (isLoading || isError || !rows.length)
+    return (
+      <HistoryStates isLoading={isLoading} isError={isError} isEmpty={!rows.length} />
+    );
+  return (
+    <div className="overflow-hidden rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Quantity</TableHead>
+            <TableHead>Performed by</TableHead>
+            <TableHead>Description</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((m, i) => (
+            <TableRow key={i}>
+              <TableCell className="text-muted-foreground">
+                {formatDate(m.date)}
+              </TableCell>
+              <TableCell>
+                <Badge
+                  variant={m.type === "Stock In" ? "default" : "destructive"}
+                >
+                  {m.type || "—"}
+                </Badge>
+              </TableCell>
+              <TableCell>{m.quantity ?? 0}</TableCell>
+              <TableCell>{m.performedBy || "—"}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {m.description || "—"}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function SalesHistoryTab({ params }: { params: HistoryParams }) {
+  const { data, isLoading, isError } = useListProductSalesHistory({
+    ...params,
+    limit: 100,
+  });
+  const rows = data?.data ?? [];
+  if (isLoading || isError || !rows.length)
+    return (
+      <HistoryStates isLoading={isLoading} isError={isError} isEmpty={!rows.length} />
+    );
+  return (
+    <div className="overflow-hidden rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Receipt</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Units</TableHead>
+            <TableHead>Unit price</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Payment</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((s, i) => (
+            <TableRow key={i}>
+              <TableCell className="text-muted-foreground">
+                {formatDate(s.date)}
+              </TableCell>
+              <TableCell className="font-mono text-xs">
+                {s.receiptNo || "—"}
+              </TableCell>
+              <TableCell>{s.customer || "—"}</TableCell>
+              <TableCell>{s.units ?? 0}</TableCell>
+              <TableCell>{formatKes(s.unitPrice)}</TableCell>
+              <TableCell className="font-medium">{formatKes(s.total)}</TableCell>
+              <TableCell>{s.paymentType || "—"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function PurchasesHistoryTab({ params }: { params: HistoryParams }) {
+  const { data, isLoading, isError } = useListProductPurchasesHistory({
+    ...params,
+    limit: 100,
+  });
+  const rows = data?.data ?? [];
+  if (isLoading || isError || !rows.length)
+    return (
+      <HistoryStates isLoading={isLoading} isError={isError} isEmpty={!rows.length} />
+    );
+  return (
+    <div className="overflow-hidden rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Receipt</TableHead>
+            <TableHead>Supplier</TableHead>
+            <TableHead>Units</TableHead>
+            <TableHead>Unit price</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Payment</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((p, i) => (
+            <TableRow key={i}>
+              <TableCell className="text-muted-foreground">
+                {formatDate(p.date)}
+              </TableCell>
+              <TableCell className="font-mono text-xs">
+                {p.receiptNo || "—"}
+              </TableCell>
+              <TableCell>{p.supplier || "—"}</TableCell>
+              <TableCell>{p.units ?? 0}</TableCell>
+              <TableCell>{formatKes(p.unitPrice)}</TableCell>
+              <TableCell className="font-medium">{formatKes(p.total)}</TableCell>
+              <TableCell>{p.paymentType || "—"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -426,6 +426,72 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResult" }
 
+  /products/history/stock:
+    get:
+      operationId: listProductStockHistory
+      tags: [products]
+      parameters:
+        - { name: productId, in: query, required: true, schema: { type: string } }
+        - { name: month, in: query, required: true, schema: { type: integer } }
+        - { name: year, in: query, required: true, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Stock movement history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockHistoryResult" }
+
+  /products/history/sales:
+    get:
+      operationId: listProductSalesHistory
+      tags: [products]
+      parameters:
+        - { name: productId, in: query, required: true, schema: { type: string } }
+        - { name: month, in: query, required: true, schema: { type: integer } }
+        - { name: year, in: query, required: true, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Sales history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SalesHistoryResult" }
+
+  /products/history/purchases:
+    get:
+      operationId: listProductPurchasesHistory
+      tags: [products]
+      parameters:
+        - { name: productId, in: query, required: true, schema: { type: string } }
+        - { name: month, in: query, required: true, schema: { type: integer } }
+        - { name: year, in: query, required: true, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Purchase history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseHistoryResult" }
+
+  /products/history/summary:
+    get:
+      operationId: getProductHistorySummary
+      tags: [products]
+      parameters:
+        - { name: productId, in: query, required: true, schema: { type: string } }
+        - { name: month, in: query, required: true, schema: { type: integer } }
+        - { name: year, in: query, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Product history summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductHistorySummary" }
+
   /attendants:
     get:
       operationId: listAttendants
@@ -1035,6 +1101,80 @@ components:
         count: { type: number }
         totalPages: { type: number }
         currentPage: { type: number }
+
+    StockMovement:
+      type: object
+      additionalProperties: true
+      properties:
+        type: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        date: { type: ["string", "null"] }
+        performedBy: { type: ["string", "null"] }
+        quantity: { type: ["number", "null"] }
+
+    StockHistoryResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/StockMovement" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    SalesHistoryItem:
+      type: object
+      additionalProperties: true
+      properties:
+        receiptNo: { type: ["string", "null"] }
+        customer: { type: ["string", "null"] }
+        date: { type: ["string", "null"] }
+        paymentType: { type: ["string", "null"] }
+        total: { type: ["string", "number", "null"] }
+        units: { type: ["number", "null"] }
+        unitPrice: { type: ["string", "number", "null"] }
+
+    SalesHistoryResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/SalesHistoryItem" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    PurchaseHistoryItem:
+      type: object
+      additionalProperties: true
+      properties:
+        receiptNo: { type: ["string", "null"] }
+        supplier: { type: ["string", "null"] }
+        date: { type: ["string", "null"] }
+        paymentType: { type: ["string", "null"] }
+        total: { type: ["string", "number", "null"] }
+        units: { type: ["number", "null"] }
+        unitPrice: { type: ["string", "number", "null"] }
+
+    PurchaseHistoryResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/PurchaseHistoryItem" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    ProductHistorySummary:
+      type: object
+      additionalProperties: true
+      properties:
+        totalSales: { type: ["number", "null"] }
+        totalUnitsSold: { type: ["number", "null"] }
+        totalStockIn: { type: ["number", "null"] }
+        totalStockOut: { type: ["number", "null"] }
+        netMovement: { type: ["number", "null"] }
 
     Attendant:
       type: object

@@ -35,12 +35,16 @@ import type {
   CommunicationListResult,
   ErrorResponse,
   GenericObject,
+  GetProductHistorySummaryParams,
   GetSettingsParams,
   HealthStatus,
   ListAdminsBySubscriptionParams,
   ListAdminsParams,
   ListAttendantsParams,
   ListCommunicationsParams,
+  ListProductPurchasesHistoryParams,
+  ListProductSalesHistoryParams,
+  ListProductStockHistoryParams,
   ListProductsParams,
   ListPurchasesParams,
   ListSalesParams,
@@ -56,13 +60,16 @@ import type {
   PackageUpdate,
   Product,
   ProductCategory,
+  ProductHistorySummary,
   ProductInput,
   ProductListResult,
   ProductUpdate,
+  PurchaseHistoryResult,
   PurchaseListResult,
   ResetResult,
   Sale,
   SaleListResult,
+  SalesHistoryResult,
   SettingsInput,
   Shop,
   ShopCategory,
@@ -72,6 +79,7 @@ import type {
   ShopUpdate,
   SmsLogListResult,
   SmsTopupInput,
+  StockHistoryResult,
   Subscription,
   SubscriptionExtendInput,
   SubscriptionListResult,
@@ -1923,6 +1931,318 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDeleteProductMutationOptions(options));
     }
+
+export const getListProductStockHistoryUrl = (params: ListProductStockHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/products/history/stock?${stringifiedParams}` : `/api/products/history/stock`
+}
+
+export const listProductStockHistory = async (params: ListProductStockHistoryParams, options?: RequestInit): Promise<StockHistoryResult> => {
+
+  return customFetch<StockHistoryResult>(getListProductStockHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListProductStockHistoryQueryKey = (params?: ListProductStockHistoryParams,) => {
+    return [
+    `/api/products/history/stock`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListProductStockHistoryQueryOptions = <TData = Awaited<ReturnType<typeof listProductStockHistory>>, TError = ErrorType<unknown>>(params: ListProductStockHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProductStockHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProductStockHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProductStockHistory>>> = ({ signal }) => listProductStockHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProductStockHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListProductStockHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof listProductStockHistory>>>
+export type ListProductStockHistoryQueryError = ErrorType<unknown>
+
+
+
+export function useListProductStockHistory<TData = Awaited<ReturnType<typeof listProductStockHistory>>, TError = ErrorType<unknown>>(
+ params: ListProductStockHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProductStockHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListProductStockHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListProductSalesHistoryUrl = (params: ListProductSalesHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/products/history/sales?${stringifiedParams}` : `/api/products/history/sales`
+}
+
+export const listProductSalesHistory = async (params: ListProductSalesHistoryParams, options?: RequestInit): Promise<SalesHistoryResult> => {
+
+  return customFetch<SalesHistoryResult>(getListProductSalesHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListProductSalesHistoryQueryKey = (params?: ListProductSalesHistoryParams,) => {
+    return [
+    `/api/products/history/sales`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListProductSalesHistoryQueryOptions = <TData = Awaited<ReturnType<typeof listProductSalesHistory>>, TError = ErrorType<unknown>>(params: ListProductSalesHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProductSalesHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProductSalesHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProductSalesHistory>>> = ({ signal }) => listProductSalesHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProductSalesHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListProductSalesHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof listProductSalesHistory>>>
+export type ListProductSalesHistoryQueryError = ErrorType<unknown>
+
+
+
+export function useListProductSalesHistory<TData = Awaited<ReturnType<typeof listProductSalesHistory>>, TError = ErrorType<unknown>>(
+ params: ListProductSalesHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProductSalesHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListProductSalesHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListProductPurchasesHistoryUrl = (params: ListProductPurchasesHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/products/history/purchases?${stringifiedParams}` : `/api/products/history/purchases`
+}
+
+export const listProductPurchasesHistory = async (params: ListProductPurchasesHistoryParams, options?: RequestInit): Promise<PurchaseHistoryResult> => {
+
+  return customFetch<PurchaseHistoryResult>(getListProductPurchasesHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListProductPurchasesHistoryQueryKey = (params?: ListProductPurchasesHistoryParams,) => {
+    return [
+    `/api/products/history/purchases`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListProductPurchasesHistoryQueryOptions = <TData = Awaited<ReturnType<typeof listProductPurchasesHistory>>, TError = ErrorType<unknown>>(params: ListProductPurchasesHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProductPurchasesHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProductPurchasesHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProductPurchasesHistory>>> = ({ signal }) => listProductPurchasesHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProductPurchasesHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListProductPurchasesHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof listProductPurchasesHistory>>>
+export type ListProductPurchasesHistoryQueryError = ErrorType<unknown>
+
+
+
+export function useListProductPurchasesHistory<TData = Awaited<ReturnType<typeof listProductPurchasesHistory>>, TError = ErrorType<unknown>>(
+ params: ListProductPurchasesHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProductPurchasesHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListProductPurchasesHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetProductHistorySummaryUrl = (params: GetProductHistorySummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/products/history/summary?${stringifiedParams}` : `/api/products/history/summary`
+}
+
+export const getProductHistorySummary = async (params: GetProductHistorySummaryParams, options?: RequestInit): Promise<ProductHistorySummary> => {
+
+  return customFetch<ProductHistorySummary>(getGetProductHistorySummaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProductHistorySummaryQueryKey = (params?: GetProductHistorySummaryParams,) => {
+    return [
+    `/api/products/history/summary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetProductHistorySummaryQueryOptions = <TData = Awaited<ReturnType<typeof getProductHistorySummary>>, TError = ErrorType<unknown>>(params: GetProductHistorySummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductHistorySummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductHistorySummaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductHistorySummary>>> = ({ signal }) => getProductHistorySummary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductHistorySummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProductHistorySummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getProductHistorySummary>>>
+export type GetProductHistorySummaryQueryError = ErrorType<unknown>
+
+
+
+export function useGetProductHistorySummary<TData = Awaited<ReturnType<typeof getProductHistorySummary>>, TError = ErrorType<unknown>>(
+ params: GetProductHistorySummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductHistorySummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProductHistorySummaryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListAttendantsUrl = (params?: ListAttendantsParams,) => {
   const normalizedParams = new URLSearchParams();
