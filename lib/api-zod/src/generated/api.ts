@@ -238,6 +238,31 @@ export const DeleteAdminResponse = zod.object({
 })
 
 
+export const ListAdminShopsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ListAdminShopsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "contact": zod.string().nullish(),
+  "currency": zod.string().nullish(),
+  "tax": zod.number().nullish(),
+  "warehouse": zod.boolean().nullish(),
+  "production": zod.boolean().nullish(),
+  "createAt": zod.string().nullish(),
+  "adminId": zod.record(zod.string(), zod.unknown()).optional(),
+  "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
+  "subscription": zod.record(zod.string(), zod.unknown()).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
 export const ResetAdminPasswordParams = zod.object({
   "id": zod.coerce.string()
 })

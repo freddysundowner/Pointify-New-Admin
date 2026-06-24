@@ -5,7 +5,9 @@ import {
   useUpdateAdmin,
   useDeleteAdmin,
   useResetAdminPassword,
+  useListAdminShops,
   getListAdminsQueryKey,
+  getListAdminShopsQueryKey,
   type Admin,
 } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -45,13 +47,14 @@ import {
   Pencil,
   KeyRound,
   Trash2,
+  Store,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 
 const LIMIT = 20;
 
-type DialogMode = "view" | "edit" | "reset" | "delete" | null;
+type DialogMode = "view" | "edit" | "reset" | "delete" | "shops" | null;
 
 export default function Users() {
   const [page, setPage] = useState(1);
@@ -140,6 +143,10 @@ export default function Users() {
                               <DropdownMenuItem onClick={() => openDialog("edit", user)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openDialog("shops", user)}>
+                                <Store className="mr-2 h-4 w-4" />
+                                Shops
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openDialog("reset", user)}>
                                 <KeyRound className="mr-2 h-4 w-4" />
@@ -265,6 +272,10 @@ export default function Users() {
           }}
           resetting={resetPassword.isPending}
         />
+      )}
+
+      {selected && (
+        <ShopsDialog open={mode === "shops"} onClose={closeDialog} user={selected} />
       )}
 
       <AlertDialog open={mode === "delete"} onOpenChange={(o) => !o && closeDialog()}>
@@ -465,6 +476,82 @@ function ResetDialog({
           </Button>
           <Button onClick={() => onReset(password)} disabled={resetting || password.length < 4}>
             {resetting ? "Resetting..." : "Reset & send SMS"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function asText(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    return (o.name ?? o.title ?? o._id) as string | undefined;
+  }
+  return String(value);
+}
+
+function ShopsDialog({
+  open,
+  onClose,
+  user,
+}: {
+  open: boolean;
+  onClose: () => void;
+  user: Admin;
+}) {
+  const { data, isLoading } = useListAdminShops(user._id, {
+    query: { enabled: open, queryKey: getListAdminShopsQueryKey(user._id) },
+  });
+  const shops = data?.data ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Shops</DialogTitle>
+          <DialogDescription>
+            Shops owned by{" "}
+            <span className="font-medium">{user.username || user.email}</span>
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="py-6 text-sm text-muted-foreground">Loading shops...</div>
+        ) : shops.length === 0 ? (
+          <div className="py-6 text-sm text-muted-foreground">This user has no shops.</div>
+        ) : (
+          <div className="max-h-[420px] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Contact</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shops.map((shop) => (
+                  <TableRow key={shop._id}>
+                    <TableCell className="font-medium">{shop.name || "—"}</TableCell>
+                    <TableCell>{asText(shop.shopCategoryId) || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={shop.warehouse ? "secondary" : "default"}>
+                        {shop.warehouse ? "Warehouse" : "Shop"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{shop.contact || "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>

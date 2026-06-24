@@ -39,6 +39,13 @@ router.get("/admins/:id", async (req, res) => {
   }
 });
 
+router.get("/admins/:id/shops", async (req, res) => {
+  await proxyList(req, res, {
+    path: `/shop/admin/${req.params.id}`,
+    query: req.query as Record<string, unknown>,
+  });
+});
+
 router.put("/admins/:id", async (req, res) => {
   await proxy(req, res, { method: "PUT", path: `/admin/${req.params.id}`, body: req.body });
 });

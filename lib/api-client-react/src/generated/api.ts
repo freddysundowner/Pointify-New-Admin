@@ -685,6 +685,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getDeleteAdminMutationOptions(options));
     }
 
+export const getListAdminShopsUrl = (id: string,) => {
+
+
+
+
+  return `/api/admins/${id}/shops`
+}
+
+export const listAdminShops = async (id: string, options?: RequestInit): Promise<ShopListResult> => {
+
+  return customFetch<ShopListResult>(getListAdminShopsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminShopsQueryKey = (id: string,) => {
+    return [
+    `/api/admins/${id}/shops`
+    ] as const;
+    }
+
+
+export const getListAdminShopsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminShops>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminShops>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminShopsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminShops>>> = ({ signal }) => listAdminShops(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminShops>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminShopsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminShops>>>
+export type ListAdminShopsQueryError = ErrorType<unknown>
+
+
+
+export function useListAdminShops<TData = Awaited<ReturnType<typeof listAdminShops>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminShops>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminShopsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getResetAdminPasswordUrl = (id: string,) => {
 
 
