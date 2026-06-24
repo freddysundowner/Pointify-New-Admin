@@ -92,3 +92,5 @@ export * from './subscriptionExtendInput';
 export * from './subscriptionListResult';
 export * from './subscriptionSummary';
 export * from './subscriptionSummaryBucket';
+export * from './subscriptionVerifyInput';
+export * from './subscriptionVerifyResult';

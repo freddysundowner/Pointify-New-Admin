@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useListSubscriptions,
+  useExtendSubscription,
+  useVerifySubscriptionPayment,
+  getListSubscriptionsQueryKey,
   ListSubscriptionsStatus,
   ListSubscriptionsType,
   type Subscription,
@@ -19,9 +23,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { formatKes, formatDate } from "@/lib/utils";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+  MoreHorizontal,
+  CalendarPlus,
+  BadgeCheck,
+  Loader2,
+} from "lucide-react";
 
 const LIMIT = 20;
 
@@ -146,6 +174,10 @@ export default function Subscriptions() {
     const qs = next.toString();
     navigate(qs ? `${location}?${qs}` : location);
   };
+
+  // Row actions: extend (set a new end date) and verify (activate via payment code).
+  const [extendSub, setExtendSub] = useState<Subscription | null>(null);
+  const [verifySub, setVerifySub] = useState<Subscription | null>(null);
 
   return (
     <div className="space-y-6">
@@ -272,6 +304,7 @@ export default function Subscriptions() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>End Date</TableHead>
+                      <TableHead className="w-12 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -288,11 +321,31 @@ export default function Subscriptions() {
                             </Badge>
                           </TableCell>
                           <TableCell>{formatDate(sub.endDate)}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open actions</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setExtendSub(sub)}>
+                                  <CalendarPlus className="mr-2 h-4 w-4" />
+                                  Extend subscription
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setVerifySub(sub)}>
+                                  <BadgeCheck className="mr-2 h-4 w-4" />
+                                  Verify payment code
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                           No subscriptions found.
                         </TableCell>
                       </TableRow>
@@ -313,9 +366,29 @@ export default function Subscriptions() {
                             {sub.type || "—"}
                           </p>
                         </div>
-                        <Badge variant={sub.status ? "default" : "destructive"} className="shrink-0">
-                          {sub.status ? "Active" : "Inactive"}
-                        </Badge>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Badge variant={sub.status ? "default" : "destructive"}>
+                            {sub.status ? "Active" : "Inactive"}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setExtendSub(sub)}>
+                                <CalendarPlus className="mr-2 h-4 w-4" />
+                                Extend subscription
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setVerifySub(sub)}>
+                                <BadgeCheck className="mr-2 h-4 w-4" />
+                                Verify payment code
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
@@ -376,6 +449,170 @@ export default function Subscriptions() {
           )}
         </CardContent>
       </Card>
+
+      <ExtendDialog sub={extendSub} onClose={() => setExtendSub(null)} />
+      <VerifyDialog sub={verifySub} onClose={() => setVerifySub(null)} />
     </div>
+  );
+}
+
+/**
+ * Converts an ISO date (or undefined) into the YYYY-MM-DD value an <input type="date">
+ * needs, using the East Africa (EAT, UTC+3) calendar day so the prefill matches what the
+ * operator sees elsewhere — `toISOString()` would shift to UTC and can land a day early.
+ */
+function toDateInput(value?: string | null): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const eat = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  return eat.toISOString().slice(0, 10);
+}
+
+function ExtendDialog({ sub, onClose }: { sub: Subscription | null; onClose: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [endDate, setEndDate] = useState("");
+  const [mpesaCode, setMpesaCode] = useState("");
+
+  useEffect(() => {
+    if (sub) {
+      setEndDate(toDateInput(sub.endDate));
+      setMpesaCode("");
+    }
+  }, [sub]);
+
+  const extend = useExtendSubscription({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListSubscriptionsQueryKey() });
+        toast({ title: "Subscription extended" });
+        onClose();
+      },
+      onError: () => {
+        toast({ title: "Failed to extend subscription", variant: "destructive" });
+      },
+    },
+  });
+
+  const submit = () => {
+    if (!sub || !endDate) return;
+    extend.mutate({
+      id: sub._id,
+      data: { endDate, ...(mpesaCode.trim() ? { mpesaCode: mpesaCode.trim() } : {}) },
+    });
+  };
+
+  return (
+    <Dialog open={!!sub} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Extend subscription</DialogTitle>
+          <DialogDescription>
+            Set a new expiry date. The shop owner is notified by SMS. The status is set
+            active when the new date is in the future.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="extend-date">New expiry date</Label>
+            <Input
+              id="extend-date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="extend-mpesa">Payment code (optional)</Label>
+            <Input
+              id="extend-mpesa"
+              value={mpesaCode}
+              onChange={(e) => setMpesaCode(e.target.value)}
+              placeholder="M-Pesa / payment code"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={extend.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={!endDate || extend.isPending}>
+            {extend.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Extend
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function VerifyDialog({ sub, onClose }: { sub: Subscription | null; onClose: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [code, setCode] = useState("");
+
+  useEffect(() => {
+    if (sub) setCode("");
+  }, [sub]);
+
+  const verify = useVerifySubscriptionPayment({
+    mutation: {
+      onSuccess: (result) => {
+        if (result?.status) {
+          queryClient.invalidateQueries({ queryKey: getListSubscriptionsQueryKey() });
+          toast({ title: "Payment verified", description: "Subscription activated." });
+          onClose();
+        } else {
+          // Upstream returns 200 with status:false when the code is already used.
+          toast({
+            title: "Could not verify",
+            description: result?.message || "The payment code could not be verified.",
+            variant: "destructive",
+          });
+        }
+      },
+      onError: () => {
+        toast({ title: "Failed to verify payment", variant: "destructive" });
+      },
+    },
+  });
+
+  const submit = () => {
+    const trimmed = code.trim();
+    if (!sub || !trimmed) return;
+    verify.mutate({ id: sub._id, data: { transaction_code: trimmed } });
+  };
+
+  return (
+    <Dialog open={!!sub} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Verify payment code</DialogTitle>
+          <DialogDescription>
+            Enter the M-Pesa / payment code for this subscription. If valid and unused,
+            the subscription is activated and the shop owner is notified.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5 py-2">
+          <Label htmlFor="verify-code">Payment code</Label>
+          <Input
+            id="verify-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="e.g. SL1A2B3C4D"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={verify.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={!code.trim() || verify.isPending}>
+            {verify.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Verify
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

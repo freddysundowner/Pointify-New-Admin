@@ -1173,6 +1173,23 @@ export const ExtendSubscriptionResponse = zod.object({
 })
 
 
+/**
+ * @summary Verify an M-Pesa/payment code and activate the subscription
+ */
+export const VerifySubscriptionPaymentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const VerifySubscriptionPaymentBody = zod.object({
+  "transaction_code": zod.string()
+})
+
+export const VerifySubscriptionPaymentResponse = zod.object({
+  "status": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
 export const ListSmsLogsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),

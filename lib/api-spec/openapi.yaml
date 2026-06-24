@@ -784,6 +784,25 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Subscription" }
 
+  /subscriptions/{id}/verify:
+    put:
+      operationId: verifySubscriptionPayment
+      tags: [subscriptions]
+      summary: Verify an M-Pesa/payment code and activate the subscription
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubscriptionVerifyInput" }
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubscriptionVerifyResult" }
+
   /sms/logs:
     get:
       operationId: listSmsLogs
@@ -1415,6 +1434,18 @@ components:
       properties:
         endDate: { type: string }
         mpesaCode: { type: string }
+
+    SubscriptionVerifyInput:
+      type: object
+      required: [transaction_code]
+      properties:
+        transaction_code: { type: string }
+
+    SubscriptionVerifyResult:
+      type: object
+      properties:
+        status: { type: boolean }
+        message: { type: string }
 
     SubscriptionListResult:
       type: object

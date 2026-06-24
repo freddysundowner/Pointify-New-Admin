@@ -85,7 +85,9 @@ import type {
   Subscription,
   SubscriptionExtendInput,
   SubscriptionListResult,
-  SubscriptionSummary
+  SubscriptionSummary,
+  SubscriptionVerifyInput,
+  SubscriptionVerifyResult
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -3574,6 +3576,78 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getExtendSubscriptionMutationOptions(options));
+    }
+
+export const getVerifySubscriptionPaymentUrl = (id: string,) => {
+
+
+
+
+  return `/api/subscriptions/${id}/verify`
+}
+
+/**
+ * @summary Verify an M-Pesa/payment code and activate the subscription
+ */
+export const verifySubscriptionPayment = async (id: string,
+    subscriptionVerifyInput: SubscriptionVerifyInput, options?: RequestInit): Promise<SubscriptionVerifyResult> => {
+
+  return customFetch<SubscriptionVerifyResult>(getVerifySubscriptionPaymentUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionVerifyInput,)
+  }
+);}
+
+
+
+
+export const getVerifySubscriptionPaymentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifySubscriptionPayment>>, TError,{id: string;data: BodyType<SubscriptionVerifyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifySubscriptionPayment>>, TError,{id: string;data: BodyType<SubscriptionVerifyInput>}, TContext> => {
+
+const mutationKey = ['verifySubscriptionPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifySubscriptionPayment>>, {id: string;data: BodyType<SubscriptionVerifyInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  verifySubscriptionPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifySubscriptionPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof verifySubscriptionPayment>>>
+    export type VerifySubscriptionPaymentMutationBody = BodyType<SubscriptionVerifyInput>
+    export type VerifySubscriptionPaymentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Verify an M-Pesa/payment code and activate the subscription
+ */
+export const useVerifySubscriptionPayment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifySubscriptionPayment>>, TError,{id: string;data: BodyType<SubscriptionVerifyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifySubscriptionPayment>>,
+        TError,
+        {id: string;data: BodyType<SubscriptionVerifyInput>},
+        TContext
+      > => {
+      return useMutation(getVerifySubscriptionPaymentMutationOptions(options));
     }
 
 export const getListSmsLogsUrl = (params?: ListSmsLogsParams,) => {

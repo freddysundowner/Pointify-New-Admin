@@ -581,6 +581,15 @@ export interface SubscriptionExtendInput {
   mpesaCode?: string;
 }
 
+export interface SubscriptionVerifyInput {
+  transaction_code: string;
+}
+
+export interface SubscriptionVerifyResult {
+  status?: boolean;
+  message?: string;
+}
+
 export interface SubscriptionListResult {
   data?: Subscription[];
   count?: number;

@@ -46,4 +46,12 @@ router.put("/subscriptions/:id/extend", async (req, res) => {
   });
 });
 
+router.put("/subscriptions/:id/verify", async (req, res) => {
+  await proxy(req, res, {
+    method: "PUT",
+    path: `/subscriptions/verify/${req.params.id}`,
+    body: req.body,
+  });
+});
+
 export default router;
