@@ -289,9 +289,9 @@ export default function Subscriptions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Active">Active / On trial</SelectItem>
                   <SelectItem value="Expired">Expired</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Cancelled">Unpaid / Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
