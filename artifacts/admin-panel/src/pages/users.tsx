@@ -199,84 +199,99 @@ export default function Users() {
             <div className="p-4">Loading users...</div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Date Registered</TableHead>
-                    <TableHead>Last Seen</TableHead>
-                    <TableHead>Shops</TableHead>
-                    <TableHead className="w-[60px] text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.data?.length ? (
-                    data.data.map((user) => (
-                      <TableRow key={user._id}>
-                        <TableCell className="font-medium">{user.email}</TableCell>
-                        <TableCell>{user.username}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell>{formatDate(user.createdAt)}</TableCell>
-                        <TableCell>{formatDate(user.last_seen)}</TableCell>
-                        <TableCell>{user.shopCount}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openDialog("view", user)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openDialog("edit", user)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/users/${user._id}/shops`}>
-                                  <Store className="mr-2 h-4 w-4" />
-                                  Shops
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openDialog("reset", user)}>
-                                <KeyRound className="mr-2 h-4 w-4" />
-                                Reset Password
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => openDialog("delete", user)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+              {/* Desktop: table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Date Registered</TableHead>
+                      <TableHead>Last Seen</TableHead>
+                      <TableHead>Shops</TableHead>
+                      <TableHead className="w-[60px] text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.data?.length ? (
+                      data.data.map((user) => (
+                        <TableRow key={user._id}>
+                          <TableCell className="font-medium">{user.email}</TableCell>
+                          <TableCell>{user.username}</TableCell>
+                          <TableCell>{user.phone}</TableCell>
+                          <TableCell>{formatDate(user.createdAt)}</TableCell>
+                          <TableCell>{formatDate(user.last_seen)}</TableCell>
+                          <TableCell>{user.shopCount}</TableCell>
+                          <TableCell className="text-right">
+                            <UserActions user={user} openDialog={openDialog} />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                          No users found.
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                        No users found.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-              <div className="flex items-center justify-between pt-4">
+              {/* Mobile: stacked cards */}
+              <div className="space-y-3 md:hidden">
+                {data?.data?.length ? (
+                  data.data.map((user) => (
+                    <div
+                      key={user._id}
+                      className="rounded-lg border bg-card p-4 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">
+                            {user.username || "—"}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {user.email || "—"}
+                          </p>
+                        </div>
+                        <UserActions user={user} openDialog={openDialog} />
+                      </div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Phone</dt>
+                          <dd>{user.phone || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Shops</dt>
+                          <dd>{user.shopCount ?? 0}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Registered</dt>
+                          <dd>{formatDate(user.createdAt)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Last Seen</dt>
+                          <dd>{formatDate(user.last_seen)}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-lg border p-8 text-center text-muted-foreground">
+                    No users found.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col items-stretch gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-muted-foreground">
                   {count > 0
                     ? `Showing ${rangeStart}–${rangeEnd} of ${count.toLocaleString()} users`
                     : "No users"}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2 sm:justify-end">
                   <span className="text-sm text-muted-foreground">
                     Page {currentPage} of {totalPages}
                   </span>
@@ -408,6 +423,52 @@ export default function Users() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function UserActions({
+  user,
+  openDialog,
+}: {
+  user: Admin;
+  openDialog: (m: DialogMode, user: Admin) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => openDialog("view", user)}>
+          <Eye className="mr-2 h-4 w-4" />
+          View
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDialog("edit", user)}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`/users/${user._id}/shops`}>
+            <Store className="mr-2 h-4 w-4" />
+            Shops
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDialog("reset", user)}>
+          <KeyRound className="mr-2 h-4 w-4" />
+          Reset Password
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => openDialog("delete", user)}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

@@ -61,40 +61,86 @@ export default function UserShops() {
           {isLoading ? (
             <div className="p-4">Loading shops...</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Address</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop: table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Address</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shops.length ? (
+                      shops.map((shop) => (
+                        <TableRow key={shop._id}>
+                          <TableCell className="font-medium">{shop.name || "—"}</TableCell>
+                          <TableCell>{asText(shop.shopCategoryId) || "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={shop.warehouse ? "secondary" : "default"}>
+                              {shop.warehouse ? "Warehouse" : "Shop"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{shop.contact || "—"}</TableCell>
+                          <TableCell>{shop.address || "—"}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                          This user has no shops.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile: stacked cards */}
+              <div className="space-y-3 md:hidden">
                 {shops.length ? (
                   shops.map((shop) => (
-                    <TableRow key={shop._id}>
-                      <TableCell className="font-medium">{shop.name || "—"}</TableCell>
-                      <TableCell>{asText(shop.shopCategoryId) || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={shop.warehouse ? "secondary" : "default"}>
+                    <div
+                      key={shop._id}
+                      className="rounded-lg border bg-card p-4 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{shop.name || "—"}</p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {asText(shop.shopCategoryId) || "—"}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={shop.warehouse ? "secondary" : "default"}
+                          className="shrink-0"
+                        >
                           {shop.warehouse ? "Warehouse" : "Shop"}
                         </Badge>
-                      </TableCell>
-                      <TableCell>{shop.contact || "—"}</TableCell>
-                      <TableCell>{shop.address || "—"}</TableCell>
-                    </TableRow>
+                      </div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Contact</dt>
+                          <dd>{shop.contact || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Address</dt>
+                          <dd>{shop.address || "—"}</dd>
+                        </div>
+                      </dl>
+                    </div>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      This user has no shops.
-                    </TableCell>
-                  </TableRow>
+                  <div className="rounded-lg border p-8 text-center text-muted-foreground">
+                    This user has no shops.
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

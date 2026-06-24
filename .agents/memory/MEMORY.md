@@ -1,3 +1,4 @@
 - [List normalization contract](list-normalization-contract.md) — proxy normalizes all lists to {data,count,totalPages,currentPage}; spec wrapper schema + page `.data` access must match.
 - [Upstream analytics endpoints](upstream-analytics-endpoints.md) — use /subscriptions/shop/stats for trial/active counts (NOT /shop/stats/metrics, which lies); upstream source is in attached_assets/.
 - [Upstream admins endpoint](upstream-admins-endpoint.md) — upstream `name` searches username/email/phone; NO date filter (proxy filters createdAt in EAT); strip leaked `password` hashes.
+- [Responsive list-page pattern](responsive-list-pages.md) — admin-panel list pages: desktop `<Table>` (hidden md:block) + mobile card list (md:hidden) from same data; keep both in sync.

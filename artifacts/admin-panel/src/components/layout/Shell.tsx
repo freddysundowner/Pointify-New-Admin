@@ -129,13 +129,19 @@ export function Shell({ children }: { children: ReactNode }) {
         </Sidebar>
 
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm">
-            <SidebarTrigger className="-ml-2 text-muted-foreground hover:text-foreground" />
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background px-4 shadow-sm md:h-16 md:px-6">
+            <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+            {/* App brand: shown on mobile where the sidebar is hidden in the drawer */}
+            <div className="flex items-center gap-2 font-bold tracking-tight md:hidden">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Store className="h-5 w-5" />
+              </div>
+              <span className="text-base">Pointify Admin</span>
+            </div>
             <div className="flex-1" />
-            {/* Additional header items could go here */}
           </header>
-          
-          <main className="flex-1 overflow-y-auto p-6">
+
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">
             {children}
           </main>
         </div>
