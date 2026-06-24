@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, formatKes } from "@/lib/utils";
+import { ReceiptDialog } from "@/components/ReceiptDialog";
 
 const PAGE_SIZE = 20;
 
@@ -24,6 +25,7 @@ function getAttendantName(attendant: unknown): string {
 export default function Purchases() {
   const { shopId, shopName, from } = useShopFilter();
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
   const { data, isLoading, isFetching } = useListPurchases({ page, limit: PAGE_SIZE, shopId });
 
   const purchases = data?.data ?? [];
@@ -57,6 +59,7 @@ export default function Purchases() {
                       <TableHead>Attendant</TableHead>
                       <TableHead>Total Amount</TableHead>
                       <TableHead>Date &amp; Time</TableHead>
+                      <TableHead className="text-right">Invoice</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -68,15 +71,20 @@ export default function Purchases() {
                           </TableCell>
                           <TableCell>{getShopName(purchase.shopId)}</TableCell>
                           <TableCell>{getAttendantName(purchase.attendantId)}</TableCell>
-                          <TableCell>{purchase.totalAmount}</TableCell>
+                          <TableCell>{formatKes(purchase.totalAmount)}</TableCell>
                           <TableCell className="whitespace-nowrap">
                             {formatDateTime(purchase.createdAt ?? purchase.createAt)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" onClick={() => setSelected(purchase)}>
+                              View
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                           No purchases found.
                         </TableCell>
                       </TableRow>
@@ -106,7 +114,7 @@ export default function Purchases() {
                       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
                           <dt className="text-xs text-muted-foreground">Total Amount</dt>
-                          <dd>{purchase.totalAmount}</dd>
+                          <dd>{formatKes(purchase.totalAmount)}</dd>
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Attendant</dt>
@@ -117,6 +125,14 @@ export default function Purchases() {
                           <dd>{formatDateTime(purchase.createdAt ?? purchase.createAt)}</dd>
                         </div>
                       </dl>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 w-full"
+                        onClick={() => setSelected(purchase)}
+                      >
+                        View invoice
+                      </Button>
                     </div>
                   ))
                 ) : (
@@ -152,6 +168,8 @@ export default function Purchases() {
           )}
         </CardContent>
       </Card>
+
+      <ReceiptDialog kind="purchase" record={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

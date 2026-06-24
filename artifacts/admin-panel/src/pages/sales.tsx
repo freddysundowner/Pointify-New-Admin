@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, formatKes } from "@/lib/utils";
+import { ReceiptDialog } from "@/components/ReceiptDialog";
 
 const PAGE_SIZE = 20;
 
@@ -25,6 +26,7 @@ function getAttendantName(attendant: unknown): string {
 export default function Sales() {
   const { shopId, shopName, from } = useShopFilter();
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
   const { data, isLoading, isFetching } = useListSales({ page, limit: PAGE_SIZE, shopId });
 
   const sales = data?.data ?? [];
@@ -59,6 +61,7 @@ export default function Sales() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date &amp; Time</TableHead>
+                      <TableHead className="text-right">Receipt</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -68,18 +71,23 @@ export default function Sales() {
                           <TableCell className="font-medium">{sale.receiptNo || "—"}</TableCell>
                           <TableCell>{getShopName(sale.shopId)}</TableCell>
                           <TableCell>{getAttendantName(sale.attendantId)}</TableCell>
-                          <TableCell>{sale.totalAmount}</TableCell>
+                          <TableCell>{formatKes(sale.totalAmount)}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{sale.status}</Badge>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {formatDateTime(sale.createdAt ?? sale.createAt)}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" onClick={() => setSelected(sale)}>
+                              View
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                           No sales found.
                         </TableCell>
                       </TableRow>
@@ -110,7 +118,7 @@ export default function Sales() {
                       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
                           <dt className="text-xs text-muted-foreground">Amount</dt>
-                          <dd>{sale.totalAmount}</dd>
+                          <dd>{formatKes(sale.totalAmount)}</dd>
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Attendant</dt>
@@ -121,6 +129,14 @@ export default function Sales() {
                           <dd>{formatDateTime(sale.createdAt ?? sale.createAt)}</dd>
                         </div>
                       </dl>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 w-full"
+                        onClick={() => setSelected(sale)}
+                      >
+                        View receipt
+                      </Button>
                     </div>
                   ))
                 ) : (
@@ -156,6 +172,8 @@ export default function Sales() {
           )}
         </CardContent>
       </Card>
+
+      <ReceiptDialog kind="sale" record={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
