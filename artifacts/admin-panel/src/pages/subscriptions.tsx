@@ -56,6 +56,23 @@ const LIMIT = 20;
 type StatusFilter = "all" | "Active" | "Expired" | "Cancelled";
 type TypeFilter = "all" | "trial" | "production";
 
+// Newest-first ordering. Upstream sorts by `createAt` desc, but legacy rows can
+// have a missing/invalid `createAt`; a Mongo `_id` embeds its creation time in
+// the first 4 bytes, so we fall back to that to keep the order deterministic.
+function createdTime(sub: Subscription): number {
+  const raw = (sub as { createAt?: unknown }).createAt;
+  if (raw) {
+    const t = new Date(raw as string).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  const id = (sub as { _id?: unknown })._id;
+  if (typeof id === "string" && id.length >= 8) {
+    const secs = parseInt(id.slice(0, 8), 16);
+    if (!Number.isNaN(secs)) return secs * 1000;
+  }
+  return 0;
+}
+
 function getShopName(shop: unknown): string {
   if (!shop) return "N/A";
   if (typeof shop === "string") return shop;
@@ -147,7 +164,9 @@ export default function Subscriptions() {
 
   const { data, isLoading, isFetching } = useListSubscriptions(params);
 
-  const subs = (data?.data ?? []) as Subscription[];
+  const subs = ((data?.data ?? []) as Subscription[])
+    .slice()
+    .sort((a, b) => createdTime(b) - createdTime(a));
   const totalPages = data?.totalPages ?? 1;
   const count = data?.count ?? 0;
   const currentPage = data?.currentPage ?? page;
