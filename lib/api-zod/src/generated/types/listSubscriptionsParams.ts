@@ -14,6 +14,18 @@ type?: ListSubscriptionsType;
 shop?: string;
 shopname?: string;
 invoiceNo?: string;
+/**
+ * Filter by creation date (single day, YYYY-MM-DD)
+ */
+createAt?: string;
+/**
+ * Expiry range start (YYYY-MM-DD); requires expiryperiodTo
+ */
+expiryperiodFrom?: string;
+/**
+ * Expiry range end (YYYY-MM-DD); requires expiryperiodFrom
+ */
+expiryperiodTo?: string;
 page?: number;
 limit?: number;
 };

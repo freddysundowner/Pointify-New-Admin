@@ -1048,6 +1048,9 @@ export const ListSubscriptionsQueryParams = zod.object({
   "shop": zod.coerce.string().optional(),
   "shopname": zod.coerce.string().optional(),
   "invoiceNo": zod.coerce.string().optional(),
+  "createAt": zod.coerce.string().optional().describe('Filter by creation date (single day, YYYY-MM-DD)'),
+  "expiryperiodFrom": zod.coerce.string().optional().describe('Expiry range start (YYYY-MM-DD); requires expiryperiodTo'),
+  "expiryperiodTo": zod.coerce.string().optional().describe('Expiry range end (YYYY-MM-DD); requires expiryperiodFrom'),
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional()
 })

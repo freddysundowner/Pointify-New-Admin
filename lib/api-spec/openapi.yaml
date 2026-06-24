@@ -718,6 +718,9 @@ paths:
         - { name: shop, in: query, schema: { type: string } }
         - { name: shopname, in: query, schema: { type: string } }
         - { name: invoiceNo, in: query, schema: { type: string } }
+        - { name: createAt, in: query, description: "Filter by creation date (single day, YYYY-MM-DD)", schema: { type: string } }
+        - { name: expiryperiodFrom, in: query, description: "Expiry range start (YYYY-MM-DD); requires expiryperiodTo", schema: { type: string } }
+        - { name: expiryperiodTo, in: query, description: "Expiry range end (YYYY-MM-DD); requires expiryperiodFrom", schema: { type: string } }
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
       responses:
