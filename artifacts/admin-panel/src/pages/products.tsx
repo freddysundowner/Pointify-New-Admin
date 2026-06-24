@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useListProducts,
   useGetProduct,
+  useUpdateProduct,
+  useListProductCategories,
   useListProductStockHistory,
   useListProductSalesHistory,
   useListProductPurchasesHistory,
   useGetProductHistorySummary,
+  getListProductsQueryKey,
+  getGetProductQueryKey,
   type Product,
+  type ProductUpdate,
   type Batch,
 } from "@workspace/api-client-react";
 import {
@@ -34,6 +40,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -45,6 +52,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import {
   ChevronDown,
   ChevronRight,
@@ -53,6 +63,7 @@ import {
   Loader2,
   MoreHorizontal,
   History,
+  Pencil,
 } from "lucide-react";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 import { formatKes, formatNumber, formatDate } from "@/lib/utils";
@@ -213,6 +224,7 @@ function ProductActions({
   onToggleInventory: () => void;
 }) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   return (
     <>
       <DropdownMenu>
@@ -230,6 +242,10 @@ function ProductActions({
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit product
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={onToggleInventory}>
             <Boxes className="mr-2 h-4 w-4" />
             View inventory
@@ -240,12 +256,315 @@ function ProductActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <EditProductDialog
+        product={product}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
       <ProductHistoryDialog
         product={product}
         open={historyOpen}
         onOpenChange={setHistoryOpen}
       />
     </>
+  );
+}
+
+function num(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  return Number.isFinite(n) ? String(n) : "";
+}
+
+function str(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function genId(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    const id = (value as { _id?: unknown })._id;
+    if (typeof id === "string") return id;
+  }
+  return "";
+}
+
+const NO_CATEGORY = "__none__";
+
+/** Slices an ISO/date string to the `YYYY-MM-DD` form an <input type="date"> needs. */
+function toDateInput(value: unknown): string {
+  if (typeof value !== "string" || !value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
+function EditProductDialog({
+  product,
+  open,
+  onOpenChange,
+}: {
+  product: Product;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  // The list row omits several editable fields (description, dealerPrice, etc.),
+  // so load the full product to seed the form with accurate current values.
+  const { data, isLoading, isError } = useGetProduct(product._id, {
+    query: { enabled: open, queryKey: getGetProductQueryKey(product._id) },
+  });
+  const detail = data ?? product;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] gap-4 overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5 text-primary" />
+            Edit product
+          </DialogTitle>
+          <DialogDescription>
+            {product.name || "—"} · {getShopName(product.shopId)}
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            Loading product…
+          </div>
+        ) : isError ? (
+          <p className="py-10 text-center text-sm text-destructive">
+            Could not load this product. Please try again.
+          </p>
+        ) : (
+          <ProductEditForm
+            key={detail._id}
+            detail={detail}
+            onDone={() => onOpenChange(false)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ProductEditForm({
+  detail,
+  onDone,
+}: {
+  detail: Product;
+  onDone: () => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const update = useUpdateProduct();
+
+  const [name, setName] = useState(str(detail.name));
+  const [description, setDescription] = useState(str(detail.description));
+  const [buyingPrice, setBuyingPrice] = useState(num(detail.buyingPrice));
+  const [sellingPrice, setSellingPrice] = useState(num(detail.sellingPrice));
+  const [wholesalePrice, setWholesalePrice] = useState(num(detail.wholesalePrice));
+  const [dealerPrice, setDealerPrice] = useState(num(detail.dealerPrice));
+  const [minSellingPrice, setMinSellingPrice] = useState(num(detail.minSellingPrice));
+  const [maxDiscount, setMaxDiscount] = useState(num(detail.maxDiscount));
+  const [quantity, setQuantity] = useState(num(detail.quantity));
+  const [reorderLevel, setReorderLevel] = useState(num(detail.reorderLevel));
+  const [measure, setMeasure] = useState(str(detail.measure));
+  const [manufacturer, setManufacturer] = useState(str(detail.manufacturer));
+  const [barcode, setBarcode] = useState(str(detail.barcode));
+  const [serialnumber, setSerialnumber] = useState(str(detail.serialnumber));
+  const [taxable, setTaxable] = useState(Boolean(detail.taxable));
+  const [expiryDate, setExpiryDate] = useState(toDateInput(detail.expiryDate));
+  const [productCategoryId, setProductCategoryId] = useState(
+    genId(detail.productCategoryId) || NO_CATEGORY,
+  );
+
+  const { data: categories } = useListProductCategories();
+
+  const handleSave = () => {
+    if (!name.trim()) {
+      toast({ title: "Name is required", variant: "destructive" });
+      return;
+    }
+    const buying = buyingPrice === "" ? undefined : Number(buyingPrice);
+    const selling = sellingPrice === "" ? undefined : Number(sellingPrice);
+    if (buying !== undefined && selling !== undefined && selling < buying) {
+      toast({
+        title: "Invalid prices",
+        description: "Selling price must be greater than the buying price.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Numbers are omitted when blank: the upstream coerces numeric fields
+    // (e.g. parseInt on quantity), so sending "" would corrupt them.
+    const numField = (v: string): number | undefined =>
+      v === "" ? undefined : Number(v);
+    // Text fields are sent as-is (including "") so blanking a field clears it.
+    const strField = (v: string): string => v.trim();
+
+    const payload: ProductUpdate = {
+      name: name.trim(),
+      description: strField(description),
+      buyingPrice: numField(buyingPrice),
+      sellingPrice: numField(sellingPrice),
+      wholesalePrice: numField(wholesalePrice),
+      dealerPrice: numField(dealerPrice),
+      minSellingPrice: numField(minSellingPrice),
+      maxDiscount: numField(maxDiscount),
+      quantity: numField(quantity),
+      reorderLevel: numField(reorderLevel),
+      measure: strField(measure),
+      manufacturer: strField(manufacturer),
+      barcode: strField(barcode),
+      serialnumber: strField(serialnumber),
+      taxable,
+      expiryDate: expiryDate === "" ? undefined : expiryDate,
+      productCategoryId: productCategoryId === NO_CATEGORY ? null : productCategoryId,
+    };
+
+    update.mutate(
+      { id: detail._id, data: payload },
+      {
+        onSuccess: (res) => {
+          const err = (res as { error?: string } | undefined)?.error;
+          if (err) {
+            toast({ title: "Update failed", description: err, variant: "destructive" });
+            return;
+          }
+          toast({ title: "Product updated" });
+          queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
+          queryClient.invalidateQueries({
+            queryKey: getGetProductQueryKey(detail._id),
+          });
+          onDone();
+        },
+        onError: () =>
+          toast({ title: "Update failed", variant: "destructive" }),
+      },
+    );
+  };
+
+  return (
+    <>
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="p-name">Name</Label>
+          <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="p-description">Description</Label>
+          <Textarea
+            id="p-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <NumberField id="p-buying" label="Buying price" value={buyingPrice} onChange={setBuyingPrice} />
+          <NumberField id="p-selling" label="Selling price" value={sellingPrice} onChange={setSellingPrice} />
+          <NumberField id="p-wholesale" label="Wholesale price" value={wholesalePrice} onChange={setWholesalePrice} />
+          <NumberField id="p-dealer" label="Dealer price" value={dealerPrice} onChange={setDealerPrice} />
+          <NumberField id="p-min" label="Min selling price" value={minSellingPrice} onChange={setMinSellingPrice} />
+          <NumberField id="p-maxdisc" label="Max discount (%)" value={maxDiscount} onChange={setMaxDiscount} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <NumberField id="p-qty" label="Quantity" value={quantity} onChange={setQuantity} />
+          <NumberField id="p-reorder" label="Reorder level" value={reorderLevel} onChange={setReorderLevel} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="p-measure">Unit / measure</Label>
+            <Input id="p-measure" value={measure} onChange={(e) => setMeasure(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-manufacturer">Manufacturer</Label>
+            <Input id="p-manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-barcode">Barcode</Label>
+            <Input id="p-barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-serial">Serial number</Label>
+            <Input id="p-serial" value={serialnumber} onChange={(e) => setSerialnumber(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select value={productCategoryId} onValueChange={setProductCategoryId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_CATEGORY}>No category</SelectItem>
+              {(categories ?? []).map((c) => (
+                <SelectItem key={c._id} value={c._id}>
+                  {c.name || c._id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="p-expiry">Expiry date</Label>
+            <Input
+              id="p-expiry"
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <Label htmlFor="p-taxable" className="cursor-pointer">
+              Taxable
+            </Label>
+            <Switch id="p-taxable" checked={taxable} onCheckedChange={setTaxable} />
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onDone} disabled={update.isPending}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} disabled={update.isPending}>
+          {update.isPending ? "Saving…" : "Save changes"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+function NumberField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
   );
 }
 

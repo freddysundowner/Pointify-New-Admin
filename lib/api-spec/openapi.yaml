@@ -1001,9 +1001,23 @@ components:
         contact: { type: string }
         currency: { type: string }
         tax: { type: number }
-        shopCategoryId: { type: string }
+        shopCategoryId: { type: string, nullable: true }
+        paybill_till: { type: string }
+        paybill_account: { type: string }
+        address_receipt: { type: string }
+        receiptemail: { type: string }
+        warehouseemail: { type: string }
+        backupemail: { type: string }
         production: { type: boolean }
         warehouse: { type: boolean }
+        useWarehouse: { type: boolean }
+        trackbatches: { type: boolean }
+        allowOnlineSelling: { type: boolean }
+        allownegativeselling: { type: boolean }
+        showstockonline: { type: boolean }
+        showpriceonline: { type: boolean }
+        allowBackup: { type: boolean }
+        mpesa_require_validation: { type: boolean }
 
     ShopListResult:
       type: object
@@ -1082,15 +1096,22 @@ components:
       type: object
       properties:
         name: { type: string }
+        description: { type: string }
         buyingPrice: { type: number }
         sellingPrice: { type: number }
         wholesalePrice: { type: number }
+        dealerPrice: { type: number }
+        minSellingPrice: { type: number }
+        maxDiscount: { type: number }
         quantity: { type: number }
         reorderLevel: { type: number }
-        barcode: { type: string }
         measure: { type: string }
         manufacturer: { type: string }
-        productCategoryId: { type: string }
+        barcode: { type: string }
+        serialnumber: { type: string }
+        taxable: { type: boolean }
+        expiryDate: { type: string }
+        productCategoryId: { type: string, nullable: true }
 
     ProductListResult:
       type: object

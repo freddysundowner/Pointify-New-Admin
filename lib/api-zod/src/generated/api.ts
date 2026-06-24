@@ -415,9 +415,23 @@ export const UpdateShopBody = zod.object({
   "contact": zod.string().optional(),
   "currency": zod.string().optional(),
   "tax": zod.number().optional(),
-  "shopCategoryId": zod.string().optional(),
+  "shopCategoryId": zod.string().nullish(),
+  "paybill_till": zod.string().optional(),
+  "paybill_account": zod.string().optional(),
+  "address_receipt": zod.string().optional(),
+  "receiptemail": zod.string().optional(),
+  "warehouseemail": zod.string().optional(),
+  "backupemail": zod.string().optional(),
   "production": zod.boolean().optional(),
-  "warehouse": zod.boolean().optional()
+  "warehouse": zod.boolean().optional(),
+  "useWarehouse": zod.boolean().optional(),
+  "trackbatches": zod.boolean().optional(),
+  "allowOnlineSelling": zod.boolean().optional(),
+  "allownegativeselling": zod.boolean().optional(),
+  "showstockonline": zod.boolean().optional(),
+  "showpriceonline": zod.boolean().optional(),
+  "allowBackup": zod.boolean().optional(),
+  "mpesa_require_validation": zod.boolean().optional()
 })
 
 export const UpdateShopResponse = zod.object({
@@ -580,15 +594,22 @@ export const UpdateProductParams = zod.object({
 
 export const UpdateProductBody = zod.object({
   "name": zod.string().optional(),
+  "description": zod.string().optional(),
   "buyingPrice": zod.number().optional(),
   "sellingPrice": zod.number().optional(),
   "wholesalePrice": zod.number().optional(),
+  "dealerPrice": zod.number().optional(),
+  "minSellingPrice": zod.number().optional(),
+  "maxDiscount": zod.number().optional(),
   "quantity": zod.number().optional(),
   "reorderLevel": zod.number().optional(),
-  "barcode": zod.string().optional(),
   "measure": zod.string().optional(),
   "manufacturer": zod.string().optional(),
-  "productCategoryId": zod.string().optional()
+  "barcode": zod.string().optional(),
+  "serialnumber": zod.string().optional(),
+  "taxable": zod.boolean().optional(),
+  "expiryDate": zod.string().optional(),
+  "productCategoryId": zod.string().nullish()
 })
 
 export const UpdateProductResponse = zod.object({

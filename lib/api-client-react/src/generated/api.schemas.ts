@@ -153,9 +153,23 @@ export interface ShopUpdate {
   contact?: string;
   currency?: string;
   tax?: number;
-  shopCategoryId?: string;
+  shopCategoryId?: string | null;
+  paybill_till?: string;
+  paybill_account?: string;
+  address_receipt?: string;
+  receiptemail?: string;
+  warehouseemail?: string;
+  backupemail?: string;
   production?: boolean;
   warehouse?: boolean;
+  useWarehouse?: boolean;
+  trackbatches?: boolean;
+  allowOnlineSelling?: boolean;
+  allownegativeselling?: boolean;
+  showstockonline?: boolean;
+  showpriceonline?: boolean;
+  allowBackup?: boolean;
+  mpesa_require_validation?: boolean;
 }
 
 export interface ShopListResult {
@@ -240,15 +254,22 @@ export interface ProductInput {
 
 export interface ProductUpdate {
   name?: string;
+  description?: string;
   buyingPrice?: number;
   sellingPrice?: number;
   wholesalePrice?: number;
+  dealerPrice?: number;
+  minSellingPrice?: number;
+  maxDiscount?: number;
   quantity?: number;
   reorderLevel?: number;
-  barcode?: string;
   measure?: string;
   manufacturer?: string;
-  productCategoryId?: string;
+  barcode?: string;
+  serialnumber?: string;
+  taxable?: boolean;
+  expiryDate?: string;
+  productCategoryId?: string | null;
 }
 
 export interface ProductListResult {

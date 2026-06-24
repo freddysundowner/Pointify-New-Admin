@@ -12,7 +12,21 @@ export interface ShopUpdate {
   contact?: string;
   currency?: string;
   tax?: number;
-  shopCategoryId?: string;
+  shopCategoryId?: string | null;
+  paybill_till?: string;
+  paybill_account?: string;
+  address_receipt?: string;
+  receiptemail?: string;
+  warehouseemail?: string;
+  backupemail?: string;
   production?: boolean;
   warehouse?: boolean;
+  useWarehouse?: boolean;
+  trackbatches?: boolean;
+  allowOnlineSelling?: boolean;
+  allownegativeselling?: boolean;
+  showstockonline?: boolean;
+  showpriceonline?: boolean;
+  allowBackup?: boolean;
+  mpesa_require_validation?: boolean;
 }

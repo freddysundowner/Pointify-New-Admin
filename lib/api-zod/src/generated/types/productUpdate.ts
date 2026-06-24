@@ -8,13 +8,20 @@
 
 export interface ProductUpdate {
   name?: string;
+  description?: string;
   buyingPrice?: number;
   sellingPrice?: number;
   wholesalePrice?: number;
+  dealerPrice?: number;
+  minSellingPrice?: number;
+  maxDiscount?: number;
   quantity?: number;
   reorderLevel?: number;
-  barcode?: string;
   measure?: string;
   manufacturer?: string;
-  productCategoryId?: string;
+  barcode?: string;
+  serialnumber?: string;
+  taxable?: boolean;
+  expiryDate?: string;
+  productCategoryId?: string | null;
 }
