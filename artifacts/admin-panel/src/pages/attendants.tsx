@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useListAttendants,
   useResetAttendantPassword,
@@ -28,17 +28,37 @@ function getShopName(shop: unknown): string {
   return s.name || s._id || "N/A";
 }
 
+const PAGE_SIZE = 20;
+
 export default function Attendants() {
   const { shopId, shopName, from } = useShopFilter();
-  const { data, isLoading } = useListAttendants({ shopId });
   const [resetTarget, setResetTarget] = useState<Attendant | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const allAttendants = data?.data ?? [];
-  const query = search.trim().toLowerCase();
-  const attendants = query
-    ? allAttendants.filter((a) => (a.username ?? "").toLowerCase().includes(query))
-    : allAttendants;
+  // Debounce the username search so we don't hit the backend on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset to the first page whenever the search term or shop filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, shopId]);
+
+  const { data, isLoading, isFetching } = useListAttendants({
+    shopId,
+    username: debouncedSearch || undefined,
+    page,
+    limit: PAGE_SIZE,
+  });
+
+  const attendants = data?.data ?? [];
+  const query = debouncedSearch;
+  const totalPages = Math.max(1, data?.totalPages ?? 1);
+  const totalCount = data?.count ?? 0;
 
   return (
     <div className="space-y-6">
@@ -148,6 +168,32 @@ export default function Attendants() {
                     {query ? "No attendants match your search." : "No attendants found."}
                   </div>
                 )}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                  {totalCount > 0
+                    ? `Page ${page} of ${totalPages} · ${totalCount} attendant${totalCount === 1 ? "" : "s"}`
+                    : ""}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1 || isFetching}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages || isFetching}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </>
           )}

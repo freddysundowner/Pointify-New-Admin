@@ -499,6 +499,9 @@ paths:
       parameters:
         - { name: shopId, in: query, schema: { type: string } }
         - { name: adminId, in: query, schema: { type: string } }
+        - { name: username, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: number } }
+        - { name: limit, in: query, schema: { type: number } }
       responses:
         "200":
           description: Attendants

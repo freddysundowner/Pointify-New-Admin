@@ -815,6 +815,9 @@ year: number;
 export type ListAttendantsParams = {
 shopId?: string;
 adminId?: string;
+username?: string;
+page?: number;
+limit?: number;
 };
 
 export type ResetAttendantPassword200 = {

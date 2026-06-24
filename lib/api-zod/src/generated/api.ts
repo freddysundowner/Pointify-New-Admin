@@ -738,7 +738,10 @@ export const GetProductHistorySummaryResponse = zod.object({
 
 export const ListAttendantsQueryParams = zod.object({
   "shopId": zod.coerce.string().optional(),
-  "adminId": zod.coerce.string().optional()
+  "adminId": zod.coerce.string().optional(),
+  "username": zod.coerce.string().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
 })
 
 export const ListAttendantsResponse = zod.object({

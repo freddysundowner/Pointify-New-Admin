@@ -133,17 +133,24 @@ export function normalizeList(raw: unknown): NormalizedList {
       }
       return undefined;
     };
+    // Some upstream endpoints (e.g. attendants `/all/:id`) nest paging info
+    // under a `pagination` object: { attendants, pagination: { total, page, limit } }.
+    const pg =
+      o["pagination"] && typeof o["pagination"] === "object"
+        ? (o["pagination"] as Record<string, unknown>)
+        : {};
     const count =
-      num(o["count"], o["total"], o["totalAdmins"], o["totalShops"], o["totalDocs"], o["totalDoc"]) ?? arr.length;
-    const limit = num(o["limit"]);
+      num(o["count"], o["total"], pg["total"], o["totalAdmins"], o["totalShops"], o["totalDocs"], o["totalDoc"]) ??
+      arr.length;
+    const limit = num(o["limit"], pg["limit"]);
     // Some upstream endpoints (e.g. purchases) return { total, page, limit } but
     // no totalPages, so derive it from count/limit when we have a page size.
     const derivedPages = limit && limit > 0 ? Math.ceil(count / limit) : undefined;
     return {
       data: arr,
       count,
-      totalPages: num(o["totalPages"], o["pages"]) ?? derivedPages ?? 1,
-      currentPage: num(o["currentPage"], o["page"]) ?? 1,
+      totalPages: num(o["totalPages"], o["pages"], pg["totalPages"]) ?? derivedPages ?? 1,
+      currentPage: num(o["currentPage"], o["page"], pg["page"]) ?? 1,
     };
   }
   return { data: [], count: 0, totalPages: 1, currentPage: 1 };

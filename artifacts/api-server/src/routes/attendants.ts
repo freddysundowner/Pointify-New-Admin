@@ -4,9 +4,18 @@ import { proxy, proxyList } from "../lib/upstream";
 const router: IRouter = Router();
 
 router.get("/attendants", async (req, res) => {
+  // Upstream `/attendants/all/:id` paginates and supports a `username` regex
+  // search; the `:id` is an admin filter where the sentinel "admin" means
+  // "no admin filter" (show all). adminId is sent as the path segment, the
+  // rest (page, limit, username, shopId) as query params.
+  const { adminId, ...rest } = req.query as Record<string, unknown>;
+  const id =
+    typeof adminId === "string" && adminId.trim().length > 0
+      ? adminId.trim()
+      : "admin";
   await proxyList(req, res, {
-    path: "/attendants/shop/filter",
-    query: req.query as Record<string, unknown>,
+    path: `/attendants/all/${encodeURIComponent(id)}`,
+    query: rest,
   });
 });
 
