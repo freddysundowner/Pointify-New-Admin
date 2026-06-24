@@ -1,11 +1,11 @@
-import { useState } from "react";
 import { useListPurchases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Purchases() {
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useListPurchases({ page, limit: 20 });
+  const { shopId, shopName } = useShopFilter();
+  const { data, isLoading } = useListPurchases({ page: 1, limit: 20, shopId });
 
   const getShopName = (shop: any) => {
     if (!shop) return "N/A";
@@ -24,6 +24,7 @@ export default function Purchases() {
           <CardTitle>Purchases List</CardTitle>
         </CardHeader>
         <CardContent>
+          {shopId && <ShopFilterBanner shopName={shopName} />}
           {isLoading ? (
             <div className="p-4">Loading purchases...</div>
           ) : (

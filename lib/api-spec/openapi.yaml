@@ -360,7 +360,7 @@ paths:
       operationId: listProducts
       tags: [products]
       parameters:
-        - { name: shopId, in: query, schema: { type: string } }
+        - { name: shopid, in: query, schema: { type: string } }
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
         - { name: name, in: query, schema: { type: string } }
@@ -613,6 +613,7 @@ paths:
       parameters:
         - { name: status, in: query, schema: { type: string, enum: [Active, Expired, Cancelled] } }
         - { name: type, in: query, schema: { type: string, enum: [trial, production] } }
+        - { name: shop, in: query, schema: { type: string } }
         - { name: shopname, in: query, schema: { type: string } }
         - { name: invoiceNo, in: query, schema: { type: string } }
         - { name: page, in: query, schema: { type: integer } }

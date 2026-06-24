@@ -11,6 +11,7 @@ import type { ListSubscriptionsType } from './listSubscriptionsType';
 export type ListSubscriptionsParams = {
 status?: ListSubscriptionsStatus;
 type?: ListSubscriptionsType;
+shop?: string;
 shopname?: string;
 invoiceNo?: string;
 page?: number;

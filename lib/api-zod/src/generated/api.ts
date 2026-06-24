@@ -454,7 +454,7 @@ export const ListProductCategoriesResponse = zod.array(ListProductCategoriesResp
 
 
 export const ListProductsQueryParams = zod.object({
-  "shopId": zod.coerce.string().optional(),
+  "shopid": zod.coerce.string().optional(),
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
   "name": zod.coerce.string().optional()
@@ -843,6 +843,7 @@ export const DeletePackageResponse = zod.object({
 export const ListSubscriptionsQueryParams = zod.object({
   "status": zod.enum(['Active', 'Expired', 'Cancelled']).optional(),
   "type": zod.enum(['trial', 'production']).optional(),
+  "shop": zod.coerce.string().optional(),
   "shopname": zod.coerce.string().optional(),
   "invoiceNo": zod.coerce.string().optional(),
   "page": zod.coerce.number().optional(),

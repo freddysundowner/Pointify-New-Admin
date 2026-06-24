@@ -1,13 +1,13 @@
-import { useState } from "react";
 import { useListSubscriptions } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatKes } from "@/lib/utils";
+import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Subscriptions() {
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useListSubscriptions({ page, limit: 20 });
+  const { shopId, shopName } = useShopFilter();
+  const { data, isLoading } = useListSubscriptions({ page: 1, limit: 20, shop: shopId });
 
   const getShopName = (shop: any) => {
     if (!shop) return "N/A";
@@ -26,6 +26,7 @@ export default function Subscriptions() {
           <CardTitle>Subscriptions List</CardTitle>
         </CardHeader>
         <CardContent>
+          {shopId && <ShopFilterBanner shopName={shopName} />}
           {isLoading ? (
             <div className="p-4">Loading subscriptions...</div>
           ) : (

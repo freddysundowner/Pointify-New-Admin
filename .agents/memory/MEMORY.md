@@ -3,3 +3,4 @@
 - [Upstream admins endpoint](upstream-admins-endpoint.md) — upstream `name` searches username/email/phone; NO date filter (proxy filters createdAt in EAT); strip leaked `password` hashes.
 - [Responsive list-page pattern](responsive-list-pages.md) — admin-panel list pages: desktop `<Table>` (hidden md:block) + mobile card list (md:hidden) from same data; keep both in sync.
 - [Shops list upstream constraints](shops-list-upstream.md) — /shop/ supports name/status/type/ownerid only; owner projected to email+phone (no name); count needs totalShops.
+- [Upstream shop-filter params](shop-filter-params.md) — each list endpoint uses a different key (products=shopid, sales/purchases/attendants=shopId, subscriptions=shop); wrong name silently returns the full list.

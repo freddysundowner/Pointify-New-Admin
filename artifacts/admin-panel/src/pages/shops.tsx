@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useListShops,
+  useDeleteShop,
+  getListShopsQueryKey,
   ListShopsSubscriptionStatus,
   ListShopsSubscriptionType,
   type Shop,
@@ -18,7 +22,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+  MoreHorizontal,
+  Eye,
+  Package,
+  Receipt,
+  ShoppingCart,
+  CreditCard,
+  Users,
+  Trash2,
+} from "lucide-react";
+import { shopScopedHref } from "@/lib/shop-filter";
 
 const LIMIT = 20;
 
@@ -105,6 +150,8 @@ export default function Shops() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [type, setType] = useState<TypeFilter>("all");
+  const [viewShop, setViewShop] = useState<Shop | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Shop | null>(null);
 
   // Debounce the shop-name search so we don't hit upstream on every keystroke.
   useEffect(() => {
@@ -128,6 +175,25 @@ export default function Shops() {
   };
 
   const { data, isLoading, isFetching } = useListShops(params);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const deleteShop = useDeleteShop({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListShopsQueryKey() });
+        toast({ title: "Shop deleted", description: deleteTarget?.name || undefined });
+        setDeleteTarget(null);
+      },
+      onError: () => {
+        toast({
+          variant: "destructive",
+          title: "Failed to delete shop",
+          description: "The shop could not be deleted. Please try again.",
+        });
+      },
+    },
+  });
 
   const shops = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -230,6 +296,7 @@ export default function Shops() {
                       <TableHead>Owner</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-[56px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -253,12 +320,19 @@ export default function Shops() {
                             <TableCell>
                               <StatusBadge shop={shop} />
                             </TableCell>
+                            <TableCell className="text-right">
+                              <ShopActions
+                                shop={shop}
+                                onView={() => setViewShop(shop)}
+                                onDelete={() => setDeleteTarget(shop)}
+                              />
+                            </TableCell>
                           </TableRow>
                         );
                       })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                           No shops found.
                         </TableCell>
                       </TableRow>
@@ -276,8 +350,13 @@ export default function Shops() {
                       <div key={shop._id} className="rounded-lg border bg-card p-4 shadow-sm">
                         <div className="flex items-start justify-between gap-2">
                           <p className="min-w-0 truncate font-semibold">{shop.name || "—"}</p>
-                          <div className="shrink-0">
+                          <div className="flex shrink-0 items-center gap-1">
                             <TypeBadge shop={shop} />
+                            <ShopActions
+                              shop={shop}
+                              onView={() => setViewShop(shop)}
+                              onDelete={() => setDeleteTarget(shop)}
+                            />
                           </div>
                         </div>
                         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -341,6 +420,160 @@ export default function Shops() {
           )}
         </CardContent>
       </Card>
+
+      <ViewShopDialog shop={viewShop} onClose={() => setViewShop(null)} />
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this shop?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes{" "}
+              <span className="font-semibold">{deleteTarget?.name || "this shop"}</span>{" "}
+              from the platform. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteShop.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteShop.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTarget) deleteShop.mutate({ id: deleteTarget._id });
+              }}
+            >
+              {deleteShop.isPending ? "Deleting…" : "Delete shop"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+function ShopActions({
+  shop,
+  onView,
+  onDelete,
+}: {
+  shop: Shop;
+  onView: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Open shop actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onClick={onView}>
+          <Eye className="mr-2 h-4 w-4" />
+          View details
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          Browse shop data
+        </DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link href={shopScopedHref("/products", shop)}>
+            <Package className="mr-2 h-4 w-4" />
+            Products
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={shopScopedHref("/sales", shop)}>
+            <Receipt className="mr-2 h-4 w-4" />
+            Sales
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={shopScopedHref("/purchases", shop)}>
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Purchases
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={shopScopedHref("/subscriptions", shop)}>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Subscriptions
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={shopScopedHref("/attendants", shop)}>
+            <Users className="mr-2 h-4 w-4" />
+            Attendants
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete shop
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 py-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="col-span-2 break-words">{value ?? "—"}</span>
+    </div>
+  );
+}
+
+function ViewShopDialog({ shop, onClose }: { shop: Shop | null; onClose: () => void }) {
+  const owner = shop ? asOwner(shop.adminId) : null;
+  const expiry = shop ? shopExpiry(shop) : null;
+  const t = shop ? shopType(shop) : null;
+  return (
+    <Dialog open={Boolean(shop)} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{shop?.name || "Shop"}</DialogTitle>
+          <DialogDescription>Shop details</DialogDescription>
+        </DialogHeader>
+        {shop && (
+          <div className="divide-y">
+            <DetailRow label="Name" value={shop.name} />
+            <DetailRow label="Owner email" value={owner?.email} />
+            <DetailRow label="Owner phone" value={owner?.phone} />
+            <DetailRow
+              label="Type"
+              value={t ? (t === "production" ? "Production" : "Trial") : "—"}
+            />
+            <DetailRow
+              label="Subscription"
+              value={
+                expiry
+                  ? `${expiry.getTime() >= Date.now() ? "Active until" : "Expired on"} ${dateFmt.format(expiry)}`
+                  : "No subscription"
+              }
+            />
+            <DetailRow label="Products" value={shop.productCount ?? 0} />
+            <DetailRow
+              label="Created"
+              value={shop.createAt ? dateFmt.format(new Date(shop.createAt)) : "—"}
+            />
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

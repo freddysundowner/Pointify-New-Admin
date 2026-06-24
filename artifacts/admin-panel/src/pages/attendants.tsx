@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { useListAttendants } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Attendants() {
-  const [shopId, setShopId] = useState<string | undefined>(undefined);
+  const { shopId, shopName } = useShopFilter();
   const { data, isLoading } = useListAttendants({ shopId });
 
   const getShopName = (shop: any) => {
@@ -24,6 +24,7 @@ export default function Attendants() {
           <CardTitle>Attendants List</CardTitle>
         </CardHeader>
         <CardContent>
+          {shopId && <ShopFilterBanner shopName={shopName} />}
           {isLoading ? (
             <div className="p-4">Loading attendants...</div>
           ) : (

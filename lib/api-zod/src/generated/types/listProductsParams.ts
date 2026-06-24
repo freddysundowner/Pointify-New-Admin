@@ -7,7 +7,7 @@
  */
 
 export type ListProductsParams = {
-shopId?: string;
+shopid?: string;
 page?: number;
 limit?: number;
 name?: string;

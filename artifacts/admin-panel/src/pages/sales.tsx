@@ -1,12 +1,12 @@
-import { useState } from "react";
 import { useListSales } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 
 export default function Sales() {
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useListSales({ page, limit: 20 });
+  const { shopId, shopName } = useShopFilter();
+  const { data, isLoading } = useListSales({ page: 1, limit: 20, shopId });
 
   const getShopName = (shop: any) => {
     if (!shop) return "N/A";
@@ -25,6 +25,7 @@ export default function Sales() {
           <CardTitle>Sales List</CardTitle>
         </CardHeader>
         <CardContent>
+          {shopId && <ShopFilterBanner shopName={shopName} />}
           {isLoading ? (
             <div className="p-4">Loading sales...</div>
           ) : (

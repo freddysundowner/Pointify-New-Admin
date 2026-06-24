@@ -629,7 +629,7 @@ export const ListShopsSubscriptionType = {
 } as const;
 
 export type ListProductsParams = {
-shopId?: string;
+shopid?: string;
 page?: number;
 limit?: number;
 name?: string;
@@ -658,6 +658,7 @@ limit?: number;
 export type ListSubscriptionsParams = {
 status?: ListSubscriptionsStatus;
 type?: ListSubscriptionsType;
+shop?: string;
 shopname?: string;
 invoiceNo?: string;
 page?: number;
