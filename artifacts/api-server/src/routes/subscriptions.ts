@@ -1,40 +1,10 @@
 import { Router, type IRouter } from "express";
-import { proxy, proxyList, upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
+import { proxy, proxyList, upstreamFetch, authHeaderFrom } from "../lib/upstream";
 
 const router: IRouter = Router();
 
 router.get("/subscriptions", async (req, res) => {
-  // TEMP DEBUG: inspect real subscription fields to ground-truth the status badge.
-  const result = await upstreamFetch({
-    method: "GET",
-    path: "/subscriptions/",
-    query: req.query as Record<string, unknown>,
-    authHeader: authHeaderFrom(req),
-  });
-  try {
-    const raw = result.data as { data?: unknown };
-    const arr = (Array.isArray(raw?.data) ? raw.data : raw) as unknown[];
-    if (Array.isArray(arr)) {
-      const rows = arr.map((s) => {
-        const x = s as Record<string, unknown>;
-        const shop = x.shop as { name?: string } | string | undefined;
-        return {
-          shop: typeof shop === "object" ? shop?.name : shop,
-          type: x.type,
-          status: x.status,
-          paid: x.paid,
-          mpesaCode: x.mpesaCode,
-          amount: x.amount,
-          startDate: x.startDate,
-          endDate: x.endDate,
-        };
-      });
-      req.log.info({ count: rows.length, rows }, "DEBUG_SUBSCRIPTIONS");
-    }
-  } catch (e) {
-    req.log.warn({ err: String(e) }, "DEBUG_SUBSCRIPTIONS_FAILED");
-  }
-  res.status(result.status).json(normalizeList(result.data));
+  await proxyList(req, res, { path: "/subscriptions/", query: req.query as Record<string, unknown> });
 });
 
 router.get("/subscriptions/summary", async (req, res) => {

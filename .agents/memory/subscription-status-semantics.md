@@ -1,30 +1,29 @@
 ---
 name: Subscription status display semantics
-description: Type-aware subscription "active" rules — trials key off expiry only; production needs `paid`.
+description: Type-aware subscription status — trials labeled by expiry; production by payment. Verified against real upstream data.
 ---
 
-# Subscription status is TYPE-AWARE (trial vs production)
+# Subscription status badge is TYPE-AWARE (trial vs production)
 
-Do not badge a subscription off the bare `status` boolean. Compute it type-aware:
+Do not badge off the bare `status` boolean. Verified real data shape (upstream
+prod): trials are ALWAYS `paid:false`, `amount:0`; production is `paid:true` only
+when actually paid (unpaid production = `paid:false`, often `status:false`).
 
-- **Trial**: never expected to be `paid`. Validity is purely the expiry window —
-  Active while `endDate` is in the future, otherwise Expired. Do NOT require `paid`.
-- **Production**: real activity needs payment. Upstream shop-stats ground truth is
-  `isActive = paid === true && startDate <= now && endDate >= now`
-  (controllers/subscription.js). A production sub with `status:true` but `paid:false`
-  was never actually paid → show Unpaid, NOT Active.
+`subStatus(sub)` in `pages/subscriptions.tsx` computes, in order:
+1. no/invalid `endDate` -> "Unknown"
+2. **trial** (`type==="trial"`, fallback populated `packageId.type`): expiry-only,
+   payment-agnostic -> "Trial Expired" if past end, "Scheduled" if start in future,
+   else "On Trial" (rendered with `outline` badge so a free trial is never confused
+   with a paying "Active" customer).
+3. **production**: "Expired" if past end, "Scheduled" if start in future, "Unpaid"
+   if `paid!==true`, else "Active". Mirrors upstream shop-stats
+   `isActive = paid && startDate<=now && endDate>=now`.
 
-Date guards (both types): a missing/invalid `endDate` or a future `startDate` can
-never be Active (→ Unknown / Scheduled respectively).
+**Why:** users flagged unpaid production rows wrongly showing Active, and separately
+wanted trials visually distinct from paying customers (a trial is "On Trial", not
+"Active"). Trials legitimately never pay, so requiring `paid` for them is wrong.
 
-Subscription `type` comes from `sub.type`, fall back to populated `sub.packageId.type`.
-
-**Why:** users reported paid:false production rows ("TRADE INN" vs paid "abyden")
-showing Active; then trials (which are legitimately unpaid) would wrongly show Unpaid
-if you blindly require `paid`.
-
-**How to apply:** the helper `subStatus(sub)` in `pages/subscriptions.tsx` implements
-this (buckets: Active / Expired / Unpaid / Scheduled / Unknown). Reuse/extend it.
-Caveat: the upstream "Active" filter dropdown is `status`-based, so a status:true+
-paid:false production row can appear under the Active filter yet badge as Unpaid —
-fixing that needs a server-side filter change.
+**How to apply:** keep the start-date guard ABOVE the "On Trial"/"Active" returns
+for BOTH branches (a future start can never be active). Caveat: the status FILTER
+dropdown is upstream `status`-based, so it won't perfectly match these badge labels;
+changing that needs a server-side filter change.

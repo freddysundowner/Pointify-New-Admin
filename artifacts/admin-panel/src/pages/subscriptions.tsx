@@ -56,8 +56,7 @@ const LIMIT = 20;
 type StatusFilter = "all" | "Active" | "Expired" | "Cancelled";
 type TypeFilter = "all" | "trial" | "production";
 
-// Sort by End Date, latest expiry first. Rows with a missing/invalid endDate
-// sort to the bottom (treated as the oldest possible time).
+// Parse endDate to a timestamp; missing/invalid dates return -Infinity.
 function endTime(sub: Subscription): number {
   const raw = (sub as { endDate?: unknown }).endDate;
   if (raw) {
@@ -89,24 +88,30 @@ function subType(sub: Subscription): string {
 
 // Status is type-aware:
 //  - Trial: never expected to be `paid`; validity is purely the expiry window.
-//    Active while endDate is in the future, otherwise Expired.
+//    Shown as its own "On Trial" badge (so it is never confused with a paying
+//    customer), or "Trial Expired" once endDate has passed.
 //  - Production: real activity needs payment. Upstream shop stats compute
 //    isActive = paid:true AND startDate<=now AND endDate>=now. An unpaid
 //    production subscription (status:true but paid:false) is NOT active.
 // Date guards: a missing/invalid endDate or a future startDate can never be Active.
 function subStatus(sub: Subscription): {
-  label: "Active" | "Expired" | "Unpaid" | "Scheduled" | "Unknown";
-  variant: "default" | "secondary" | "destructive";
+  label: "Active" | "Expired" | "Unpaid" | "Scheduled" | "Unknown" | "On Trial" | "Trial Expired";
+  variant: "default" | "secondary" | "destructive" | "outline";
 } {
   const now = Date.now();
   const end = endTime(sub);
   if (end === -Infinity) return { label: "Unknown", variant: "secondary" };
+
+  // Trials are payment-agnostic: expiry alone decides (start-date guard applies).
+  if (subType(sub) === "trial") {
+    if (end < now) return { label: "Trial Expired", variant: "secondary" };
+    if (startTime(sub) > now) return { label: "Scheduled", variant: "secondary" };
+    return { label: "On Trial", variant: "outline" };
+  }
+
+  // Production.
   if (end < now) return { label: "Expired", variant: "secondary" };
   if (startTime(sub) > now) return { label: "Scheduled", variant: "secondary" };
-
-  // Within the validity window.
-  if (subType(sub) === "trial") return { label: "Active", variant: "default" };
-  // Production must be paid.
   if ((sub as { paid?: unknown }).paid !== true) {
     return { label: "Unpaid", variant: "destructive" };
   }
