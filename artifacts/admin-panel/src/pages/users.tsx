@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdmins,
@@ -49,6 +49,8 @@ import {
   Store,
   ChevronLeft,
   ChevronRight,
+  Search,
+  X,
 } from "lucide-react";
 
 const LIMIT = 20;
@@ -57,15 +59,50 @@ type DialogMode = "view" | "edit" | "reset" | "delete" | null;
 
 export default function Users() {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching } = useListAdmins({ page, limit: LIMIT });
+
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  // Debounce the free-text search so we don't query upstream on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Any filter change resets back to the first page.
+  useEffect(() => {
+    setPage(1);
+  }, [search, from, to]);
+
+  const params = {
+    page,
+    limit: LIMIT,
+    ...(search ? { search } : {}),
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
+  };
+
+  const { data, isLoading, isFetching } = useListAdmins(params);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [mode, setMode] = useState<DialogMode>(null);
   const [selected, setSelected] = useState<Admin | null>(null);
 
+  const hasDateFilter = Boolean(from || to);
+  const hasAnyFilter = Boolean(search || from || to);
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setSearch("");
+    setFrom("");
+    setTo("");
+  };
+
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: getListAdminsQueryKey({ page, limit: LIMIT }) });
+    queryClient.invalidateQueries({ queryKey: getListAdminsQueryKey(params) });
 
   const updateAdmin = useUpdateAdmin();
   const deleteAdmin = useDeleteAdmin();
@@ -74,8 +111,8 @@ export default function Users() {
   const totalPages = data?.totalPages ?? 1;
   const count = data?.count ?? 0;
   const currentPage = data?.currentPage ?? page;
-  const from = count === 0 ? 0 : (currentPage - 1) * LIMIT + 1;
-  const to = Math.min(currentPage * LIMIT, count);
+  const rangeStart = count === 0 ? 0 : (currentPage - 1) * LIMIT + 1;
+  const rangeEnd = Math.min(currentPage * LIMIT, count);
 
   const openDialog = (m: DialogMode, user: Admin) => {
     setSelected(user);
@@ -98,6 +135,67 @@ export default function Users() {
           <CardTitle>All Users</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="space-y-1.5">
+                <Label htmlFor="search">Search</Label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="search"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Phone, email or username"
+                    className="pl-8 sm:w-64"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="from">Registered from</Label>
+                <Input
+                  id="from"
+                  type="date"
+                  value={from}
+                  max={to || undefined}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="sm:w-40"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="to">Registered to</Label>
+                <Input
+                  id="to"
+                  type="date"
+                  value={to}
+                  min={from || undefined}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="sm:w-40"
+                />
+              </div>
+              {hasAnyFilter && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="mr-1 h-4 w-4" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {hasDateFilter && !isLoading && (
+            <div className="mb-4 rounded-md border bg-muted/40 px-4 py-3 text-sm">
+              <span className="font-semibold">{(data?.count ?? 0).toLocaleString()}</span>{" "}
+              {(data?.count ?? 0) === 1 ? "user" : "users"} registered{" "}
+              {from && to
+                ? from === to
+                  ? `on ${from}`
+                  : `between ${from} and ${to}`
+                : from
+                  ? `on or after ${from}`
+                  : `on or before ${to}`}
+              .
+            </div>
+          )}
+
           {isLoading ? (
             <div className="p-4">Loading users...</div>
           ) : (
@@ -178,7 +276,7 @@ export default function Users() {
               <div className="flex items-center justify-between pt-4">
                 <p className="text-sm text-muted-foreground">
                   {count > 0
-                    ? `Showing ${from}–${to} of ${count.toLocaleString()} users`
+                    ? `Showing ${rangeStart}–${rangeEnd} of ${count.toLocaleString()} users`
                     : "No users"}
                 </p>
                 <div className="flex items-center gap-2">

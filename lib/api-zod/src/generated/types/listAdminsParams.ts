@@ -9,5 +9,16 @@
 export type ListAdminsParams = {
 page?: number;
 limit?: number;
-name?: string;
+/**
+ * Search by username, email or phone
+ */
+search?: string;
+/**
+ * Registration date from (YYYY-MM-DD, inclusive)
+ */
+from?: string;
+/**
+ * Registration date to (YYYY-MM-DD, inclusive)
+ */
+to?: string;
 };

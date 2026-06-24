@@ -95,7 +95,9 @@ paths:
       parameters:
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
-        - { name: name, in: query, schema: { type: string } }
+        - { name: search, in: query, description: "Search by username, email or phone", schema: { type: string } }
+        - { name: from, in: query, description: "Registration date from (YYYY-MM-DD, inclusive)", schema: { type: string } }
+        - { name: to, in: query, description: "Registration date to (YYYY-MM-DD, inclusive)", schema: { type: string } }
       responses:
         "200":
           description: Admins

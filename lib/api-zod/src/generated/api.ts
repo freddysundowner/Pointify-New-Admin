@@ -105,7 +105,9 @@ export const GetAnalyticsOverviewResponse = zod.object({
 export const ListAdminsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
-  "name": zod.coerce.string().optional()
+  "search": zod.coerce.string().optional().describe('Search by username, email or phone'),
+  "from": zod.coerce.string().optional().describe('Registration date from (YYYY-MM-DD, inclusive)'),
+  "to": zod.coerce.string().optional().describe('Registration date to (YYYY-MM-DD, inclusive)')
 })
 
 export const ListAdminsResponse = zod.object({
