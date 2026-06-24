@@ -1,22 +1,50 @@
 import { Router, type IRouter } from "express";
-import { proxy, proxyList } from "../lib/upstream";
+import { proxy, upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
 
 const router: IRouter = Router();
 
+// Never expose the upstream password hash in list responses.
+function sanitizeAttendant(attendant: unknown): unknown {
+  if (attendant && typeof attendant === "object") {
+    const { password: _password, ...rest } = attendant as Record<string, unknown>;
+    return rest;
+  }
+  return attendant;
+}
+
 router.get("/attendants", async (req, res) => {
-  // Upstream `/attendants/all/:id` paginates and supports a `username` regex
-  // search; the `:id` is an admin filter where the sentinel "admin" means
-  // "no admin filter" (show all). adminId is sent as the path segment, the
-  // rest (page, limit, username, shopId) as query params.
+  // Upstream `/attendants/all/:id` paginates (nesting paging under a
+  // `pagination` object) and supports a `username` regex search; the `:id` is
+  // an admin filter where the sentinel "admin" means "no admin filter" (show
+  // all). adminId is sent as the path segment, the rest (page, limit,
+  // username, shopId) as query params.
   const { adminId, ...rest } = req.query as Record<string, unknown>;
   const id =
     typeof adminId === "string" && adminId.trim().length > 0
       ? adminId.trim()
       : "admin";
-  await proxyList(req, res, {
-    path: `/attendants/all/${encodeURIComponent(id)}`,
-    query: rest,
-  });
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: `/attendants/all/${encodeURIComponent(id)}`,
+      query: rest,
+      authHeader: authHeaderFrom(req),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const norm = normalizeList(result.data);
+    res.status(200).json({
+      data: norm.data.map(sanitizeAttendant),
+      count: norm.count,
+      totalPages: norm.totalPages,
+      currentPage: norm.currentPage,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to list attendants");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
 });
 
 router.post("/attendants", async (req, res) => {
@@ -24,7 +52,19 @@ router.post("/attendants", async (req, res) => {
 });
 
 router.get("/attendants/:id", async (req, res) => {
-  await proxy(req, res, { method: "GET", path: `/attendants/${req.params.id}` });
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: `/attendants/${req.params.id}`,
+      authHeader: authHeaderFrom(req),
+    });
+    res
+      .status(result.status)
+      .json(result.status >= 400 ? result.data : sanitizeAttendant(result.data));
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch attendant");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
 });
 
 router.put("/attendants/:id", async (req, res) => {
