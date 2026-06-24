@@ -11,7 +11,6 @@ import {
 import { Link } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -126,7 +125,7 @@ export default function Users() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Platform Users</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Users</h1>
         <p className="text-muted-foreground">Manage shop owners and platform users.</p>
       </div>
 
@@ -206,7 +205,8 @@ export default function Users() {
                     <TableHead>Email</TableHead>
                     <TableHead>Username</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Date Registered</TableHead>
+                    <TableHead>Last Seen</TableHead>
                     <TableHead>Shops</TableHead>
                     <TableHead className="w-[60px] text-right">Actions</TableHead>
                   </TableRow>
@@ -218,11 +218,8 @@ export default function Users() {
                         <TableCell className="font-medium">{user.email}</TableCell>
                         <TableCell>{user.username}</TableCell>
                         <TableCell>{user.phone}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.status === "Active" ? "default" : "secondary"}>
-                            {user.status || "Unknown"}
-                          </Badge>
-                        </TableCell>
+                        <TableCell>{formatDate(user.createdAt)}</TableCell>
+                        <TableCell>{formatDate(user.last_seen)}</TableCell>
                         <TableCell>{user.shopCount}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -265,7 +262,7 @@ export default function Users() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         No users found.
                       </TableCell>
                     </TableRow>
@@ -414,6 +411,17 @@ export default function Users() {
   );
 }
 
+function formatDate(value?: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid grid-cols-3 gap-2 py-1.5 text-sm">
@@ -443,14 +451,8 @@ function ViewDialog({
           <Row label="Username" value={user.username} />
           <Row label="Email" value={user.email} />
           <Row label="Phone" value={user.phone} />
-          <Row
-            label="Status"
-            value={
-              <Badge variant={user.status === "Active" ? "default" : "secondary"}>
-                {user.status || "Unknown"}
-              </Badge>
-            }
-          />
+          <Row label="Date Registered" value={formatDate(user.createdAt)} />
+          <Row label="Last Seen" value={formatDate(user.last_seen)} />
           <Row label="Shops" value={user.shopCount} />
         </div>
         <DialogFooter>
