@@ -130,7 +130,6 @@ export default function Products() {
                     <TableRow>
                       <TableHead className="w-8" />
                       <TableHead>Name</TableHead>
-                      <TableHead>Shop</TableHead>
                       <TableHead>Selling Price</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Date added</TableHead>
@@ -145,7 +144,7 @@ export default function Products() {
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={7}
+                          colSpan={6}
                           className="h-24 text-center text-muted-foreground"
                         >
                           No products found.
@@ -202,8 +201,12 @@ function ProductRow({ product }: { product: Product }) {
             )}
           </Button>
         </TableCell>
-        <TableCell className="font-medium">{product.name || "—"}</TableCell>
-        <TableCell>{getShopName(product.shopId)}</TableCell>
+        <TableCell>
+          <div className="font-medium">{product.name || "—"}</div>
+          <div className="text-xs text-muted-foreground">
+            {getShopName(product.shopId)}
+          </div>
+        </TableCell>
         <TableCell>{formatKes(product.sellingPrice)}</TableCell>
         <TableCell>
           <Badge variant={stockBadgeVariant(product.quantity)}>
@@ -219,7 +222,7 @@ function ProductRow({ product }: { product: Product }) {
       </TableRow>
       {open && (
         <TableRow className="bg-muted/30 hover:bg-muted/30">
-          <TableCell colSpan={7} className="p-0">
+          <TableCell colSpan={6} className="p-0">
             <div className="px-6 py-4">
               <ProductInventory product={product} />
             </div>
