@@ -266,6 +266,9 @@ paths:
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
         - { name: name, in: query, schema: { type: string } }
+        - { name: subscriptionStatus, in: query, schema: { type: string, enum: [active, expired] } }
+        - { name: subscriptionType, in: query, schema: { type: string, enum: [trial, production] } }
+        - { name: ownerid, in: query, schema: { type: string } }
       responses:
         "200":
           description: Shops
@@ -904,6 +907,7 @@ components:
         tax: { type: ["number", "null"] }
         warehouse: { type: ["boolean", "null"] }
         production: { type: ["boolean", "null"] }
+        productCount: { type: ["number", "null"] }
         createAt: { type: ["string", "null"] }
         adminId: { $ref: "#/components/schemas/GenericObject" }
         shopCategoryId: { $ref: "#/components/schemas/GenericObject" }

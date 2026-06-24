@@ -24,6 +24,8 @@ export interface Shop {
   /** @nullable */
   production?: boolean | null;
   /** @nullable */
+  productCount?: number | null;
+  /** @nullable */
   createAt?: string | null;
   adminId?: GenericObject;
   shopCategoryId?: GenericObject;

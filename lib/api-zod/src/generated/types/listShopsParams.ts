@@ -5,9 +5,14 @@
  * Pointify super-admin panel API (proxies the Pointify POS API)
  * OpenAPI spec version: 0.1.0
  */
+import type { ListShopsSubscriptionStatus } from './listShopsSubscriptionStatus';
+import type { ListShopsSubscriptionType } from './listShopsSubscriptionType';
 
 export type ListShopsParams = {
 page?: number;
 limit?: number;
 name?: string;
+subscriptionStatus?: ListShopsSubscriptionStatus;
+subscriptionType?: ListShopsSubscriptionType;
+ownerid?: string;
 };

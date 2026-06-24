@@ -128,6 +128,8 @@ export interface Shop {
   /** @nullable */
   production?: boolean | null;
   /** @nullable */
+  productCount?: number | null;
+  /** @nullable */
   createAt?: string | null;
   adminId?: GenericObject;
   shopCategoryId?: GenericObject;
@@ -605,7 +607,26 @@ export type ListShopsParams = {
 page?: number;
 limit?: number;
 name?: string;
+subscriptionStatus?: ListShopsSubscriptionStatus;
+subscriptionType?: ListShopsSubscriptionType;
+ownerid?: string;
 };
+
+export type ListShopsSubscriptionStatus = typeof ListShopsSubscriptionStatus[keyof typeof ListShopsSubscriptionStatus];
+
+
+export const ListShopsSubscriptionStatus = {
+  active: 'active',
+  expired: 'expired',
+} as const;
+
+export type ListShopsSubscriptionType = typeof ListShopsSubscriptionType[keyof typeof ListShopsSubscriptionType];
+
+
+export const ListShopsSubscriptionType = {
+  trial: 'trial',
+  production: 'production',
+} as const;
 
 export type ListProductsParams = {
 shopId?: string;

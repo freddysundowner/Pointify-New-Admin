@@ -35,6 +35,8 @@ export * from './listProductsParams';
 export * from './listPurchasesParams';
 export * from './listSalesParams';
 export * from './listShopsParams';
+export * from './listShopsSubscriptionStatus';
+export * from './listShopsSubscriptionType';
 export * from './listSmsLogsParams';
 export * from './listSubscriptionsParams';
 export * from './listSubscriptionsStatus';

@@ -254,6 +254,7 @@ export const ListAdminShopsResponse = zod.object({
   "tax": zod.number().nullish(),
   "warehouse": zod.boolean().nullish(),
   "production": zod.boolean().nullish(),
+  "productCount": zod.number().nullish(),
   "createAt": zod.string().nullish(),
   "adminId": zod.record(zod.string(), zod.unknown()).optional(),
   "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
@@ -322,7 +323,10 @@ export const DeleteShopCategoryResponse = zod.object({
 export const ListShopsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
-  "name": zod.coerce.string().optional()
+  "name": zod.coerce.string().optional(),
+  "subscriptionStatus": zod.enum(['active', 'expired']).optional(),
+  "subscriptionType": zod.enum(['trial', 'production']).optional(),
+  "ownerid": zod.coerce.string().optional()
 })
 
 export const ListShopsResponse = zod.object({
@@ -335,6 +339,7 @@ export const ListShopsResponse = zod.object({
   "tax": zod.number().nullish(),
   "warehouse": zod.boolean().nullish(),
   "production": zod.boolean().nullish(),
+  "productCount": zod.number().nullish(),
   "createAt": zod.string().nullish(),
   "adminId": zod.record(zod.string(), zod.unknown()).optional(),
   "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
@@ -365,6 +370,7 @@ export const CreateShopResponse = zod.object({
   "tax": zod.number().nullish(),
   "warehouse": zod.boolean().nullish(),
   "production": zod.boolean().nullish(),
+  "productCount": zod.number().nullish(),
   "createAt": zod.string().nullish(),
   "adminId": zod.record(zod.string(), zod.unknown()).optional(),
   "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
@@ -391,6 +397,7 @@ export const GetShopResponse = zod.object({
   "tax": zod.number().nullish(),
   "warehouse": zod.boolean().nullish(),
   "production": zod.boolean().nullish(),
+  "productCount": zod.number().nullish(),
   "createAt": zod.string().nullish(),
   "adminId": zod.record(zod.string(), zod.unknown()).optional(),
   "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
@@ -422,6 +429,7 @@ export const UpdateShopResponse = zod.object({
   "tax": zod.number().nullish(),
   "warehouse": zod.boolean().nullish(),
   "production": zod.boolean().nullish(),
+  "productCount": zod.number().nullish(),
   "createAt": zod.string().nullish(),
   "adminId": zod.record(zod.string(), zod.unknown()).optional(),
   "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),

@@ -2,3 +2,4 @@
 - [Upstream analytics endpoints](upstream-analytics-endpoints.md) — use /subscriptions/shop/stats for trial/active counts (NOT /shop/stats/metrics, which lies); upstream source is in attached_assets/.
 - [Upstream admins endpoint](upstream-admins-endpoint.md) — upstream `name` searches username/email/phone; NO date filter (proxy filters createdAt in EAT); strip leaked `password` hashes.
 - [Responsive list-page pattern](responsive-list-pages.md) — admin-panel list pages: desktop `<Table>` (hidden md:block) + mobile card list (md:hidden) from same data; keep both in sync.
+- [Shops list upstream constraints](shops-list-upstream.md) — /shop/ supports name/status/type/ownerid only; owner projected to email+phone (no name); count needs totalShops.
