@@ -1,0 +1,1 @@
+- [List normalization contract](list-normalization-contract.md) — proxy normalizes all lists to {data,count,totalPages,currentPage}; spec wrapper schema + page `.data` access must match.

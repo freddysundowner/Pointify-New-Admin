@@ -1,0 +1,69 @@
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { Shell } from "@/components/layout/Shell";
+import NotFound from "@/pages/not-found";
+
+import Login from "@/pages/login";
+import Dashboard from "@/pages/dashboard";
+import Users from "@/pages/users";
+import Shops from "@/pages/shops";
+import Products from "@/pages/products";
+import Attendants from "@/pages/attendants";
+import Sales from "@/pages/sales";
+import Purchases from "@/pages/purchases";
+import Packages from "@/pages/packages";
+import Subscriptions from "@/pages/subscriptions";
+import SMS from "@/pages/sms";
+import Settings from "@/pages/settings";
+
+const queryClient = new QueryClient();
+
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  return (
+    <Shell>
+      <Component />
+    </Shell>
+  );
+}
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/"><ProtectedRoute component={Dashboard} /></Route>
+      <Route path="/users"><ProtectedRoute component={Users} /></Route>
+      <Route path="/shops"><ProtectedRoute component={Shops} /></Route>
+      <Route path="/products"><ProtectedRoute component={Products} /></Route>
+      <Route path="/attendants"><ProtectedRoute component={Attendants} /></Route>
+      <Route path="/sales"><ProtectedRoute component={Sales} /></Route>
+      <Route path="/purchases"><ProtectedRoute component={Purchases} /></Route>
+      <Route path="/packages"><ProtectedRoute component={Packages} /></Route>
+      <Route path="/subscriptions"><ProtectedRoute component={Subscriptions} /></Route>
+      <Route path="/sms"><ProtectedRoute component={SMS} /></Route>
+      <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <AuthProvider>
+            <Router />
+          </AuthProvider>
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

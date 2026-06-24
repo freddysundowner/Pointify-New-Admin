@@ -1,0 +1,55 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { Admin, setAuthTokenGetter } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
+
+interface AuthState {
+  token: string | null;
+  userdata: Admin | null;
+  isAuthenticated: boolean;
+  login: (token: string, userdata: Admin) => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthState | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [, setLocation] = useLocation();
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("pointify_token"));
+  const [userdata, setUserdata] = useState<Admin | null>(() => {
+    const saved = localStorage.getItem("pointify_userdata");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  useEffect(() => {
+    setAuthTokenGetter(() => localStorage.getItem("pointify_token"));
+  }, []);
+
+  const login = (newToken: string, data: Admin) => {
+    localStorage.setItem("pointify_token", newToken);
+    localStorage.setItem("pointify_userdata", JSON.stringify(data));
+    setToken(newToken);
+    setUserdata(data);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("pointify_token");
+    localStorage.removeItem("pointify_userdata");
+    setToken(null);
+    setUserdata(null);
+    setLocation("/login");
+  };
+
+  return (
+    <AuthContext.Provider value={{ token, userdata, isAuthenticated: !!token, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}

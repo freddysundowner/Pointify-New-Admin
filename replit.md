@@ -1,44 +1,48 @@
-# [Project name]
+# Pointify Admin
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A platform/super-admin panel for Pointify POS. A web admin frontend plus an Express API server that **proxies** to the user's existing Pointify POS API at `https://api.pointifypos.com`. Operators sign in and manage shops, users, products, subscriptions, SMS, and view revenue analytics across the whole platform.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API/proxy server
+- `pnpm --filter @workspace/admin-panel run dev` — run the admin web app
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Optional env: `POS_API_BASE_URL` — upstream POS API base URL (defaults to `https://api.pointifypos.com`). Not a secret.
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite + wouter + TanStack Query + shadcn/ui (artifact `admin-panel`, served at `/`)
+- API: Express 5 stateless proxy (artifact `api-server`, served at `/api`)
+- Validation/codegen: Zod + Orval from `lib/api-spec/openapi.yaml`
+- No database — the server is a stateless proxy; all data lives upstream.
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- API contract (source of truth): `lib/api-spec/openapi.yaml`
+- Generated hooks/schemas: `lib/api-client-react/src/generated/` (import from `@workspace/api-client-react`)
+- Proxy core: `artifacts/api-server/src/lib/upstream.ts` (`proxy`, `proxyList`, `normalizeList`, `upstreamFetch`)
+- Proxy routes: `artifacts/api-server/src/routes/*` (one file per domain, mounted in `routes/index.ts`)
+- Frontend pages: `artifacts/admin-panel/src/pages/*`; auth context: `src/lib/auth.tsx`; layout: `src/components/layout/Shell.tsx`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Stateless proxy, no DB.** The server forwards requests to the upstream POS API and returns responses. The browser stores the auth token in `localStorage` (`pointify_token`) and the generated client attaches `Authorization: Bearer <token>` via `setAuthTokenGetter`.
+- **Auth is upstream**, not Clerk: `POST /api/auth/login` proxies to upstream `POST /auth/login`.
+- **List normalization:** upstream list endpoints return inconsistent shapes, so `proxyList`/`normalizeList` coerce them to `{ data, count, totalPages, currentPage }`.
+- **Analytics is composed server-side** (`/api/analytics/overview`) from upstream `/subscriptions/summary/stats`, `/shop/stats/metrics`, and admin counts.
+- **Path remapping:** clean REST paths in the spec (e.g. `/subscriptions/{id}/extend`) map to upstream's actual paths (e.g. `/subscriptions/extend/{id}`). See each route file.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
+Operator-facing pages: dashboard analytics, users/admins, shops + shop categories, products + categories, attendants, sales, purchases, packages, subscriptions (extend/delete + revenue), SMS (bulk by audience, top-up, logs, communications), and global settings.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The upstream has **no get-admin-by-id endpoint**; `/api/admins/{id}` fetches the admin list and finds the match.
+- Relation fields (adminId, shopId, packageId, etc.) come back as either populated objects or bare id strings — render defensively.
+- Generated client paths are absolute `/api/...` and route through the shared proxy; do not set a base URL for the web app.
 
 ## Pointers
 
