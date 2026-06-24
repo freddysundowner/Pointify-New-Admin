@@ -204,9 +204,7 @@ export default function Subscriptions() {
 
   const { data, isLoading, isFetching } = useListSubscriptions(params);
 
-  const subs = ((data?.data ?? []) as Subscription[])
-    .slice()
-    .sort((a, b) => endTime(b) - endTime(a));
+  const subs = (data?.data ?? []) as Subscription[];
   const totalPages = data?.totalPages ?? 1;
   const count = data?.count ?? 0;
   const currentPage = data?.currentPage ?? page;
