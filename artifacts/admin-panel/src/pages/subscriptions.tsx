@@ -67,6 +67,52 @@ function endTime(sub: Subscription): number {
   return -Infinity;
 }
 
+function startTime(sub: Subscription): number {
+  const raw = (sub as { startDate?: unknown }).startDate;
+  if (raw) {
+    const t = new Date(raw as string).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return -Infinity; // unknown start => treat as already started
+}
+
+function subType(sub: Subscription): string {
+  const t = (sub as { type?: unknown }).type;
+  if (typeof t === "string" && t) return t.toLowerCase();
+  const pkg = (sub as { packageId?: unknown }).packageId;
+  if (pkg && typeof pkg === "object") {
+    const pt = (pkg as { type?: unknown }).type;
+    if (typeof pt === "string") return pt.toLowerCase();
+  }
+  return "";
+}
+
+// Status is type-aware:
+//  - Trial: never expected to be `paid`; validity is purely the expiry window.
+//    Active while endDate is in the future, otherwise Expired.
+//  - Production: real activity needs payment. Upstream shop stats compute
+//    isActive = paid:true AND startDate<=now AND endDate>=now. An unpaid
+//    production subscription (status:true but paid:false) is NOT active.
+// Date guards: a missing/invalid endDate or a future startDate can never be Active.
+function subStatus(sub: Subscription): {
+  label: "Active" | "Expired" | "Unpaid" | "Scheduled" | "Unknown";
+  variant: "default" | "secondary" | "destructive";
+} {
+  const now = Date.now();
+  const end = endTime(sub);
+  if (end === -Infinity) return { label: "Unknown", variant: "secondary" };
+  if (end < now) return { label: "Expired", variant: "secondary" };
+  if (startTime(sub) > now) return { label: "Scheduled", variant: "secondary" };
+
+  // Within the validity window.
+  if (subType(sub) === "trial") return { label: "Active", variant: "default" };
+  // Production must be paid.
+  if ((sub as { paid?: unknown }).paid !== true) {
+    return { label: "Unpaid", variant: "destructive" };
+  }
+  return { label: "Active", variant: "default" };
+}
+
 function getShopName(shop: unknown): string {
   if (!shop) return "N/A";
   if (typeof shop === "string") return shop;
@@ -329,9 +375,10 @@ export default function Subscriptions() {
                           <TableCell className="capitalize">{sub.type || "—"}</TableCell>
                           <TableCell>{formatKes(sub.amount)}</TableCell>
                           <TableCell>
-                            <Badge variant={sub.status ? "default" : "destructive"}>
-                              {sub.status ? "Active" : "Inactive"}
-                            </Badge>
+                            {(() => {
+                              const s = subStatus(sub);
+                              return <Badge variant={s.variant}>{s.label}</Badge>;
+                            })()}
                           </TableCell>
                           <TableCell>{formatDate(sub.endDate)}</TableCell>
                           <TableCell className="text-right">
@@ -380,9 +427,10 @@ export default function Subscriptions() {
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
-                          <Badge variant={sub.status ? "default" : "destructive"}>
-                            {sub.status ? "Active" : "Inactive"}
-                          </Badge>
+                          {(() => {
+                            const s = subStatus(sub);
+                            return <Badge variant={s.variant}>{s.label}</Badge>;
+                          })()}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
