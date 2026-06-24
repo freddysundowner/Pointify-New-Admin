@@ -1,14 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useListSales } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 import { formatDateTime, formatKes } from "@/lib/utils";
 import { ReceiptDialog } from "@/components/ReceiptDialog";
 
 const PAGE_SIZE = 20;
+
+const ANY = "all";
+
+const STATUS_OPTIONS = [
+  { value: "cashed", label: "Cashed" },
+  { value: "hold", label: "Hold" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+const PAYMENT_OPTIONS = [
+  { value: "cash", label: "Cash" },
+  { value: "mpesa", label: "M-Pesa" },
+  { value: "bank", label: "Bank" },
+  { value: "credit", label: "Credit" },
+  { value: "wallet", label: "Wallet" },
+];
 
 function getShopName(shop: unknown): string {
   if (!shop) return "N/A";
@@ -27,11 +51,60 @@ export default function Sales() {
   const { shopId, shopName, from } = useShopFilter();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
-  const { data, isLoading, isFetching } = useListSales({ page, limit: PAGE_SIZE, shopId });
+
+  const [receiptSearch, setReceiptSearch] = useState("");
+  const [debouncedReceipt, setDebouncedReceipt] = useState("");
+  const [status, setStatus] = useState(ANY);
+  const [paymentType, setPaymentType] = useState(ANY);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedReceipt(receiptSearch.trim()), 350);
+    return () => clearTimeout(t);
+  }, [receiptSearch]);
+
+  // Reset to first page whenever a filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedReceipt, status, paymentType, start, end, shopId]);
+
+  // Date range is only applied when both ends are set (upstream requires both).
+  const dateRangeReady = Boolean(start && end);
+
+  const { data, isLoading, isFetching } = useListSales({
+    page,
+    limit: PAGE_SIZE,
+    shopId,
+    receiptNo: debouncedReceipt || undefined,
+    status: status === ANY ? undefined : status,
+    paymentType: paymentType === ANY ? undefined : paymentType,
+    // Upstream defaults paymentTag to "cash" (hiding non-cash sales) when no
+    // payment filter is sent. An explicit empty paymentTag disables that branch
+    // so "All payments" truly returns every payment type.
+    paymentTag: "",
+    start: dateRangeReady ? start : undefined,
+    end: dateRangeReady ? end : undefined,
+  });
 
   const sales = data?.data ?? [];
   const totalPages = Math.max(1, data?.totalPages ?? 1);
   const currentPage = data?.currentPage ?? page;
+
+  const hasFilters =
+    Boolean(receiptSearch) ||
+    status !== ANY ||
+    paymentType !== ANY ||
+    Boolean(start) ||
+    Boolean(end);
+
+  const clearFilters = () => {
+    setReceiptSearch("");
+    setStatus(ANY);
+    setPaymentType(ANY);
+    setStart("");
+    setEnd("");
+  };
 
   return (
     <div className="space-y-6">
@@ -46,6 +119,64 @@ export default function Sales() {
         </CardHeader>
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
+
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+            <div className="lg:w-56">
+              <label className="mb-1 block text-xs text-muted-foreground">Receipt No</label>
+              <Input
+                type="search"
+                value={receiptSearch}
+                onChange={(e) => setReceiptSearch(e.target.value)}
+                placeholder="Search receipt…"
+              />
+            </div>
+            <div className="lg:w-40">
+              <label className="mb-1 block text-xs text-muted-foreground">Status</label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>All statuses</SelectItem>
+                  {STATUS_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="lg:w-40">
+              <label className="mb-1 block text-xs text-muted-foreground">Payment type</label>
+              <Select value={paymentType} onValueChange={setPaymentType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>All payments</SelectItem>
+                  {PAYMENT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="lg:w-40">
+              <label className="mb-1 block text-xs text-muted-foreground">From</label>
+              <Input type="date" value={start} max={end || undefined} onChange={(e) => setStart(e.target.value)} />
+            </div>
+            <div className="lg:w-40">
+              <label className="mb-1 block text-xs text-muted-foreground">To</label>
+              <Input type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} />
+            </div>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
+          </div>
+
           {isLoading ? (
             <div className="p-4">Loading sales...</div>
           ) : (

@@ -845,8 +845,14 @@ export const ListSalesQueryParams = zod.object({
   "shopId": zod.coerce.string().optional(),
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
-  "startDate": zod.coerce.string().optional(),
-  "endDate": zod.coerce.string().optional()
+  "receiptNo": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "paymentType": zod.coerce.string().optional(),
+  "paymentTag": zod.coerce.string().optional(),
+  "attendantId": zod.coerce.string().optional(),
+  "customerId": zod.coerce.string().optional(),
+  "start": zod.coerce.string().optional(),
+  "end": zod.coerce.string().optional()
 })
 
 export const ListSalesResponse = zod.object({
@@ -892,7 +898,12 @@ export const ListPurchasesQueryParams = zod.object({
   "shopId": zod.coerce.string().optional(),
   "supplierId": zod.coerce.string().optional(),
   "page": zod.coerce.number().optional(),
-  "limit": zod.coerce.number().optional()
+  "limit": zod.coerce.number().optional(),
+  "purchaseNo": zod.coerce.string().optional(),
+  "paymentType": zod.coerce.string().optional(),
+  "attendantId": zod.coerce.string().optional(),
+  "start": zod.coerce.string().optional(),
+  "end": zod.coerce.string().optional()
 })
 
 export const ListPurchasesResponse = zod.object({

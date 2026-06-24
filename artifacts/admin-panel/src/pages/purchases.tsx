@@ -1,13 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useListPurchases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 import { formatDateTime, formatKes } from "@/lib/utils";
 import { ReceiptDialog } from "@/components/ReceiptDialog";
 
 const PAGE_SIZE = 20;
+
+const ANY = "all";
+
+// Upstream treats paymentType="credit" as "has outstanding balance", and any
+// other value as "fully settled", so we expose those two meaningful choices.
+const PAYMENT_OPTIONS = [
+  { value: "credit", label: "Credit (unpaid)" },
+  { value: "cash", label: "Settled" },
+];
 
 function getShopName(shop: unknown): string {
   if (!shop) return "N/A";
@@ -26,11 +43,49 @@ export default function Purchases() {
   const { shopId, shopName, from } = useShopFilter();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
-  const { data, isLoading, isFetching } = useListPurchases({ page, limit: PAGE_SIZE, shopId });
+
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [debouncedInvoice, setDebouncedInvoice] = useState("");
+  const [paymentType, setPaymentType] = useState(ANY);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedInvoice(invoiceSearch.trim()), 350);
+    return () => clearTimeout(t);
+  }, [invoiceSearch]);
+
+  // Reset to first page whenever a filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedInvoice, paymentType, start, end, shopId]);
+
+  // Date range is only applied when both ends are set (upstream requires both).
+  const dateRangeReady = Boolean(start && end);
+
+  const { data, isLoading, isFetching } = useListPurchases({
+    page,
+    limit: PAGE_SIZE,
+    shopId,
+    purchaseNo: debouncedInvoice || undefined,
+    paymentType: paymentType === ANY ? undefined : paymentType,
+    start: dateRangeReady ? start : undefined,
+    end: dateRangeReady ? end : undefined,
+  });
 
   const purchases = data?.data ?? [];
   const totalPages = Math.max(1, data?.totalPages ?? 1);
   const currentPage = data?.currentPage ?? page;
+
+  const hasFilters =
+    Boolean(invoiceSearch) || paymentType !== ANY || Boolean(start) || Boolean(end);
+
+  const clearFilters = () => {
+    setInvoiceSearch("");
+    setPaymentType(ANY);
+    setStart("");
+    setEnd("");
+  };
 
   return (
     <div className="space-y-6">
@@ -45,6 +100,48 @@ export default function Purchases() {
         </CardHeader>
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
+
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+            <div className="lg:w-56">
+              <label className="mb-1 block text-xs text-muted-foreground">Invoice No</label>
+              <Input
+                type="search"
+                value={invoiceSearch}
+                onChange={(e) => setInvoiceSearch(e.target.value)}
+                placeholder="Search invoice…"
+              />
+            </div>
+            <div className="lg:w-44">
+              <label className="mb-1 block text-xs text-muted-foreground">Payment status</label>
+              <Select value={paymentType} onValueChange={setPaymentType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>All</SelectItem>
+                  {PAYMENT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="lg:w-40">
+              <label className="mb-1 block text-xs text-muted-foreground">From</label>
+              <Input type="date" value={start} max={end || undefined} onChange={(e) => setStart(e.target.value)} />
+            </div>
+            <div className="lg:w-40">
+              <label className="mb-1 block text-xs text-muted-foreground">To</label>
+              <Input type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} />
+            </div>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
+          </div>
+
           {isLoading ? (
             <div className="p-4">Loading purchases...</div>
           ) : (

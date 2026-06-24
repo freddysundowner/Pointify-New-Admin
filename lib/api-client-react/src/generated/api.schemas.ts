@@ -828,8 +828,14 @@ export type ListSalesParams = {
 shopId?: string;
 page?: number;
 limit?: number;
-startDate?: string;
-endDate?: string;
+receiptNo?: string;
+status?: string;
+paymentType?: string;
+paymentTag?: string;
+attendantId?: string;
+customerId?: string;
+start?: string;
+end?: string;
 };
 
 export type ListPurchasesParams = {
@@ -837,6 +843,11 @@ shopId?: string;
 supplierId?: string;
 page?: number;
 limit?: number;
+purchaseNo?: string;
+paymentType?: string;
+attendantId?: string;
+start?: string;
+end?: string;
 };
 
 export type ListSubscriptionsParams = {

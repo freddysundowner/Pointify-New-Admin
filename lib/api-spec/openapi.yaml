@@ -593,8 +593,14 @@ paths:
         - { name: shopId, in: query, schema: { type: string } }
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
-        - { name: startDate, in: query, schema: { type: string } }
-        - { name: endDate, in: query, schema: { type: string } }
+        - { name: receiptNo, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: paymentType, in: query, schema: { type: string } }
+        - { name: paymentTag, in: query, schema: { type: string } }
+        - { name: attendantId, in: query, schema: { type: string } }
+        - { name: customerId, in: query, schema: { type: string } }
+        - { name: start, in: query, schema: { type: string } }
+        - { name: end, in: query, schema: { type: string } }
       responses:
         "200":
           description: Sales
@@ -624,6 +630,11 @@ paths:
         - { name: supplierId, in: query, schema: { type: string } }
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
+        - { name: purchaseNo, in: query, schema: { type: string } }
+        - { name: paymentType, in: query, schema: { type: string } }
+        - { name: attendantId, in: query, schema: { type: string } }
+        - { name: start, in: query, schema: { type: string } }
+        - { name: end, in: query, schema: { type: string } }
       responses:
         "200":
           description: Purchases
