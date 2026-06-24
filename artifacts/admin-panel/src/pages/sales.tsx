@@ -17,10 +17,9 @@ function getShopName(shop: unknown): string {
 }
 
 function getAttendantName(attendant: unknown): string {
-  if (!attendant) return "—";
-  if (typeof attendant === "string") return attendant;
-  const a = attendant as { username?: string; _id?: string };
-  return a.username || a._id || "—";
+  if (!attendant || typeof attendant === "string") return "—";
+  const a = attendant as { username?: string };
+  return a.username || "—";
 }
 
 export default function Sales() {
