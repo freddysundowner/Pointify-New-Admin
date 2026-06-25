@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Loader2, User, Save, Shield } from "lucide-react";
+import { Loader2, User, Save, Shield, LogOut } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const profileSchema = z.object({
@@ -31,7 +31,7 @@ const passwordSchema = z.object({
 
 export default function Profile() {
   const { toast } = useToast();
-  const { updateUserdata } = useAuth();
+  const { updateUserdata, logout } = useAuth();
   const queryClient = useQueryClient();
   
   const { data: profile, isLoading } = useGetPortalProfile({
@@ -293,6 +293,19 @@ export default function Profile() {
           </Form>
         </Card>
       </div>
+
+      <Card className="md:hidden">
+        <CardContent className="pt-6">
+          <Button
+            variant="outline"
+            className="w-full justify-center gap-2 text-destructive hover:text-destructive"
+            onClick={logout}
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

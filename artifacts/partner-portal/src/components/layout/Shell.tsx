@@ -1,18 +1,16 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Store, 
-  Users, 
-  ArrowRightLeft, 
-  Banknote, 
+import {
+  LayoutDashboard,
+  Store,
+  Users,
+  ArrowRightLeft,
+  Banknote,
   UserCircle,
   LogOut,
-  Menu
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_LINKS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -23,32 +21,18 @@ const NAV_LINKS = [
   { href: "/profile", label: "My Profile", icon: UserCircle },
 ];
 
+// Primary destinations shown in the mobile bottom tab bar (short labels).
+const BOTTOM_NAV = [
+  { href: "/", label: "Home", icon: LayoutDashboard },
+  { href: "/shops", label: "Shops", icon: Store },
+  { href: "/users", label: "Users", icon: Users },
+  { href: "/transactions", label: "Activity", icon: ArrowRightLeft },
+  { href: "/withdraw", label: "Withdraw", icon: Banknote },
+];
+
 export function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { logout, userdata } = useAuth();
-
-  const NavItems = () => (
-    <>
-      {NAV_LINKS.map((link) => {
-        const Icon = link.icon;
-        const isActive = location === link.href;
-        return (
-          <Link key={link.href} href={link.href}>
-            <div
-              className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer ${
-                isActive
-                  ? "bg-primary text-primary-foreground font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span>{link.label}</span>
-            </div>
-          </Link>
-        );
-      })}
-    </>
-  );
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -61,7 +45,24 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="flex-1 overflow-auto py-4 px-3 space-y-1">
-          <NavItems />
+          {NAV_LINKS.map((link) => {
+            const Icon = link.icon;
+            const isActive = location === link.href;
+            return (
+              <Link key={link.href} href={link.href}>
+                <div
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer ${
+                    isActive
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{link.label}</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
         <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 mb-4 px-2">
@@ -80,41 +81,74 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile Header & Content */}
+      {/* Mobile App Shell & Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex items-center justify-between md:justify-end px-4 border-b bg-card">
-          <div className="md:hidden flex items-center gap-2 font-bold text-lg text-primary">
-            <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs">P</div>
+        {/* Mobile top app bar */}
+        <header
+          className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/80"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
+          <div className="flex items-center gap-2 font-bold text-lg text-primary">
+            <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm">P</div>
             Pointify
           </div>
-          
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 flex flex-col">
-              <div className="h-14 flex items-center px-6 border-b">
-                <span className="font-bold text-lg">Menu</span>
-              </div>
-              <div className="flex-1 overflow-auto py-4 px-3 space-y-1">
-                <NavItems />
-              </div>
-              <div className="p-4 border-t">
-                <Button variant="outline" className="w-full justify-start gap-2" onClick={logout}>
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Link
+            href="/profile"
+            aria-label="My Profile"
+            aria-current={location === "/profile" ? "page" : undefined}
+          >
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-full font-bold uppercase transition-colors ${
+                location === "/profile"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
+              {userdata?.email?.[0] || "U"}
+            </div>
+          </Link>
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-8">
+
+        <main className="flex-1 overflow-auto p-4 pb-24 md:p-8 md:pb-8">
           <div className="mx-auto max-w-6xl">
             {children}
           </div>
         </main>
+
+        {/* Mobile bottom tab bar */}
+        <nav
+          className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="grid grid-cols-5">
+            {BOTTOM_NAV.map((link) => {
+              const Icon = link.icon;
+              const isActive = location === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <div
+                    className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${
+                        isActive ? "bg-primary/10" : "bg-transparent"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    {link.label}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       </div>
     </div>
   );
