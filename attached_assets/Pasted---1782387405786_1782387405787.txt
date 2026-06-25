@@ -1,0 +1,15 @@
+┌────┬────────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                   │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ app                    │ default     │ 0.0.0   │ fork    │ 592484   │ 40h    │ 2    │ online    │ 0%       │ 195.1mb  │ root     │ disabled │
+│ 8  │ app                    │ default     │ 1.0.0   │ fork    │ 592494   │ 40h    │ 2    │ online    │ 0%       │ 133.0mb  │ root     │ disabled │
+│ 9  │ app                    │ default     │ 1.0.0   │ fork    │ 592495   │ 40h    │ 1    │ online    │ 0%       │ 134.3mb  │ root     │ disabled │
+│ 1  │ pointify-web           │ default     │ N/A     │ fork    │ 177655   │ 7D     │ 1    │ online    │ 0%       │ 94.5mb   │ root     │ disabled │
+│ 10 │ pointify-website       │ default     │ N/A     │ fork    │ 992      │ 8D     │ 0    │ online    │ 0%       │ 79.8mb   │ root     │ disabled │
+│ 7  │ reggycodas             │ default     │ 1.0.0   │ fork    │ 958      │ 8D     │ 0    │ online    │ 0%       │ 85.1mb   │ root     │ disabled │
+│ 5  │ sunpay                 │ default     │ 1.0.0   │ fork    │ 196309   │ 6D     │ 2    │ online    │ 0%       │ 97.6mb   │ root     │ disabled │
+│ 6  │ tokshop-admin          │ default     │ 1.0.0   │ cluster │ 545678   │ 2D     │ 4    │ online    │ 0%       │ 130.0mb  │ root     │ disabled │
+│ 4  │ tokshop-doc-web        │ default     │ 1.0.0   │ fork    │ 900      │ 8D     │ 0    │ online    │ 0%       │ 76.9mb   │ root     │ disabled │
+│ 2  │ tokshop-marketplace    │ default     │ 1.0.0   │ cluster │ 545677   │ 2D     │ 4    │ online    │ 0%       │ 122.3mb  │ root     │ disabled │
+└────┴────────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2][WARN] Current process list is not synchronized with saved list. App pointify-admin differs. Type 'pm2 save' to synchronize.
