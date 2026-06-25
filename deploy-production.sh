@@ -312,6 +312,18 @@ server {
 NGINX
     ok "wrote $conf"
   fi
+
+  # Disable a legacy per-domain server block (old convention: a sites-enabled
+  # file named exactly "$domain" WITHOUT the .conf suffix). Leaving it enabled
+  # makes nginx ignore one of the duplicate server_names and, worse, can cause
+  # certbot to wire SSL into that old (dead-upstream) vhost instead of ours —
+  # which surfaces as a 502 on HTTPS. The sites-available original is kept.
+  local legacy_link="/etc/nginx/sites-enabled/$domain"
+  if [ "$legacy_link" != "$link" ] && { [ -L "$legacy_link" ] || [ -f "$legacy_link" ]; }; then
+    warn "Disabling legacy nginx site '$legacy_link' (conflicts with $domain.conf)"
+    rm -f "$legacy_link"
+  fi
+
   ln -sf "$conf" "$link"
 }
 write_nginx "$ADMIN_DOMAIN"
