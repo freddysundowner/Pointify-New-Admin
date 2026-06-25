@@ -79,13 +79,13 @@ export default function Withdraw() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Withdraw Funds</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Withdraw Funds</h1>
         <p className="text-muted-foreground mt-1">Transfer your earnings directly to your M-Pesa account.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-primary/20 shadow-md">
           <CardHeader className="bg-primary/5 pb-4">
             <CardTitle className="flex items-center gap-2 text-primary">

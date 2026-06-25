@@ -17,9 +17,9 @@ export default function Transactions() {
   const transactions = result?.data || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
         <p className="text-muted-foreground mt-1">History of your earnings and withdrawals.</p>
       </div>
 

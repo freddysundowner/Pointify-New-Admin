@@ -127,13 +127,13 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+        <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
         <p className="text-muted-foreground mt-1">Manage your account details and security settings.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

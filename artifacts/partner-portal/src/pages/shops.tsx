@@ -15,9 +15,9 @@ export default function Shops() {
   const shops = result?.data || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Referred Shops</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Referred Shops</h1>
         <p className="text-muted-foreground mt-1">Shops created by the users you referred to Pointify.</p>
       </div>
 

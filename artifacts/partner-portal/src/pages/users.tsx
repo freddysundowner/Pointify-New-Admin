@@ -16,9 +16,9 @@ export default function ReferredUsers() {
   const users = result?.data || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Referred Users</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Referred Users</h1>
         <p className="text-muted-foreground mt-1">Shop owners who registered using your referral code.</p>
       </div>
 
