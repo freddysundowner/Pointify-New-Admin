@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListPartners,
@@ -52,6 +53,7 @@ import {
   Trash2,
   Loader2,
   Handshake,
+  Eye,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -346,6 +348,16 @@ export default function Partners() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               <Button
+                                asChild
+                                variant="ghost"
+                                size="icon"
+                                aria-label="View partner"
+                              >
+                                <Link href={`/partners/${p._id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => openEdit(p)}
@@ -391,6 +403,16 @@ export default function Partners() {
                           ) : null}
                         </div>
                         <div className="flex shrink-0 gap-1">
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon"
+                            aria-label="View partner"
+                          >
+                            <Link href={`/partners/${p._id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

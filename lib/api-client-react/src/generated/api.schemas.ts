@@ -78,6 +78,39 @@ export interface PartnerRegisterResult {
   [key: string]: unknown;
  }
 
+export interface Transaction {
+  _id?: string;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  amount?: number | null;
+  /** @nullable */
+  affliateAmount?: number | null;
+  /** @nullable */
+  balance?: number | null;
+  /** @nullable */
+  transId?: string | null;
+  /** @nullable */
+  mpesaCode?: string | null;
+  /**
+     * withdraw or subscription
+     * @nullable
+     */
+  type?: string | null;
+  /** @nullable */
+  status?: boolean | null;
+  user?: GenericObject;
+  affliate?: GenericObject;
+  [key: string]: unknown;
+ }
+
+export interface TransactionListResult {
+  data?: Transaction[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
 export interface ErrorResponse {
   error?: string;
 }
@@ -970,6 +1003,10 @@ limit?: number;
  */
 search?: string;
 /**
+ * Filter to users referred by this partner
+ */
+affliate?: string;
+/**
  * Registration date from (YYYY-MM-DD, inclusive)
  */
 from?: string;
@@ -1007,6 +1044,15 @@ page?: number;
 limit?: number;
 };
 
+export type ListPartnerTransactionsParams = {
+/**
+ * Partner (affiliate) id
+ */
+id: string;
+page?: number;
+limit?: number;
+};
+
 export type ListShopsParams = {
 page?: number;
 limit?: number;
@@ -1014,6 +1060,10 @@ name?: string;
 subscriptionStatus?: ListShopsSubscriptionStatus;
 subscriptionType?: ListShopsSubscriptionType;
 ownerid?: string;
+/**
+ * Filter to shops owned by users referred by this partner
+ */
+affliate?: string;
 };
 
 export type ListShopsSubscriptionStatus = typeof ListShopsSubscriptionStatus[keyof typeof ListShopsSubscriptionStatus];

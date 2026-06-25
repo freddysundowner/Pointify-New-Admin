@@ -15,4 +15,8 @@ name?: string;
 subscriptionStatus?: ListShopsSubscriptionStatus;
 subscriptionType?: ListShopsSubscriptionType;
 ownerid?: string;
+/**
+ * Filter to shops owned by users referred by this partner
+ */
+affliate?: string;
 };

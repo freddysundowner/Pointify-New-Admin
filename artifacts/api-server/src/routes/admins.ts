@@ -39,6 +39,7 @@ function sanitizeAdmin(admin: unknown): unknown {
 router.get("/admins", async (req, res) => {
   const q = req.query as Record<string, unknown>;
   const search = (q["search"] ?? q["name"]) as string | undefined;
+  const affliate = (q["affliate"] as string | undefined)?.trim() || undefined;
   const from = (q["from"] as string | undefined)?.trim() || undefined;
   const to = (q["to"] as string | undefined)?.trim() || undefined;
   const page = Math.max(1, parseInt(String(q["page"] ?? "1"), 10) || 1);
@@ -63,7 +64,7 @@ router.get("/admins", async (req, res) => {
       const result = await upstreamFetch({
         method: "GET",
         path: "/admin/",
-        query: { name: search, page, limit },
+        query: { name: search, affliate, page, limit },
         authHeader: authHeaderFrom(req),
       });
       if (result.status >= 400) {
@@ -90,7 +91,7 @@ router.get("/admins", async (req, res) => {
     const result = await upstreamFetch({
       method: "GET",
       path: "/admin/",
-      query: { name: search, page: 1, limit: 100000 },
+      query: { name: search, affliate, page: 1, limit: 100000 },
       authHeader: authHeaderFrom(req),
     });
     if (result.status >= 400) {

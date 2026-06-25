@@ -14,6 +14,10 @@ limit?: number;
  */
 search?: string;
 /**
+ * Filter to users referred by this partner
+ */
+affliate?: string;
+/**
  * Registration date from (YYYY-MM-DD, inclusive)
  */
 from?: string;

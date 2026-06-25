@@ -44,6 +44,7 @@ import type {
   ListAdminsParams,
   ListAttendantsParams,
   ListCommunicationsParams,
+  ListPartnerTransactionsParams,
   ListPartnersParams,
   ListProductPurchasesHistoryParams,
   ListProductSalesHistoryParams,
@@ -100,6 +101,7 @@ import type {
   SubscriptionSummary,
   SubscriptionVerifyInput,
   SubscriptionVerifyResult,
+  TransactionListResult,
   WithdrawInput,
   WithdrawResult
 } from './api.schemas';
@@ -1625,6 +1627,90 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDeletePartnerMutationOptions(options));
     }
+
+export const getListPartnerTransactionsUrl = (params: ListPartnerTransactionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/partners/transactions?${stringifiedParams}` : `/api/partners/transactions`
+}
+
+/**
+ * @summary Subscription earnings and withdrawals for a partner
+ */
+export const listPartnerTransactions = async (params: ListPartnerTransactionsParams, options?: RequestInit): Promise<TransactionListResult> => {
+
+  return customFetch<TransactionListResult>(getListPartnerTransactionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPartnerTransactionsQueryKey = (params?: ListPartnerTransactionsParams,) => {
+    return [
+    `/api/partners/transactions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPartnerTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof listPartnerTransactions>>, TError = ErrorType<unknown>>(params: ListPartnerTransactionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPartnerTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPartnerTransactionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPartnerTransactions>>> = ({ signal }) => listPartnerTransactions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPartnerTransactions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPartnerTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPartnerTransactions>>>
+export type ListPartnerTransactionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Subscription earnings and withdrawals for a partner
+ */
+
+export function useListPartnerTransactions<TData = Awaited<ReturnType<typeof listPartnerTransactions>>, TError = ErrorType<unknown>>(
+ params: ListPartnerTransactionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPartnerTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPartnerTransactionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListShopsUrl = (params?: ListShopsParams,) => {
   const normalizedParams = new URLSearchParams();

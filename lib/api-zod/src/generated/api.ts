@@ -237,6 +237,7 @@ export const ListAdminsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
   "search": zod.coerce.string().optional().describe('Search by username, email or phone'),
+  "affliate": zod.coerce.string().optional().describe('Filter to users referred by this partner'),
   "from": zod.coerce.string().optional().describe('Registration date from (YYYY-MM-DD, inclusive)'),
   "to": zod.coerce.string().optional().describe('Registration date to (YYYY-MM-DD, inclusive)')
 })
@@ -575,13 +576,43 @@ export const DeletePartnerResponse = zod.object({
 })
 
 
+/**
+ * @summary Subscription earnings and withdrawals for a partner
+ */
+export const ListPartnerTransactionsQueryParams = zod.object({
+  "id": zod.coerce.string().describe('Partner (affiliate) id'),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListPartnerTransactionsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string().optional(),
+  "createdAt": zod.string().nullish(),
+  "amount": zod.number().nullish(),
+  "affliateAmount": zod.number().nullish(),
+  "balance": zod.number().nullish(),
+  "transId": zod.string().nullish(),
+  "mpesaCode": zod.string().nullish(),
+  "type": zod.string().nullish().describe('withdraw or subscription'),
+  "status": zod.boolean().nullish(),
+  "user": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.record(zod.string(), zod.unknown()).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
 export const ListShopsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
   "name": zod.coerce.string().optional(),
   "subscriptionStatus": zod.enum(['active', 'expired']).optional(),
   "subscriptionType": zod.enum(['trial', 'production']).optional(),
-  "ownerid": zod.coerce.string().optional()
+  "ownerid": zod.coerce.string().optional(),
+  "affliate": zod.coerce.string().optional().describe('Filter to shops owned by users referred by this partner')
 })
 
 export const ListShopsResponse = zod.object({

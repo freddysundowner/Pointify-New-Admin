@@ -125,6 +125,7 @@ paths:
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
         - { name: search, in: query, description: "Search by username, email or phone", schema: { type: string } }
+        - { name: affliate, in: query, description: "Filter to users referred by this partner", schema: { type: string } }
         - { name: from, in: query, description: "Registration date from (YYYY-MM-DD, inclusive)", schema: { type: string } }
         - { name: to, in: query, description: "Registration date to (YYYY-MM-DD, inclusive)", schema: { type: string } }
       responses:
@@ -365,6 +366,22 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Partner" }
 
+  /partners/transactions:
+    get:
+      operationId: listPartnerTransactions
+      tags: [partners]
+      summary: Subscription earnings and withdrawals for a partner
+      parameters:
+        - { name: id, in: query, required: true, description: "Partner (affiliate) id", schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Partner transactions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionListResult" }
+
   /shops:
     get:
       operationId: listShops
@@ -376,6 +393,7 @@ paths:
         - { name: subscriptionStatus, in: query, schema: { type: string, enum: [active, expired] } }
         - { name: subscriptionType, in: query, schema: { type: string, enum: [trial, production] } }
         - { name: ownerid, in: query, schema: { type: string } }
+        - { name: affliate, in: query, description: "Filter to shops owned by users referred by this partner", schema: { type: string } }
       responses:
         "200":
           description: Shops
@@ -1144,6 +1162,32 @@ components:
         error: { type: string }
         token: { type: string }
         userdata: { $ref: "#/components/schemas/GenericObject" }
+
+    Transaction:
+      type: object
+      additionalProperties: true
+      properties:
+        _id: { type: string }
+        createdAt: { type: ["string", "null"] }
+        amount: { type: ["number", "null"] }
+        affliateAmount: { type: ["number", "null"] }
+        balance: { type: ["number", "null"] }
+        transId: { type: ["string", "null"] }
+        mpesaCode: { type: ["string", "null"] }
+        type: { type: ["string", "null"], description: "withdraw or subscription" }
+        status: { type: ["boolean", "null"] }
+        user: { $ref: "#/components/schemas/GenericObject" }
+        affliate: { $ref: "#/components/schemas/GenericObject" }
+
+    TransactionListResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Transaction" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
 
     ErrorResponse:
       type: object

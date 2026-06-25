@@ -40,6 +40,27 @@ the upstream shop list resolves `affliate` -> `Admin.find({affliate}).distinct(_
 `shopCount`; it drops the misleading embedded `shops`/`admins` arrays from the
 list payload (which also removes the nested-admin secret-leak surface).
 
+## Partner-scoped data (shops / users / transactions)
+- **Referred shops** = `GET /shop/?affliate=<affId>` (`totalShops`); **referred users** =
+  `GET /admin/?affliate=<affId>` — both upstream list endpoints honor the `affliate`
+  query param and resolve it to admins referred by that affiliate. The proxy just
+  passes `affliate` through on `/shops` and `/admins`.
+- **Transactions** = `GET /payments/transactions?id=<affId>` (id filters by affiliate),
+  returns `{success,total,page,limit,totalPages,data}`; `type` is `subscription`
+  (commission, `affliateAmount`) or `withdraw`. Populated `affliate` carries secrets —
+  strip them; also strip `user` defensively (upstream only projects username/phone).
+- Spec path uses `/partners/transactions?id=` (id as QUERY param, NOT a path param)
+  to dodge the orval `<Op>Params` name collision; proxy route must be registered
+  BEFORE `/partners/:id` so the literal segment isn't captured by the dynamic id.
+
+## Known authz gap (pre-existing, app-wide)
+`/admins`, `/shops`, `/products`, `/sales`, etc. have NO proxy bearer gate — only
+`/partners*`, `/statistics*`, `/analytics*`, `/sms/bulk` do. The frontend is
+auth-gated and always sends a token, but the API itself is open (upstream is fully
+open too). Filtering these by `affliate` exposes nothing new. A real fix is an
+app-wide auth middleware (skip `/auth/login`,`/healthz`), which is a separate
+decision — don't silently bolt it onto a feature task.
+
 ## Auth gotcha
 Upstream mounts `/affiliates/` with **no token check** (whole upstream API is
 open). The proxy must enforce a Bearer-token gate itself on every `/partners`

@@ -128,6 +128,57 @@ router.post("/partners", async (req, res) => {
   }
 });
 
+// Transactions (subscription earnings + withdrawals) for a single partner.
+// Upstream `/payments/transactions?id=<affiliateId>` populates the `affliate`
+// (with secrets) — strip those; the `user` is already projected safely upstream.
+router.get("/partners/transactions", async (req, res) => {
+  if (!requireBearer(req, res)) return;
+  const q = req.query as Record<string, unknown>;
+  const id = (q["id"] as string | undefined)?.trim();
+  if (!id) {
+    res.status(400).json({ message: "Missing partner id" });
+    return;
+  }
+  const page = Math.max(1, parseInt(String(q["page"] ?? "1"), 10) || 1);
+  const limit = Math.max(1, parseInt(String(q["limit"] ?? "30"), 10) || 30);
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/payments/transactions",
+      query: { id, page, limit },
+      authHeader: authHeaderFrom(req),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const norm = normalizeList(result.data);
+    res.status(200).json({
+      data: norm.data.map((t) => {
+        if (t && typeof t === "object") {
+          const row = t as Record<string, unknown>;
+          // Upstream projects `user` to username/phone, but don't rely on that —
+          // strip secrets defensively from both populated relations.
+          if (row["affliate"] && typeof row["affliate"] === "object") {
+            row["affliate"] = stripSecrets(row["affliate"]);
+          }
+          if (row["user"] && typeof row["user"] === "object") {
+            row["user"] = stripSecrets(row["user"]);
+          }
+          return row;
+        }
+        return t;
+      }),
+      count: norm.count,
+      totalPages: norm.totalPages,
+      currentPage: norm.currentPage,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to list partner transactions");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
+});
+
 router.get("/partners/:id", async (req, res) => {
   if (!requireBearer(req, res)) return;
   try {

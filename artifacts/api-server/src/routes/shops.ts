@@ -59,7 +59,7 @@ router.get("/shops", async (req, res) => {
     page: 1,
     limit: SHOP_FETCH_ALL_LIMIT,
   };
-  for (const key of ["name", "subscriptionStatus", "subscriptionType", "ownerid"]) {
+  for (const key of ["name", "subscriptionStatus", "subscriptionType", "ownerid", "affliate"]) {
     const v = q[key];
     if (v !== undefined && v !== null && v !== "") upstreamQuery[key] = v;
   }
