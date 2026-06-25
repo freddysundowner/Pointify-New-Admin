@@ -214,6 +214,23 @@ export const GetStatisticsResponse = zod.object({
 
 
 /**
+ * @summary Subscription revenue total for an arbitrary date range
+ */
+export const GetRevenueRangeQueryParams = zod.object({
+  "from": zod.coerce.string().describe('Start date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)'),
+  "to": zod.coerce.string().describe('End date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)')
+})
+
+export const GetRevenueRangeResponse = zod.object({
+  "from": zod.string().optional(),
+  "to": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "amount": zod.number().optional(),
+  "count": zod.number().optional()
+})
+
+
+/**
  * @summary List platform users (shop owners)
  */
 export const ListAdminsQueryParams = zod.object({

@@ -100,6 +100,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/StatisticsResult"
 
+  /statistics/revenue:
+    get:
+      operationId: getRevenueRange
+      tags: [analytics]
+      summary: Subscription revenue total for an arbitrary date range
+      parameters:
+        - { name: from, in: query, required: true, description: "Start date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)", schema: { type: string } }
+        - { name: to, in: query, required: true, description: "End date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)", schema: { type: string } }
+      responses:
+        "200":
+          description: Revenue for the requested date range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueRange"
+
   /admins:
     get:
       operationId: listAdmins
@@ -1560,6 +1576,15 @@ components:
     MoneyBucket:
       type: object
       properties:
+        amount: { type: number }
+        count: { type: number }
+
+    RevenueRange:
+      type: object
+      properties:
+        from: { type: string }
+        to: { type: string }
+        currency: { type: string }
         amount: { type: number }
         count: { type: number }
 

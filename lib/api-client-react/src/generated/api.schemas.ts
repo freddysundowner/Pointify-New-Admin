@@ -639,6 +639,14 @@ export interface MoneyBucket {
   count?: number;
 }
 
+export interface RevenueRange {
+  from?: string;
+  to?: string;
+  currency?: string;
+  amount?: number;
+  count?: number;
+}
+
 export interface TrendPoint {
   month?: string;
   label?: string;
@@ -873,6 +881,17 @@ export interface SettingsInput {
   name: string;
   [key: string]: unknown;
  }
+
+export type GetRevenueRangeParams = {
+/**
+ * Start date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)
+ */
+from: string;
+/**
+ * End date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)
+ */
+to: string;
+};
 
 export type ListAdminsParams = {
 page?: number;

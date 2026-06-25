@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   useGetStatistics,
+  useGetRevenueRange,
+  getGetRevenueRangeQueryKey,
   useListAdmins,
   useListAdminShops,
   useListUserPackages,
@@ -76,6 +78,7 @@ import {
   Package as PackageIcon,
   Boxes,
   UserPlus,
+  CalendarRange,
 } from "lucide-react";
 import { formatKes, formatNumber } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -105,6 +108,19 @@ export default function Statistics() {
   const { data: stats, isLoading, isError, refetch } = useGetStatistics();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
+
+  // Custom revenue date-range filter. We only query once both ends are set and
+  // the operator applies the range (the upstream call scans every subscription).
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null);
+  const rangeParams = { from: appliedRange?.from ?? "", to: appliedRange?.to ?? "" };
+  const rangeQuery = useGetRevenueRange(rangeParams, {
+    query: {
+      enabled: appliedRange != null,
+      queryKey: getGetRevenueRangeQueryKey(rangeParams),
+    },
+  });
 
   const revenue = stats?.revenue ?? {};
   const gmv = stats?.gmv ?? {};
@@ -186,6 +202,115 @@ export default function Statistics() {
         </Card>
       ) : (
         <>
+          {/* Revenue overview + custom date range */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CalendarRange className="h-4 w-4 text-muted-foreground" />
+                Revenue
+              </CardTitle>
+              <CardDescription>
+                Subscription revenue collected over time. Pick a date range to total any period.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <RevenueStat
+                  label="Today"
+                  amount={num(revenue.today?.amount)}
+                  count={num(revenue.today?.count)}
+                />
+                <RevenueStat
+                  label="This Week"
+                  amount={num(revenue.thisWeek?.amount)}
+                  count={num(revenue.thisWeek?.count)}
+                />
+                <RevenueStat
+                  label="This Month"
+                  amount={monthRevenue}
+                  count={num(revenue.thisMonth?.count)}
+                />
+              </div>
+
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                  <div className="lg:w-44">
+                    <Label className="mb-1 block text-xs text-muted-foreground">From</Label>
+                    <Input
+                      type="date"
+                      value={rangeFrom}
+                      max={rangeTo || undefined}
+                      onChange={(e) => setRangeFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="lg:w-44">
+                    <Label className="mb-1 block text-xs text-muted-foreground">To</Label>
+                    <Input
+                      type="date"
+                      value={rangeTo}
+                      min={rangeFrom || undefined}
+                      onChange={(e) => setRangeTo(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      disabled={!rangeFrom || !rangeTo}
+                      onClick={() => setAppliedRange({ from: rangeFrom, to: rangeTo })}
+                    >
+                      Show revenue
+                    </Button>
+                    {appliedRange && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setAppliedRange(null);
+                          setRangeFrom("");
+                          setRangeTo("");
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {appliedRange && (
+                  <div className="mt-4">
+                    {rangeQuery.isLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Calculating revenue…
+                      </div>
+                    ) : rangeQuery.isError ? (
+                      <div className="flex items-center gap-2 text-sm text-rose-600">
+                        <AlertTriangle className="h-4 w-4" />
+                        Couldn't calculate revenue for this range.
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 text-rose-600"
+                          onClick={() => rangeQuery.refetch()}
+                        >
+                          Try again
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span className="text-2xl font-bold">
+                          {formatKes(rangeQuery.data?.amount)}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          from {formatNumber(rangeQuery.data?.count)} subscription
+                          {num(rangeQuery.data?.count) === 1 ? "" : "s"} ·{" "}
+                          {appliedRange.from} → {appliedRange.to}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Primary KPIs */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard
@@ -485,6 +610,26 @@ function KpiCard({
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+function RevenueStat({
+  label,
+  amount,
+  count,
+}: {
+  label: string;
+  amount: number;
+  count: number;
+}) {
+  return (
+    <div className="rounded-lg border p-4">
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-bold">{formatKes(amount)}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {formatNumber(count)} subscription{count === 1 ? "" : "s"}
+      </p>
+    </div>
   );
 }
 

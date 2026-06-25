@@ -37,6 +37,7 @@ import type {
   ErrorResponse,
   GenericObject,
   GetProductHistorySummaryParams,
+  GetRevenueRangeParams,
   GetSettingsParams,
   HealthStatus,
   ListAdminsBySubscriptionParams,
@@ -70,6 +71,7 @@ import type {
   PurchaseListResult,
   ResetAttendantPassword200,
   ResetResult,
+  RevenueRange,
   Sale,
   SaleListResult,
   SalesHistoryResult,
@@ -399,6 +401,90 @@ export function useGetStatistics<TData = Awaited<ReturnType<typeof getStatistics
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetStatisticsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetRevenueRangeUrl = (params: GetRevenueRangeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/statistics/revenue?${stringifiedParams}` : `/api/statistics/revenue`
+}
+
+/**
+ * @summary Subscription revenue total for an arbitrary date range
+ */
+export const getRevenueRange = async (params: GetRevenueRangeParams, options?: RequestInit): Promise<RevenueRange> => {
+
+  return customFetch<RevenueRange>(getGetRevenueRangeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRevenueRangeQueryKey = (params?: GetRevenueRangeParams,) => {
+    return [
+    `/api/statistics/revenue`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetRevenueRangeQueryOptions = <TData = Awaited<ReturnType<typeof getRevenueRange>>, TError = ErrorType<unknown>>(params: GetRevenueRangeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRevenueRange>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRevenueRangeQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRevenueRange>>> = ({ signal }) => getRevenueRange(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRevenueRange>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRevenueRangeQueryResult = NonNullable<Awaited<ReturnType<typeof getRevenueRange>>>
+export type GetRevenueRangeQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Subscription revenue total for an arbitrary date range
+ */
+
+export function useGetRevenueRange<TData = Awaited<ReturnType<typeof getRevenueRange>>, TError = ErrorType<unknown>>(
+ params: GetRevenueRangeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRevenueRange>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRevenueRangeQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
