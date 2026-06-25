@@ -82,7 +82,7 @@ const emptyForm: PartnerForm = {
 };
 
 function shopsCount(p: Partner): number {
-  return Array.isArray(p.shops) ? p.shops.length : 0;
+  return typeof p.shopCount === "number" ? p.shopCount : 0;
 }
 
 export default function Partners() {

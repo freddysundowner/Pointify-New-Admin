@@ -30,6 +30,16 @@ related `admins` objects which carry their **own** password/otp hashes. The prox
 must deep-sanitize: strip secrets from the partner top-level AND from each nested
 `admins` entry. Stripping only top-level is not enough.
 
+## Shops-per-partner count gotcha
+The affiliate list embeds `shops` via `Shop.find({ affliate })`, but a shop's
+`affliate` field is **rarely set**, so that count badly undercounts (e.g. 1 vs
+real 5, 8 vs 70). Real attribution = shops owned by admins the partner referred:
+the upstream shop list resolves `affliate` -> `Admin.find({affliate}).distinct(_id)`
+-> shops by `adminId`. So derive the count from `GET /shop/?affliate=<id>` →
+`totalShops`. The proxy fetches this per partner (parallel) and exposes
+`shopCount`; it drops the misleading embedded `shops`/`admins` arrays from the
+list payload (which also removes the nested-admin secret-leak surface).
+
 ## Auth gotcha
 Upstream mounts `/affiliates/` with **no token check** (whole upstream API is
 open). The proxy must enforce a Bearer-token gate itself on every `/partners`

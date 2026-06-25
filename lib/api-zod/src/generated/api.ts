@@ -470,6 +470,7 @@ export const ListPartnersResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
 })).optional(),
@@ -510,6 +511,7 @@ export const GetPartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
 })
@@ -544,6 +546,7 @@ export const UpdatePartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
 })
@@ -566,6 +569,7 @@ export const DeletePartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
 })

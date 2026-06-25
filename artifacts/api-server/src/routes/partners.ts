@@ -51,8 +51,43 @@ router.get("/partners", async (req, res) => {
       return;
     }
     const norm = normalizeList(result.data);
+
+    // The upstream embeds `shops` via `Shop.find({ affliate })`, but a shop's
+    // `affliate` field is rarely set — the real attribution is shops owned by
+    // admins the partner referred. The shop list endpoint computes this (it
+    // resolves `affliate` -> referred admins -> shops by adminId), so derive an
+    // accurate `shopCount` per partner from its `totalShops`. Done in parallel
+    // to bound latency.
+    const partners = await Promise.all(
+      norm.data.map(async (raw) => {
+        const partner = sanitizePartner(raw) as Record<string, unknown>;
+        // Drop the heavy/misleading embedded arrays from the list payload.
+        delete partner["shops"];
+        delete partner["admins"];
+        const id = partner["_id"];
+        if (typeof id !== "string") {
+          partner["shopCount"] = 0;
+          return partner;
+        }
+        try {
+          const shopResult = await upstreamFetch({
+            method: "GET",
+            path: "/shop/",
+            query: { affliate: id, page: 1, limit: 1 },
+            authHeader: authHeaderFrom(req),
+          });
+          partner["shopCount"] =
+            shopResult.status < 400 ? normalizeList(shopResult.data).count : 0;
+        } catch (err) {
+          req.log.error({ err, partnerId: id }, "Failed to count partner shops");
+          partner["shopCount"] = 0;
+        }
+        return partner;
+      }),
+    );
+
     res.status(200).json({
-      data: norm.data.map(sanitizePartner),
+      data: partners,
       count: norm.count,
       totalPages: norm.totalPages,
       currentPage: norm.currentPage,

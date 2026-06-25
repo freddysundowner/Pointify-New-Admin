@@ -35,6 +35,7 @@ export interface Partner {
   code?: string | null;
   /** @nullable */
   createAt?: string | null;
+  shopCount?: number;
   shops?: GenericObject[];
   admins?: GenericObject[];
   [key: string]: unknown;
