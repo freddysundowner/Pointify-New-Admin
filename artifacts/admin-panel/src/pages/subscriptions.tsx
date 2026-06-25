@@ -244,7 +244,7 @@ export default function Subscriptions() {
   const [verifySub, setVerifySub] = useState<Subscription | null>(null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="Subscriptions" description="Manage all shop subscriptions." />
 
       <Card>

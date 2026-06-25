@@ -62,7 +62,7 @@ export default function Attendants() {
   const totalCount = data?.count ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="Attendants" description="Manage shop attendants." />
 
       <Card>

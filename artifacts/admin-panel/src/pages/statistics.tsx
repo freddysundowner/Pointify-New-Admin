@@ -164,7 +164,7 @@ export default function Statistics() {
   const topShops = stats?.topShops ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title="Statistics"
         description="Platform-wide performance, growth, payouts and payment prompts."
@@ -738,7 +738,7 @@ function TrendLine({ data }: { data: Array<{ label: string; value: number }> }) 
 
 function StatisticsSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>

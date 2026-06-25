@@ -178,7 +178,7 @@ export default function PartnerDetail() {
   const name = partner?.name || "Partner";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title={name}
         description="Everything referred by this partner — shops, users and transactions."

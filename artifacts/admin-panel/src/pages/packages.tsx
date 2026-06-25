@@ -98,7 +98,7 @@ export default function Packages() {
   const packages = data?.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title="Packages"
         description="Create, edit and remove subscription packages."

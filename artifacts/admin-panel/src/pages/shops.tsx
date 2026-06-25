@@ -263,7 +263,7 @@ export default function Shops() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="Shops" description="Manage all shops registered on the platform." />
 
       <Card>

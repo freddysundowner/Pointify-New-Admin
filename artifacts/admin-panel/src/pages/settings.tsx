@@ -592,7 +592,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title="Settings"
         description="Global platform settings."
@@ -612,7 +612,7 @@ export default function Settings() {
       />
 
       {isLoading ? (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {[0, 1].map((i) => (
             <Card key={i}>
               <CardHeader>
@@ -658,7 +658,7 @@ export default function Settings() {
         <Tabs
           value={currentTab}
           onValueChange={setActiveTab}
-          className="space-y-6"
+          className="space-y-4 md:space-y-6"
         >
           <TabsList className="flex h-auto flex-wrap justify-start gap-1">
             {displayGroups.map(([name]) => (

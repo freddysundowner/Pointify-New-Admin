@@ -109,7 +109,7 @@ export default function Sales() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="Sales" description="View all platform sales." />
 
       <Card>

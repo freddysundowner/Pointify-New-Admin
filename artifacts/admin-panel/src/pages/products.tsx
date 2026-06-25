@@ -111,7 +111,7 @@ export default function Products() {
   const products = data?.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="Products" description="Manage all products across shops." />
 
       <Card>

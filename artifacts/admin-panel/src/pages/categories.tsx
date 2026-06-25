@@ -156,7 +156,7 @@ export default function Categories() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title="Shop Categories"
         description="Manage the categories shops can be assigned to."

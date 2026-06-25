@@ -247,7 +247,7 @@ export default function Partners() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader
         title="Partners"
         description="Manage marketing program partners, their commission, and account access."

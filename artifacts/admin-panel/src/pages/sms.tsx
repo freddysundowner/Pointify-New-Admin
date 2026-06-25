@@ -129,7 +129,7 @@ export default function SMS() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="SMS Hub" description="Manage platform communications." />
 
       <Card>
