@@ -2,25 +2,29 @@
 #
 # deploy-production.sh
 # ---------------------------------------------------------------------------
-# Run this ON your production server (Ubuntu/Debian) to deploy the two
-# Pointify front-ends to their own subdomains, behind nginx, with SSL, and the
-# shared API proxy running as a systemd service.
+# Run this ON your production server (Ubuntu/Debian) to deploy the Pointify
+# admin panel and partner portal. Both front-ends AND the API proxy are served
+# by a SINGLE Node process ("pointify-api") managed by PM2, with nginx in front
+# terminating SSL and proxying each subdomain to that process:
 #
-#   admin.pointifypos.com    -> admin panel   (static SPA)
-#   partner.pointifypos.com  -> partner portal (static SPA)
-#   /api on BOTH subdomains   -> the API proxy (Node, listens on 127.0.0.1:API_PORT)
+#   admin.pointifypos.com    -> pointify-api (serves the admin SPA)
+#   partner.pointifypos.com  -> pointify-api (serves the partner SPA)
+#   /api on BOTH subdomains   -> pointify-api (proxies upstream api.pointifypos.com)
+#
+# The one process picks which SPA to serve by request hostname (admin.* vs
+# partner.*) and proxies every /api request upstream. nginx forwards the
+# original Host header so that hostname routing works.
 #
 # The script is idempotent and self-checking. On each run it will:
-#   1. Verify prerequisites (node, pnpm, nginx, certbot) and install the system
-#      packages it can (nginx, certbot) via apt when missing.
+#   1. Verify prerequisites (node, pnpm, pm2, nginx, certbot) and install the
+#      system packages it can (nginx, certbot, pm2) when missing.
 #   2. Build both front-ends (rooted at "/") and the API proxy.
-#   3. Publish the built front-ends into each subdomain's web root.
-#   4. Install/refresh the API proxy systemd service and (re)start it.
+#   3. Persist API runtime config (SESSION_SECRET, port) in a root-only env file.
+#   4. Start/reload the pointify-api process under PM2 and save the PM2 list.
 #   5. Create each subdomain's nginx server block IF it does not already exist
 #      (existing configs are left untouched so certbot's SSL edits survive).
-#   6. Verify the built content is actually present in each web root.
-#   7. Obtain/enable SSL via certbot IF a certificate does not already exist.
-#   8. Test and reload nginx.
+#   6. Obtain/enable SSL via certbot IF a certificate does not already exist.
+#   7. Test and reload nginx.
 #
 # Usage:
 #   sudo LE_EMAIL=you@example.com ./deploy-production.sh
@@ -28,11 +32,10 @@
 # Configurable via environment variables (defaults shown):
 #   ADMIN_DOMAIN=admin.pointifypos.com
 #   PARTNER_DOMAIN=partner.pointifypos.com
-#   API_PORT=8080
+#   API_PORT=8080                (reused from the env file on re-runs)
 #   POS_API_BASE_URL=            (optional upstream override; not a secret)
 #   SESSION_SECRET=              (auto-generated & persisted if not provided)
-#   APP_USER=                    (user to run the API as; defaults to the
-#                                 invoking sudo user, else root with a warning)
+#   NODE_BIN=                    (path to a Node 20+ binary to use for build/run)
 #   LE_EMAIL=                    (required to obtain SSL certificates)
 #   FORCE_NGINX=0                (set to 1 to overwrite existing nginx configs)
 #   SKIP_SSL=0                   (set to 1 to skip the certbot/SSL step)
@@ -42,10 +45,12 @@ set -euo pipefail
 
 ADMIN_DOMAIN="${ADMIN_DOMAIN:-admin.pointifypos.com}"
 PARTNER_DOMAIN="${PARTNER_DOMAIN:-partner.pointifypos.com}"
+# Remember whether the operator pinned a port explicitly; if not, we prefer the
+# port already persisted in the env file so re-runs keep the same nginx wiring.
+API_PORT_SET="${API_PORT:+1}"
 API_PORT="${API_PORT:-8080}"
 POS_API_BASE_URL="${POS_API_BASE_URL:-}"
 SESSION_SECRET="${SESSION_SECRET:-}"
-APP_USER="${APP_USER:-${SUDO_USER:-}}"
 LE_EMAIL="${LE_EMAIL:-}"
 FORCE_NGINX="${FORCE_NGINX:-0}"
 SKIP_SSL="${SKIP_SSL:-0}"
@@ -57,8 +62,7 @@ ENV_FILE="$ENV_DIR/api.env"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 ADMIN_SRC="$REPO_DIR/artifacts/admin-panel/dist/public"
 PARTNER_SRC="$REPO_DIR/artifacts/partner-portal/dist/public"
-ADMIN_ROOT="/var/www/$ADMIN_DOMAIN"
-PARTNER_ROOT="/var/www/$PARTNER_DOMAIN"
+API_ENTRY="$REPO_DIR/artifacts/api-server/dist/index.mjs"
 
 log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m  ok\033[0m %s\n' "$*"; }
@@ -67,16 +71,6 @@ die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 # --- Port helpers -----------------------------------------------------------
-# List the PIDs currently LISTENing on a TCP port (best-effort, root-only info).
-listening_pids() {
-  local port="$1"
-  if have ss; then
-    ss -ltnpH "( sport = :$port )" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u
-  elif have lsof; then
-    lsof -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | sort -u
-  fi
-}
-
 # True if anything is LISTENing on the given TCP port.
 port_in_use() {
   local port="$1"
@@ -89,20 +83,8 @@ port_in_use() {
   fi
 }
 
-# True if the port is held ONLY by our own systemd service (so a normal
-# re-deploy keeps the same port — restarting the service frees and rebinds it).
-port_owned_by_service() {
-  local port="$1" pids p
-  pids="$(listening_pids "$port")"
-  [ -n "$pids" ] || return 1
-  for p in $pids; do
-    grep -q "$SERVICE_NAME.service" "/proc/$p/cgroup" 2>/dev/null || return 1
-  done
-  return 0
-}
-
-# Resolve API_PORT to a free port, incrementing past unrelated squatters. A port
-# held only by the existing pointify-api service counts as available.
+# Resolve API_PORT to a free port, incrementing past squatters. We delete our
+# own PM2 process before calling this, so our previous port reads as free.
 resolve_api_port() {
   if ! have ss && ! have lsof; then
     warn "No port probe (ss/lsof) found; using API_PORT=$API_PORT without conflict detection."
@@ -110,20 +92,13 @@ resolve_api_port() {
   fi
   local desired="$API_PORT" max_attempts=20 attempt=0
   while [ "$attempt" -lt "$max_attempts" ]; do
-    if ! port_in_use "$API_PORT"; then
-      break  # free to use
-    fi
-    if port_owned_by_service "$API_PORT"; then
-      ok "Port $API_PORT is held only by the existing $SERVICE_NAME service; reusing it (a restart rebinds it)."
-      break
-    fi
+    port_in_use "$API_PORT" || break
     warn "Port $API_PORT is in use by another process; trying $((API_PORT + 1))."
     API_PORT=$((API_PORT + 1))
     attempt=$((attempt + 1))
   done
-  if [ "$attempt" -ge "$max_attempts" ]; then
-    die "Could not find a free API port within $max_attempts attempts starting at $desired. Free a port or set API_PORT explicitly."
-  fi
+  [ "$attempt" -lt "$max_attempts" ] \
+    || die "Could not find a free API port within $max_attempts attempts starting at $desired. Free a port or set API_PORT explicitly."
   if [ "$API_PORT" = "$desired" ]; then
     ok "Using API_PORT=$API_PORT"
   else
@@ -145,8 +120,9 @@ log "Checking prerequisites"
 # NODE_BIN lets you point this deploy at a non-default Node (e.g. when the
 # server's default `node` is too old for Vite but you have a newer one
 # installed elsewhere): NODE_BIN=/opt/node20/bin/node bash deploy-production.sh
-# Its directory is put first on PATH so the build (pnpm/vite/corepack) and the
-# systemd service both use it, while the system default node stays untouched.
+# Its directory is put first on PATH so the build (pnpm/vite) and the PM2
+# process (via --interpreter) both use it, while the system default node stays
+# untouched.
 if [ -n "${NODE_BIN:-}" ]; then
   [ -x "$NODE_BIN" ] || die "NODE_BIN='$NODE_BIN' is not executable. Point it at a Node 20+ binary, e.g. /opt/node20/bin/node."
   PATH="$(dirname "$NODE_BIN"):$PATH"
@@ -180,6 +156,14 @@ apt_install() {
   DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" >/dev/null
 }
 
+# PM2 runs the API process (matches the rest of this server's apps). Install it
+# globally via npm if missing, using the resolved Node.
+if ! have pm2; then
+  log "Installing pm2 globally"
+  npm install -g pm2 >/dev/null 2>&1 || die "Failed to install pm2. Install it manually ('npm i -g pm2') and re-run."
+fi
+ok "pm2 $(pm2 -v 2>/dev/null | tail -n1)"
+
 have nginx || apt_install nginx
 ok "nginx present"
 
@@ -212,36 +196,17 @@ fi
 
 [ -f "$ADMIN_SRC/index.html" ]   || die "Admin build missing ($ADMIN_SRC/index.html). Re-run without SKIP_BUILD=1."
 [ -f "$PARTNER_SRC/index.html" ] || die "Partner build missing ($PARTNER_SRC/index.html). Re-run without SKIP_BUILD=1."
-[ -f "$REPO_DIR/artifacts/api-server/dist/index.mjs" ] || die "API build missing. Re-run without SKIP_BUILD=1."
+[ -f "$API_ENTRY" ]              || die "API build missing ($API_ENTRY). Re-run without SKIP_BUILD=1."
 
 # ----------------------------------------------------------------------------
-# 3. Publish static front-ends into web roots
+# 3. API runtime config (SESSION_SECRET + port), persisted root-only
 # ----------------------------------------------------------------------------
-publish_site() {
-  local src="$1" dest="$2" name="$3"
-  log "Publishing $name -> $dest"
-  mkdir -p "$dest"
-  if have rsync; then
-    rsync -a --delete "$src/" "$dest/"
-  else
-    rm -rf "${dest:?}/"* && cp -a "$src/." "$dest/"
-  fi
-  [ -f "$dest/index.html" ] || die "Publish failed: $dest/index.html not found."
-  ok "$name content in place ($(find "$dest" -type f | wc -l) files)"
-}
-publish_site "$ADMIN_SRC"   "$ADMIN_ROOT"   "admin"
-publish_site "$PARTNER_SRC" "$PARTNER_ROOT" "partner"
-
-# ----------------------------------------------------------------------------
-# 4. API proxy secrets + systemd service
-# ----------------------------------------------------------------------------
-# SESSION_SECRET is REQUIRED by the API at startup. Persist it in a root-only
-# env file so it survives re-runs (rotating it would invalidate live sessions).
-log "Preparing API runtime secrets ($ENV_FILE)"
+log "Preparing API runtime config ($ENV_FILE)"
 mkdir -p "$ENV_DIR"
-# Resolve SESSION_SECRET deterministically: explicit env var wins; otherwise
-# reuse the value already on disk; otherwise generate one. Rotating it would
-# invalidate live sessions, so we never change it unless the operator passes one.
+
+# SESSION_SECRET: explicit env var wins; otherwise reuse what's on disk;
+# otherwise generate one. Rotating it would invalidate live sessions, so we
+# never change it unless the operator passes one.
 if [ -z "$SESSION_SECRET" ] && [ -f "$ENV_FILE" ]; then
   SESSION_SECRET="$(sed -n 's/^SESSION_SECRET=//p' "$ENV_FILE" | head -n1)"
   [ -n "$SESSION_SECRET" ] && ok "Reusing existing SESSION_SECRET"
@@ -250,91 +215,79 @@ if [ -z "$SESSION_SECRET" ]; then
   SESSION_SECRET="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
   log "Generated a new SESSION_SECRET"
 fi
-# Always (re)write the env file so a changed/cleared POS_API_BASE_URL takes
-# effect on re-runs. Omitting the line reverts the API to its default upstream.
+
+# Port: if the operator didn't pin one, reuse the port already persisted on disk
+# so nginx keeps pointing at the right place across re-runs.
+if [ -z "$API_PORT_SET" ] && [ -f "$ENV_FILE" ]; then
+  PERSISTED_PORT="$(sed -n 's/^PORT=//p' "$ENV_FILE" | head -n1)"
+  if [ -n "$PERSISTED_PORT" ]; then
+    API_PORT="$PERSISTED_PORT"
+    ok "Reusing persisted API_PORT=$API_PORT"
+  fi
+fi
+
+# Free our own port (if the previous pointify-api is up) before resolving, so a
+# re-deploy keeps the same port instead of incrementing past itself.
+pm2 delete "$SERVICE_NAME" >/dev/null 2>&1 || true
+log "Resolving API port (desired: $API_PORT)"
+resolve_api_port
+
+# (Re)write the env file so changed config takes effect on re-runs.
 {
   printf 'SESSION_SECRET=%s\n' "$SESSION_SECRET"
+  printf 'PORT=%s\n' "$API_PORT"
+  printf 'NODE_ENV=production\n'
+  printf 'ADMIN_DIST=%s\n' "$ADMIN_SRC"
+  printf 'PARTNER_DIST=%s\n' "$PARTNER_SRC"
   if [ -n "$POS_API_BASE_URL" ]; then printf 'POS_API_BASE_URL=%s\n' "$POS_API_BASE_URL"; fi
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 chown root:root "$ENV_FILE"
 
-# Decide which OS user runs the API (avoid root when possible).
-if [ -z "$APP_USER" ] || [ "$APP_USER" = "root" ]; then
-  APP_USER="root"
-  warn "API service will run as root. Set APP_USER=<user> to harden (that user must be able to read $REPO_DIR)."
-elif ! id "$APP_USER" >/dev/null 2>&1; then
-  die "APP_USER '$APP_USER' does not exist."
-fi
-APP_GROUP="$(id -gn "$APP_USER" 2>/dev/null || echo "$APP_USER")"
+# ----------------------------------------------------------------------------
+# 4. Start the API process under PM2
+# ----------------------------------------------------------------------------
+log "Starting $SERVICE_NAME under PM2 (port $API_PORT)"
+# Load the runtime config into this shell so PM2 captures it for the process.
+set -a
+# shellcheck disable=SC1090
+. "$ENV_FILE"
+set +a
 
-# Pre-flight: a non-root service user must be able to execute node and read the
-# built API. This catches repos cloned under /root (mode 700) before the service
-# silently fails to start.
-if [ "$APP_USER" != "root" ] && have sudo; then
-  sudo -u "$APP_USER" test -x "$NODE_BIN" 2>/dev/null \
-    || warn "User '$APP_USER' may not be able to execute node ($NODE_BIN). If node is under /root or a private dir, install it system-wide or set APP_USER=root."
-  sudo -u "$APP_USER" test -r "$REPO_DIR/artifacts/api-server/dist/index.mjs" 2>/dev/null \
-    || warn "User '$APP_USER' cannot read $REPO_DIR. If the repo lives under /root, move it (e.g. to the user's home or /opt) or set APP_USER=root, then re-run."
-fi
+pm2 start "$API_ENTRY" \
+  --name "$SERVICE_NAME" \
+  --interpreter "$NODE_BIN" \
+  --time \
+  --update-env
+pm2 save >/dev/null 2>&1 || warn "pm2 save failed; the process may not survive a reboot. Run 'pm2 startup' once, then 'pm2 save'."
 
-# Resolve a free API port before writing the systemd unit, the health check,
-# and the nginx proxy_pass — all of which reference $API_PORT downstream.
-log "Resolving API port (desired: $API_PORT)"
-resolve_api_port
-
-log "Installing API proxy service ($SERVICE_NAME, user: $APP_USER)"
-{
-  printf '[Unit]\n'
-  printf 'Description=Pointify API proxy\n'
-  printf 'After=network.target\n\n'
-  printf '[Service]\n'
-  printf 'Type=simple\n'
-  if [ "$APP_USER" != "root" ]; then
-    printf 'User=%s\n' "$APP_USER"
-    printf 'Group=%s\n' "$APP_GROUP"
-  fi
-  printf 'WorkingDirectory=%s\n' "$REPO_DIR"
-  printf 'EnvironmentFile=%s\n' "$ENV_FILE"
-  printf 'Environment=NODE_ENV=production\n'
-  printf 'Environment=PORT=%s\n' "$API_PORT"
-  printf 'ExecStart=%s --enable-source-maps %s/artifacts/api-server/dist/index.mjs\n' "$NODE_BIN" "$REPO_DIR"
-  printf 'Restart=on-failure\n'
-  printf 'RestartSec=3\n\n'
-  printf '[Install]\n'
-  printf 'WantedBy=multi-user.target\n'
-} > "/etc/systemd/system/$SERVICE_NAME.service"
-
-systemctl daemon-reload
-systemctl enable "$SERVICE_NAME" >/dev/null 2>&1 || true
-systemctl restart "$SERVICE_NAME" || true
 sleep 2
-if systemctl is-active --quiet "$SERVICE_NAME"; then
-  ok "API proxy running on 127.0.0.1:$API_PORT"
+if pm2 jlist 2>/dev/null | grep -q "\"name\":\"$SERVICE_NAME\""; then
+  ok "$SERVICE_NAME is registered with PM2"
   if have curl; then
     if curl -fsS -m 5 "http://127.0.0.1:$API_PORT/api/healthz" >/dev/null 2>&1; then
       ok "API health check passed (/api/healthz)"
     else
-      warn "API is up but /api/healthz did not respond OK. Inspect: journalctl -u $SERVICE_NAME -n 50"
+      warn "Process is up but /api/healthz did not respond OK. Inspect: pm2 logs $SERVICE_NAME --lines 50"
     fi
   fi
 else
-  warn "API proxy failed to start. Inspect: journalctl -u $SERVICE_NAME -n 50"
+  warn "PM2 did not register $SERVICE_NAME. Inspect: pm2 logs $SERVICE_NAME --lines 50"
 fi
 
 # ----------------------------------------------------------------------------
-# 5. nginx server blocks (create only if missing)
+# 5. nginx server blocks (create only if missing) — proxy ALL traffic to PM2
 # ----------------------------------------------------------------------------
 write_nginx() {
-  local domain="$1" root="$2"
+  local domain="$1"
   local conf="/etc/nginx/sites-available/$domain.conf"
   local link="/etc/nginx/sites-enabled/$domain.conf"
 
   if [ -f "$conf" ] && [ "$FORCE_NGINX" != "1" ]; then
     ok "nginx config already exists for $domain (left untouched; set FORCE_NGINX=1 to overwrite)"
     grep -q "server_name $domain" "$conf" || warn "  existing $conf has no 'server_name $domain' — it may not serve this subdomain."
-    grep -q "location /api" "$conf"       || warn "  existing $conf has no '/api' proxy — API calls may 404. Set FORCE_NGINX=1 to regenerate."
-    grep -q "try_files" "$conf"           || warn "  existing $conf has no SPA fallback (try_files) — deep links may 404. Set FORCE_NGINX=1 to regenerate."
+    grep -q "proxy_pass" "$conf"          || warn "  existing $conf has no proxy_pass — it won't reach pointify-api. Set FORCE_NGINX=1 to regenerate."
+    grep -q "127.0.0.1:$API_PORT" "$conf" || warn "  existing $conf does not proxy to 127.0.0.1:$API_PORT — it may point at a stale/dead backend (this is the usual cause of a 502). Set FORCE_NGINX=1 to regenerate."
   else
     log "Writing nginx config for $domain"
     cat > "$conf" <<NGINX
@@ -343,22 +296,17 @@ server {
     listen [::]:80;
     server_name $domain;
 
-    root $root;
-    index index.html;
-
-    # Shared API proxy
-    location /api {
+    # Everything (the SPA and /api) is served by the pointify-api process. The
+    # original Host header is forwarded so it can pick the right front-end.
+    location / {
         proxy_pass http://127.0.0.1:$API_PORT;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    # SPA fallback
-    location / {
-        try_files \$uri /index.html;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 }
 NGINX
@@ -366,8 +314,8 @@ NGINX
   fi
   ln -sf "$conf" "$link"
 }
-write_nginx "$ADMIN_DOMAIN"   "$ADMIN_ROOT"
-write_nginx "$PARTNER_DOMAIN" "$PARTNER_ROOT"
+write_nginx "$ADMIN_DOMAIN"
+write_nginx "$PARTNER_DOMAIN"
 
 # Disable the stock default site if present (it can shadow the subdomains).
 [ -e /etc/nginx/sites-enabled/default ] && rm -f /etc/nginx/sites-enabled/default && warn "removed default nginx site"
@@ -419,15 +367,12 @@ fi
 # ----------------------------------------------------------------------------
 echo
 log "Done."
-echo "  Admin   : https://$ADMIN_DOMAIN   (root: $ADMIN_ROOT)"
-echo "  Partner : https://$PARTNER_DOMAIN (root: $PARTNER_ROOT)"
-echo "  API     : 127.0.0.1:$API_PORT via systemd '$SERVICE_NAME' (proxied at /api on both)"
+echo "  Admin   : https://$ADMIN_DOMAIN"
+echo "  Partner : https://$PARTNER_DOMAIN"
+echo "  Process : PM2 '$SERVICE_NAME' on 127.0.0.1:$API_PORT (serves both SPAs + /api)"
 echo
 echo "  Useful checks:"
-echo "    systemctl status $SERVICE_NAME"
-echo "    journalctl -u $SERVICE_NAME -f"
-echo "    curl -I https://$ADMIN_DOMAIN"
-echo "    curl -s https://$ADMIN_DOMAIN/api/healthz"
-echo
-echo "  Note: make sure DNS A/AAAA records for both subdomains point to this server"
-echo "  and ports 80 + 443 are open before the SSL step can succeed."
+echo "    pm2 status"
+echo "    pm2 logs $SERVICE_NAME --lines 50"
+echo "    curl -I http://127.0.0.1:$API_PORT/api/healthz"
+echo "    curl -I -H 'Host: $ADMIN_DOMAIN' http://127.0.0.1:$API_PORT/"
