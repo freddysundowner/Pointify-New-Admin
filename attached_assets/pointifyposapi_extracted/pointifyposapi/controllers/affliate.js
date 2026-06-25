@@ -130,22 +130,42 @@ async function getAllAffiliates(req, res) {
       affiliatesQuery = affiliatesQuery.skip(skip).limit(limitInt);
     }
     const affiliates = await affiliatesQuery;
+    const affiliateIds = affiliates.map((a) => a._id);
 
-    // For each affiliate, find associated shops and admins
-    const populatedAffiliates = await Promise.all(affiliates.map(async (affiliate) => {
-      // Find shops associated with the current affiliate
-      const shops = await Shop.find({ affliate: affiliate._id });
+    // Fetch every admin referred by these affiliates in ONE query (not per-affiliate).
+    const admins = await Admin.find({ affliate: { $in: affiliateIds } });
 
-      // Find admins associated with the current affiliate
-      const admins = await Admin.find({ affliate: affiliate._id });
+    // A shop belongs to an affiliate when its OWNER (adminId) was referred by that
+    // affiliate. The old code used Shop.find({ affliate }) which only matched shops
+    // directly tagged with the affiliate id (almost never set) and undercounted.
+    const adminIds = admins.map((a) => a._id);
+    const shops = await Shop.find({ adminId: { $in: adminIds } });
 
-      // Combine affiliate data with associated shops and admins
+    // Map each admin -> its affiliate, then bucket admins and shops by affiliate.
+    const affiliateByAdmin = {};
+    const adminsByAffiliate = {};
+    for (const admin of admins) {
+      const affKey = String(admin.affliate);
+      affiliateByAdmin[String(admin._id)] = affKey;
+      (adminsByAffiliate[affKey] = adminsByAffiliate[affKey] || []).push(admin);
+    }
+
+    const shopsByAffiliate = {};
+    for (const shop of shops) {
+      const affKey = affiliateByAdmin[String(shop.adminId)];
+      if (!affKey) continue;
+      (shopsByAffiliate[affKey] = shopsByAffiliate[affKey] || []).push(shop);
+    }
+
+    // Combine affiliate data with its associated shops and admins.
+    const populatedAffiliates = affiliates.map((affiliate) => {
+      const affKey = String(affiliate._id);
       return {
         ...affiliate.toObject(),
-        shops,
-        admins
+        shops: shopsByAffiliate[affKey] || [],
+        admins: adminsByAffiliate[affKey] || [],
       };
-    }));
+    });
 
     if (page) {
       // Get total count for pagination

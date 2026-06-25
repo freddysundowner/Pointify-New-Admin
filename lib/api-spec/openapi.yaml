@@ -1112,6 +1112,7 @@ components:
         code: { type: ["string", "null"] }
         createAt: { type: ["string", "null"] }
         shopCount: { type: number }
+        userCount: { type: number }
         shops:
           type: array
           items: { $ref: "#/components/schemas/GenericObject" }

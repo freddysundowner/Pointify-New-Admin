@@ -30,15 +30,18 @@ related `admins` objects which carry their **own** password/otp hashes. The prox
 must deep-sanitize: strip secrets from the partner top-level AND from each nested
 `admins` entry. Stripping only top-level is not enough.
 
-## Shops-per-partner count gotcha
-The affiliate list embeds `shops` via `Shop.find({ affliate })`, but a shop's
-`affliate` field is **rarely set**, so that count badly undercounts (e.g. 1 vs
-real 5, 8 vs 70). Real attribution = shops owned by admins the partner referred:
-the upstream shop list resolves `affliate` -> `Admin.find({affliate}).distinct(_id)`
--> shops by `adminId`. So derive the count from `GET /shop/?affliate=<id>` →
-`totalShops`. The proxy fetches this per partner (parallel) and exposes
-`shopCount`; it drops the misleading embedded `shops`/`admins` arrays from the
-list payload (which also removes the nested-admin secret-leak surface).
+## Shops-per-partner count: fix upstream, never N+1
+A partner's true shops = shops whose OWNER (shop.adminId) was an admin that partner
+referred (admin.affliate). The affiliate record's own `affliate`-tagged shops are
+rarely set and badly undercount; the embedded `admins` array is already accurate
+(so userCount = admins.length is free).
+**Decision:** the correct, scalable fix lives in the UPSTREAM `getAllAffiliates`
+controller (compute attribution there in batched queries), and the proxy stays a
+single `/affiliates/` call deriving counts from embedded arrays.
+**Why:** the user explicitly rejected a proxy-side per-partner fan-out ("too many
+requests") — do NOT reintroduce one-call-per-partner, even as a fallback.
+**Watch out:** counts are only correct once the upstream controller change is
+actually deployed to api.pointifypos.com; a stale upstream silently undercounts shops.
 
 ## Partner-scoped data (shops / users / transactions)
 - **Referred shops** = `GET /shop/?affliate=<affId>` (`totalShops`); **referred users** =
