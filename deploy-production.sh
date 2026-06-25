@@ -143,10 +143,10 @@ have apt-get || die "This script targets Debian/Ubuntu (apt-get not found). Inst
 log "Checking prerequisites"
 
 if ! have node; then
-  die "Node.js is not installed. Install Node.js 20+ (24 recommended), e.g. via https://github.com/nodesource/distributions, then re-run."
+  die "Node.js is not installed. Install Node.js 18+ (24 recommended), e.g. via https://github.com/nodesource/distributions, then re-run."
 fi
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-[ "$NODE_MAJOR" -ge 20 ] || die "Node.js $NODE_MAJOR detected; need 20+ (24 recommended)."
+[ "$NODE_MAJOR" -ge 18 ] || die "Node.js $NODE_MAJOR detected; need 18+ (24 recommended)."
 ok "node $(node -v)"
 NODE_BIN="$(command -v node)"
 
