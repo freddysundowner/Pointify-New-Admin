@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListPortalShops, getListPortalShopsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Store, Loader2, MapPin, Phone, CheckCircle2, AlertTriangle, XCircle, CircleSlash } from "lucide-react";
+import { Store, Loader2, MapPin, Phone, CheckCircle2, AlertTriangle, XCircle, CircleSlash, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { getShopSubscription, type ShopSubStatus } from "@/lib/format";
 
@@ -40,14 +41,27 @@ function SubscriptionBadge({ status, label }: { status: ShopSubStatus; label: st
   );
 }
 
+const PAGE_SIZE = 10;
+
 export default function Shops() {
   const [page, setPage] = useState(1);
   const { data: result, isLoading, isError } = useListPortalShops(
-    { page, limit: 50 },
-    { query: { queryKey: getListPortalShopsQueryKey({ page, limit: 50 }) } }
+    { page, limit: PAGE_SIZE },
+    { query: { queryKey: getListPortalShopsQueryKey({ page, limit: PAGE_SIZE }) } }
   );
 
   const shops = result?.data || [];
+  const totalPages = result?.totalPages || 1;
+  const totalCount = result?.count || 0;
+  const currentPage = result?.currentPage || page;
+
+  // The server clamps out-of-range pages; mirror that back into local state so
+  // Previous/Next keep working from the corrected page.
+  useEffect(() => {
+    if (result?.currentPage && result.currentPage !== page) {
+      setPage(result.currentPage);
+    }
+  }, [result?.currentPage, page]);
 
   return (
     <div className="space-y-5">
@@ -174,6 +188,35 @@ export default function Shops() {
                   </TableBody>
                 </Table>
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between gap-2 pt-4 mt-2 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                    <span className="hidden sm:inline"> · {totalCount} shops</span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span className="hidden sm:inline">Previous</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>

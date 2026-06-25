@@ -221,12 +221,16 @@ router.get("/portal/shops", async (req, res) => {
     const norm = normalizeList(result.data);
     const all = norm.data.map(stripSecrets);
     const count = all.length;
-    const start = (page - 1) * limit;
+    const totalPages = Math.max(1, Math.ceil(count / limit));
+    // Clamp out-of-range requests (e.g. stale page after data shrinks) so the
+    // client never receives an empty page that actually has results elsewhere.
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * limit;
     res.status(200).json({
       data: all.slice(start, start + limit),
       count,
-      totalPages: Math.max(1, Math.ceil(count / limit)),
-      currentPage: page,
+      totalPages,
+      currentPage: safePage,
     });
   } catch (err) {
     req.log.error({ err }, "Portal shops fetch failed");
