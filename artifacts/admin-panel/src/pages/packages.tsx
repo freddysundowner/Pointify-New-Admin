@@ -110,7 +110,7 @@ export default function Packages() {
         }
       />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Packages List</CardTitle>
         </CardHeader>

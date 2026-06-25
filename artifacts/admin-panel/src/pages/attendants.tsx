@@ -65,7 +65,7 @@ export default function Attendants() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Attendants" description="Manage shop attendants." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Attendants List</CardTitle>
         </CardHeader>

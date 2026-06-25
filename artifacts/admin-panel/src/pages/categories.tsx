@@ -168,7 +168,7 @@ export default function Categories() {
         }
       />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>All categories</CardTitle>
           <CardDescription>

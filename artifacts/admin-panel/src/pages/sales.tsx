@@ -112,7 +112,7 @@ export default function Sales() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Sales" description="View all platform sales." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Sales List</CardTitle>
         </CardHeader>

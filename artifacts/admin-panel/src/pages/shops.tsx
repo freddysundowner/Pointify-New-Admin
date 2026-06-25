@@ -266,7 +266,7 @@ export default function Shops() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Shops" description="Manage all shops registered on the platform." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>All Shops</CardTitle>
         </CardHeader>

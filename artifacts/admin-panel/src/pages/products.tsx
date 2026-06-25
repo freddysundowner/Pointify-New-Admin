@@ -114,7 +114,7 @@ export default function Products() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Products" description="Manage all products across shops." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Products List</CardTitle>
         </CardHeader>

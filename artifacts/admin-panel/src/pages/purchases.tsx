@@ -93,7 +93,7 @@ export default function Purchases() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Purchases" description="View all platform purchases." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Purchases List</CardTitle>
         </CardHeader>

@@ -178,3 +178,18 @@
     }
   }
 }
+
+/* Mobile: flatten outer page cards so content runs edge-to-edge (no double
+   padding / squeeze). Restored to normal card chrome from md up. */
+@media (max-width: 767px) {
+  .page-card {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .page-card > * {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}

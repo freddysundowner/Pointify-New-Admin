@@ -128,7 +128,7 @@ export default function Users() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Users" description="Manage shop owners and platform users." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>All Users</CardTitle>
         </CardHeader>

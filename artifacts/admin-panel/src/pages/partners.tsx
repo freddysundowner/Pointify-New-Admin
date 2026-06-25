@@ -259,7 +259,7 @@ export default function Partners() {
         }
       />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>All partners</CardTitle>
           <CardDescription>

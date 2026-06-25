@@ -186,7 +186,7 @@ export default function PartnerDetail() {
       />
 
       {/* Partner summary */}
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Partner details</CardTitle>
           <CardDescription>
@@ -253,7 +253,7 @@ export default function PartnerDetail() {
 
         {/* Shops */}
         <TabsContent value="shops">
-          <Card>
+          <Card className="page-card">
             <CardHeader>
               <CardTitle>Shops</CardTitle>
               <CardDescription>
@@ -351,7 +351,7 @@ export default function PartnerDetail() {
 
         {/* Users */}
         <TabsContent value="users">
-          <Card>
+          <Card className="page-card">
             <CardHeader>
               <CardTitle>Users</CardTitle>
               <CardDescription>
@@ -436,7 +436,7 @@ export default function PartnerDetail() {
 
         {/* Transactions */}
         <TabsContent value="transactions">
-          <Card>
+          <Card className="page-card">
             <CardHeader>
               <CardTitle>Transactions</CardTitle>
               <CardDescription>

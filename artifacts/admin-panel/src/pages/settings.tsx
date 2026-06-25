@@ -627,7 +627,7 @@ export default function Settings() {
           ))}
         </div>
       ) : isError ? (
-        <Card>
+        <Card className="page-card">
           <CardContent className="py-10">
             <Empty>
               <EmptyHeader>
@@ -641,7 +641,7 @@ export default function Settings() {
           </CardContent>
         </Card>
       ) : displayGroups.length === 0 ? (
-        <Card>
+        <Card className="page-card">
           <CardContent className="py-10">
             <Empty>
               <EmptyHeader>
@@ -673,7 +673,7 @@ export default function Settings() {
             const isSaving = saveMutation.isPending && isEditing;
             return (
               <TabsContent key={name} value={name} className="mt-0">
-                <Card>
+                <Card className="page-card">
                   <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
                     <CardTitle>{humanize(name)}</CardTitle>
                     {isEditing ? (

@@ -247,7 +247,7 @@ export default function Subscriptions() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="Subscriptions" description="Manage all shop subscriptions." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>Subscriptions List</CardTitle>
         </CardHeader>

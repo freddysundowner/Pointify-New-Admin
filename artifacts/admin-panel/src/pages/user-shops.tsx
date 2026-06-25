@@ -47,7 +47,7 @@ export default function UserShops() {
         backHref="/users"
       />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>
             All Shops{shops.length ? ` (${shops.length})` : ""}

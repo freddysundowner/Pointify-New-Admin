@@ -132,7 +132,7 @@ export default function SMS() {
     <div className="space-y-4 md:space-y-6">
       <PageHeader title="SMS Hub" description="Manage platform communications." />
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Send className="h-5 w-5 text-muted-foreground" />
@@ -200,7 +200,7 @@ export default function SMS() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="page-card">
         <CardHeader>
           <CardTitle>SMS Logs</CardTitle>
         </CardHeader>
