@@ -21,6 +21,22 @@ breakdown), `/subscriptions/summary/stats` (revenue), and `/admin/` count (total
 Map: productionActive=shops.active.production, trialActive=shops.active.trial, etc.;
 payingUsers = users.active.production (owners with an active production sub).
 
+# Single-call platform stats: upstream GET /admin/analytics
+
+The live upstream exposes `GET /admin/analytics` which returns a payload **identical in shape
+to our `StatisticsResult` schema** in one call (currency, generatedAt, revenue{today..allTime,mrr},
+revenueTrend[], gmv, salesTrend[], users, userTrend[], shops, subscriptions, packages[],
+topShops[], sms, catalog). The `/api/statistics` proxy remaps to `/admin/analytics` (NOT a
+literal upstream `/statistics`, which does not exist and 404s).
+
+**Why:** the earlier statistics design assumed the operator would paste a custom `/statistics`
+controller upstream; that was never needed — `/admin/analytics` already aggregates everything.
+
+**Caution:** this endpoint is NOT in the extracted source snapshot
+(`attached_assets/pointifyposapi_extracted/` admin router has no `analytics` route). It only
+exists on the live API. Verify shape by curling the live base URL when the snapshot lacks it.
+
 **General lesson:** the user has the upstream source in `attached_assets/pointifyposapi_extracted/`.
 When in doubt about which endpoint returns real data, read the controllers/routes there
-(`routes/*.js`, `controllers/*.js`) instead of guessing or computing from raw lists.
+(`routes/*.js`, `controllers/*.js`) instead of guessing or computing from raw lists — but the
+live API may have newer endpoints than the snapshot, so confirm against the live base URL too.

@@ -4,8 +4,8 @@ import { proxy } from "../lib/upstream";
 const router: IRouter = Router();
 
 // Comprehensive platform statistics. The aggregation runs upstream (it needs
-// direct DB access); this proxy simply forwards. See deliverables/statistics.controller.js
-// for the upstream method the operator pastes into the Pointify POS API.
-router.get("/statistics", (req, res) => proxy(req, res, { method: "GET", path: "/statistics" }));
+// direct DB access); this proxy simply forwards to the upstream admin analytics
+// endpoint, which returns the full StatisticsResult shape in a single call.
+router.get("/statistics", (req, res) => proxy(req, res, { method: "GET", path: "/admin/analytics" }));
 
 export default router;
