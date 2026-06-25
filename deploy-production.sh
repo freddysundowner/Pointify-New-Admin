@@ -37,7 +37,7 @@
 #   API_PORT=8080                (reused from the env file on re-runs)
 #   POS_API_BASE_URL=            (optional upstream override; not a secret)
 #   SESSION_SECRET=              (auto-generated & persisted if not provided)
-#   NODE_BIN=                    (path to a Node 20+ binary to use for build/run)
+#   NODE_BIN=                    (optional override; auto-detected when unset)
 #   LE_EMAIL=                    (required to obtain SSL certificates)
 #   FORCE_NGINX=0                (set to 1 to overwrite existing nginx configs)
 #   SKIP_SSL=0                   (set to 1 to skip the certbot/SSL step)
@@ -119,22 +119,46 @@ have apt-get || die "This script targets Debian/Ubuntu (apt-get not found). Inst
 # ----------------------------------------------------------------------------
 log "Checking prerequisites"
 
-# NODE_BIN lets you point this deploy at a non-default Node (e.g. when the
-# server's default `node` is too old for Vite but you have a newer one
-# installed elsewhere): NODE_BIN=/opt/node20/bin/node bash deploy-production.sh
-# Its directory is put first on PATH so the build (pnpm/vite) and the PM2
-# process (via --interpreter) both use it, while the system default node stays
-# untouched.
+# We need a Node 20+ binary (Vite 7 requires 20.19+). Normally you don't have to
+# do anything: the script uses the default `node` if it's new enough, otherwise
+# it auto-discovers one in common install locations (/opt/node*, nvm, fnm, n,
+# /usr/local). You can still force a specific one with NODE_BIN=/path/to/node.
+# The chosen binary's directory is put first on PATH so the build (pnpm/vite) and
+# the PM2 process (via --interpreter) both use it, leaving the system default
+# node untouched.
+node_major_of() { "$1" -p 'process.versions.node.split(".")[0]' 2>/dev/null; }
+
 if [ -n "${NODE_BIN:-}" ]; then
   [ -x "$NODE_BIN" ] || die "NODE_BIN='$NODE_BIN' is not executable. Point it at a Node 20+ binary, e.g. /opt/node20/bin/node."
-  PATH="$(dirname "$NODE_BIN"):$PATH"
-  export PATH
-elif ! have node; then
-  die "Node.js is not installed. Install Node.js 20+ (24 recommended), e.g. via https://github.com/nodesource/distributions, then re-run. To use a non-default Node, set NODE_BIN=/path/to/node."
+else
+  # Auto-discover: prefer the default node, then well-known install locations.
+  # Unmatched globs expand to a literal path that simply fails the -x test.
+  NODE_BIN=""
+  for cand in \
+    "$(command -v node 2>/dev/null || true)" \
+    /opt/node*/bin/node \
+    /usr/local/bin/node \
+    /usr/bin/node \
+    /root/.nvm/versions/node/*/bin/node \
+    "${HOME:-/root}"/.nvm/versions/node/*/bin/node \
+    /usr/local/n/versions/node/*/bin/node \
+    /root/.local/share/fnm/node-versions/*/installation/bin/node \
+    "${HOME:-/root}"/.local/share/fnm/node-versions/*/installation/bin/node
+  do
+    [ -n "$cand" ] && [ -x "$cand" ] || continue
+    maj="$(node_major_of "$cand")"
+    [ -n "$maj" ] && [ "$maj" -ge 20 ] 2>/dev/null || continue
+    NODE_BIN="$cand"; break
+  done
+  [ -n "$NODE_BIN" ] || die "No Node.js 20+ found (Vite 7 requires 20.19+; 24 recommended). Install it (e.g. via https://github.com/nodesource/distributions) or set NODE_BIN=/path/to/node, then re-run."
 fi
-NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-[ "$NODE_MAJOR" -ge 20 ] || die "Node.js $NODE_MAJOR detected; need 20+ (Vite 7 requires 20.19+; 24 recommended). Tip: install a newer Node elsewhere and run with NODE_BIN=/opt/node20/bin/node to use it just for this deploy."
-ok "node $(node -v)"
+
+PATH="$(dirname "$NODE_BIN"):$PATH"
+export PATH
+NODE_MAJOR="$(node_major_of "$NODE_BIN")"
+[ -n "$NODE_MAJOR" ] && [ "$NODE_MAJOR" -ge 20 ] 2>/dev/null \
+  || die "Node.js at '$NODE_BIN' is not 20+ (Vite 7 requires 20.19+; 24 recommended). Set NODE_BIN=/path/to/a/newer/node, then re-run."
+ok "node $(node -v) ($NODE_BIN)"
 NODE_BIN="$(command -v node)"
 
 if ! have pnpm; then
