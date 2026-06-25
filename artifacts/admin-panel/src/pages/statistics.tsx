@@ -311,7 +311,7 @@ export default function Statistics() {
           </Card>
 
           {/* Primary KPIs */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
             <KpiCard
               title="Revenue This Month"
               icon={<Receipt className="h-4 w-4 text-muted-foreground" />}
@@ -359,7 +359,7 @@ export default function Statistics() {
           </div>
 
           {/* Secondary KPIs */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
             <KpiCard
               title="Paying Customers"
               icon={<Users className="h-4 w-4 text-muted-foreground" />}
@@ -449,7 +449,7 @@ export default function Statistics() {
           </div>
 
           {/* Subscription health + catalog */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
             <KpiCard
               title="Active Subscriptions"
               icon={<Check className="h-4 w-4 text-muted-foreground" />}
@@ -600,7 +600,7 @@ function KpiCard({
       </CardHeader>
       <CardContent>
         <div
-          className={`text-2xl font-bold ${accent === "warn" ? "text-amber-600" : ""}`}
+          className={`text-lg font-bold leading-tight tabular-nums break-words sm:text-xl md:text-2xl ${accent === "warn" ? "text-amber-600" : ""}`}
         >
           {value}
         </div>
@@ -622,9 +622,9 @@ function RevenueStat({
   count: number;
 }) {
   return (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-lg border p-3 sm:p-4">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-bold">{formatKes(amount)}</p>
+      <p className="mt-1 text-lg font-bold leading-tight tabular-nums break-words sm:text-xl md:text-2xl">{formatKes(amount)}</p>
       <p className="mt-1 text-xs text-muted-foreground">
         {formatNumber(count)} subscription{count === 1 ? "" : "s"}
       </p>
@@ -644,7 +644,7 @@ const chartTip = {
 
 function TrendArea({ data, money }: { data: Array<{ label: string; value: number }>; money?: boolean }) {
   return (
-    <div className="h-[260px]">
+    <div className="h-[220px] md:h-[260px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
           <defs>
@@ -681,7 +681,7 @@ function TrendArea({ data, money }: { data: Array<{ label: string; value: number
 
 function TrendBar({ data, money }: { data: Array<{ label: string; value: number }>; money?: boolean }) {
   return (
-    <div className="h-[260px]">
+    <div className="h-[220px] md:h-[260px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
@@ -706,7 +706,7 @@ function TrendBar({ data, money }: { data: Array<{ label: string; value: number 
 
 function TrendLine({ data }: { data: Array<{ label: string; value: number }> }) {
   return (
-    <div className="h-[260px]">
+    <div className="h-[220px] md:h-[260px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
@@ -739,7 +739,7 @@ function TrendLine({ data }: { data: Array<{ label: string; value: number }> }) 
 function StatisticsSkeleton() {
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardHeader className="pb-2">
@@ -759,7 +759,7 @@ function StatisticsSkeleton() {
               <Skeleton className="h-5 w-40" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-[260px] w-full" />
+              <Skeleton className="h-[220px] md:h-[260px] w-full" />
             </CardContent>
           </Card>
         ))}
