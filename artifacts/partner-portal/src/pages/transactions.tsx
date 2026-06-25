@@ -1,20 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListPortalTransactions, getListPortalTransactionsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowUpRight, ArrowDownLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Loader2, ArrowUpRight, ArrowDownLeft, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { formatKES } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const PAGE_SIZE = 10;
 
 export default function Transactions() {
   const [page, setPage] = useState(1);
   const { data: result, isLoading, isError } = useListPortalTransactions(
-    { page, limit: 50 },
-    { query: { queryKey: getListPortalTransactionsQueryKey({ page, limit: 50 }) } }
+    { page, limit: PAGE_SIZE },
+    { query: { queryKey: getListPortalTransactionsQueryKey({ page, limit: PAGE_SIZE }) } }
   );
 
   const transactions = result?.data || [];
+  const totalPages = result?.totalPages || 1;
+  const totalCount = result?.count || 0;
+  const currentPage = result?.currentPage || page;
+
+  // Mirror the server's reported page back into local state so Prev/Next resume
+  // from the correct page if the request was out of range.
+  useEffect(() => {
+    if (result?.currentPage && result.currentPage !== page) {
+      setPage(result.currentPage);
+    }
+  }, [result?.currentPage, page]);
 
   return (
     <div className="space-y-5">
@@ -37,7 +51,7 @@ export default function Transactions() {
             <div className="text-center py-12 text-destructive">
               Failed to load transactions. Please try again later.
             </div>
-          ) : transactions.length === 0 ? (
+          ) : totalCount === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                 <ArrowUpRight className="w-6 h-6 text-muted-foreground" />
@@ -175,6 +189,35 @@ export default function Transactions() {
                 </TableBody>
               </Table>
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 pt-4 mt-2 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                  <span className="hidden sm:inline"> · {totalCount} transactions</span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage <= 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage >= totalPages}
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
             </>
           )}
         </CardContent>

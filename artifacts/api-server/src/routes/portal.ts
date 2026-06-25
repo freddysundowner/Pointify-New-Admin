@@ -287,7 +287,22 @@ router.get("/portal/transactions", async (req, res) => {
       res.status(result.status).json(result.data);
       return;
     }
-    const norm = normalizeList(result.data);
+    let norm = normalizeList(result.data);
+    // Upstream does NOT clamp out-of-range pages (e.g. page=999 returns empty
+    // `data` but still `page:999`). Re-fetch the last valid page so the client
+    // never lands on an empty page while transactions exist on earlier pages.
+    const safePage = Math.min(page, Math.max(1, norm.totalPages));
+    if (safePage !== page) {
+      const reFetch = await upstreamFetch({
+        method: "GET",
+        path: "/payments/transactions",
+        query: { id: session.aid, page: safePage, limit },
+        authHeader: upstreamAuth(session),
+      });
+      if (reFetch.status < 400) {
+        norm = normalizeList(reFetch.data);
+      }
+    }
     res.status(200).json({
       data: norm.data.map((t) => {
         if (t && typeof t === "object") {
@@ -304,7 +319,7 @@ router.get("/portal/transactions", async (req, res) => {
       }),
       count: norm.count,
       totalPages: norm.totalPages,
-      currentPage: norm.currentPage,
+      currentPage: Math.min(norm.currentPage, Math.max(1, norm.totalPages)),
     });
   } catch (err) {
     req.log.error({ err }, "Portal transactions fetch failed");
