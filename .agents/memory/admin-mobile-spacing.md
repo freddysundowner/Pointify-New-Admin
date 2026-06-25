@@ -13,4 +13,8 @@ The admin-panel must feel compact on phones. The rule is "tighter on mobile, res
 
 **Dashboard compact (mobile):** dashboard keeps real Card chrome (NOT `.page-card`) since it is a stat/chart-tile grid. To compact it on phones: KPI grid is `grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4` (2-up on mobile, 4-up desktop); KPI value numbers use `text-lg ... break-words tabular-nums sm:text-xl md:text-2xl` (break-words is REQUIRED — long `formatKes` KES strings overflow the narrow 2-col cards otherwise); heading `text-2xl md:text-3xl`; revenue chart `h-[220px] md:h-[300px]`.
 
+**Header actions on mobile:** `PageHeader` renders `actions` full-width on phones — wrapper is `flex w-full ... [&>button]:flex-1 md:w-auto md:flex-shrink-0 md:[&>button]:flex-none`, so a lone action becomes a full-width CTA and 2+ actions split the row evenly; inline auto-width returns at `md+`. Shared across all pages with `actions=`.
+
+**FilterBar with apply-on-click filters:** `FilterBar` works for non-live (explicit "apply") filters too (e.g. statistics revenue date-range): wrap the inputs+apply button in it, but keep the RESULT/output block OUTSIDE (below) the FilterBar so it stays visible on mobile when the filter sheet is closed.
+
 **Why:** user reported the mobile layout looked "squeezed" — main `p-4` + outer card `p-4` + nested item cards stacked padding three deep. Removing the outer card chrome + its horizontal padding gives a native edge-to-edge grouped-list feel. Default shadcn card `p-6` (24px) and `space-y-6` are too loose on small screens. When adding new admin pages/cards, follow the same `mobile → md:` responsive padding and use `page-card` on the outer wrapper so the look stays consistent. Desktop appearance must remain unchanged.

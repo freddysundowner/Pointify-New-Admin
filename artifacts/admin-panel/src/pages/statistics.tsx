@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar } from "@/components/layout/FilterBar";
 import {
   useGetStatistics,
   useGetRevenueRange,
@@ -212,8 +213,8 @@ export default function Statistics() {
                 Subscription revenue collected over time. Pick a date range to total any period.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-3">
+            <CardContent className="space-y-4 md:space-y-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                 <RevenueStat
                   label="Today"
                   amount={num(revenue.today?.amount)}
@@ -231,8 +232,12 @@ export default function Statistics() {
                 />
               </div>
 
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+              <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
+                <FilterBar
+                  className="flex flex-col gap-3 lg:flex-row lg:items-end"
+                  active={appliedRange != null}
+                  title="Revenue date range"
+                >
                   <div className="lg:w-44">
                     <Label className="mb-1 block text-xs text-muted-foreground">From</Label>
                     <Input
@@ -271,7 +276,7 @@ export default function Statistics() {
                       </Button>
                     )}
                   </div>
-                </div>
+                </FilterBar>
 
                 {appliedRange && (
                   <div className="mt-4">
@@ -494,7 +499,7 @@ export default function Statistics() {
                   </p>
                 ) : (
                   <div className="space-y-1">
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b pb-2 text-xs font-medium text-muted-foreground">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 sm:gap-4 border-b pb-2 text-xs font-medium text-muted-foreground">
                       <span>Plan</span>
                       <span className="text-right">Active</span>
                       <span className="text-right">Revenue</span>
@@ -540,7 +545,7 @@ export default function Statistics() {
                   </p>
                 ) : (
                   <div className="space-y-1">
-                    <div className="grid grid-cols-[1.5rem_1fr_auto_auto] gap-4 border-b pb-2 text-xs font-medium text-muted-foreground">
+                    <div className="grid grid-cols-[1.5rem_1fr_auto_auto] gap-2 sm:gap-4 border-b pb-2 text-xs font-medium text-muted-foreground">
                       <span>#</span>
                       <span>Shop</span>
                       <span className="text-right">Sales</span>

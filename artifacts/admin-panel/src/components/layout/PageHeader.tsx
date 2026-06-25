@@ -37,7 +37,9 @@ export function PageHeader({ title, description, actions, backHref }: PageHeader
         </div>
       </div>
       {actions && (
-        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex w-full flex-wrap items-center gap-2 [&>button]:flex-1 md:w-auto md:flex-shrink-0 md:[&>button]:flex-none">
+          {actions}
+        </div>
       )}
     </div>
   );
