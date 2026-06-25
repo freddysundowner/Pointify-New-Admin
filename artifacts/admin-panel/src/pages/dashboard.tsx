@@ -99,21 +99,21 @@ export default function Dashboard() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Overview</h1>
+        <p className="text-sm text-muted-foreground md:text-base">
           Platform performance across all shops on Pointify.
         </p>
       </div>
 
       {/* KPI cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">All-time Revenue</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatKes(allTime.revenue)}</div>
+            <div className="text-lg font-bold leading-tight tabular-nums break-words sm:text-xl md:text-2xl">{formatKes(allTime.revenue)}</div>
             <p className="text-xs text-muted-foreground">
               {formatNumber(allTime.count)} subscription payments
             </p>
@@ -126,7 +126,7 @@ export default function Dashboard() {
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatKes(monthRevenue)}</div>
+            <div className="text-lg font-bold leading-tight tabular-nums break-words sm:text-xl md:text-2xl">{formatKes(monthRevenue)}</div>
             <p className="text-xs flex items-center gap-1">
               {monthDelta === null ? (
                 <span className="text-muted-foreground">vs last month</span>
@@ -157,7 +157,7 @@ export default function Dashboard() {
             <Store className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(activeShops)}</div>
+            <div className="text-lg font-bold leading-tight tabular-nums break-words sm:text-xl md:text-2xl">{formatNumber(activeShops)}</div>
             <p className="text-xs text-muted-foreground">
               {formatNumber(trialShops)} on trial · {formatNumber(expiredShops)} expired
             </p>
@@ -170,7 +170,7 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(totalUsers)}</div>
+            <div className="text-lg font-bold leading-tight tabular-nums break-words sm:text-xl md:text-2xl">{formatNumber(totalUsers)}</div>
             <p className="text-xs text-muted-foreground">
               {formatNumber(payingUsers)} paying customers
             </p>
@@ -179,13 +179,13 @@ export default function Dashboard() {
       </div>
 
       {/* Revenue chart + shop status */}
-      <div className="grid gap-4 lg:grid-cols-7">
+      <div className="grid gap-3 md:gap-4 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Revenue by Period</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[220px] md:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueChart} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
