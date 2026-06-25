@@ -1429,7 +1429,7 @@ export const TopupSmsResponse = zod.record(zod.string(), zod.unknown())
  * @summary Send a bulk SMS to an audience segment
  */
 export const SendBulkSmsBody = zod.object({
-  "userType": zod.enum(['trial_active', 'trial_expired', 'production_active', 'production_expired']),
+  "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired']),
   "message": zod.string()
 })
 

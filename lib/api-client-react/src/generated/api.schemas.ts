@@ -835,6 +835,7 @@ export type BulkSmsInputUserType = typeof BulkSmsInputUserType[keyof typeof Bulk
 
 
 export const BulkSmsInputUserType = {
+  all: 'all',
   trial_active: 'trial_active',
   trial_expired: 'trial_expired',
   production_active: 'production_active',

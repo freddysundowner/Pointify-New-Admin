@@ -1781,7 +1781,7 @@ components:
       properties:
         userType:
           type: string
-          enum: [trial_active, trial_expired, production_active, production_expired]
+          enum: [all, trial_active, trial_expired, production_active, production_expired]
         message: { type: string }
 
     BulkSmsResult:

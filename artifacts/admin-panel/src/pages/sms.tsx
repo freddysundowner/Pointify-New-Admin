@@ -43,6 +43,11 @@ type Audience = BulkSmsInput["userType"];
 
 const AUDIENCES: { value: Audience; label: string; description: string }[] = [
   {
+    value: "all",
+    label: "All shops",
+    description: "Everyone across every plan and status",
+  },
+  {
     value: "trial_active",
     label: "Trial · Active",
     description: "Shops on a trial that hasn't expired yet",
@@ -107,6 +112,11 @@ export default function SMS() {
               variant: "destructive",
             });
             return;
+          } else if (result?.partialFailure) {
+            toast({
+              title: "Bulk SMS partly sent",
+              description: `${sent} sent · ${failed} failed. Some groups couldn't be reached — send again to retry them.`,
+            });
           } else {
             toast({
               title: "Bulk SMS sent",
