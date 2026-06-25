@@ -27,3 +27,16 @@ wanted trials visually distinct from paying customers (a trial is "On Trial", no
 for BOTH branches (a future start can never be active). Caveat: the status FILTER
 dropdown is upstream `status`-based, so it won't perfectly match these badge labels;
 changing that needs a server-side filter change.
+
+# Partner-portal per-shop expiry badge
+
+Partners need to see, per referred shop, whether its subscription is live or
+expired (drives whether they follow up). Each shop from `/api/portal/shops`
+embeds a populated `subscription` doc (`paid`, `endDate`, `packageId`) — the proxy
+`stripSecrets` only drops top-level `password/otp`, so it's available client-side.
+`getShopSubscription()` in `partner-portal/src/lib/format.ts` derives:
+active (paid + future endDate) / expiring (≤7 days) / expired (past endDate) /
+unpaid (`paid!==true`) / none (no sub). Paid-but-no-valid-endDate is malformed
+(never happens on real data) → labeled "Check status" (amber), NOT a confident
+green Active. **Why:** never give partners false confidence that an indeterminate
+shop is active.

@@ -2,8 +2,43 @@ import { useState } from "react";
 import { useListPortalShops, getListPortalShopsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Store, Loader2, MapPin, Phone } from "lucide-react";
+import { Store, Loader2, MapPin, Phone, CheckCircle2, AlertTriangle, XCircle, CircleSlash } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { getShopSubscription, type ShopSubStatus } from "@/lib/format";
+
+const STATUS_STYLES: Record<ShopSubStatus, { className: string; Icon: typeof CheckCircle2 }> = {
+  active: {
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
+    Icon: CheckCircle2,
+  },
+  expiring: {
+    className: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
+    Icon: AlertTriangle,
+  },
+  expired: {
+    className: "bg-destructive/10 text-destructive border-destructive/20",
+    Icon: XCircle,
+  },
+  unpaid: {
+    className: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
+    Icon: AlertTriangle,
+  },
+  none: {
+    className: "bg-muted text-muted-foreground border-border",
+    Icon: CircleSlash,
+  },
+};
+
+function SubscriptionBadge({ status, label }: { status: ShopSubStatus; label: string }) {
+  const { className, Icon } = STATUS_STYLES[status];
+  return (
+    <Badge variant="outline" className={`gap-1 ${className}`}>
+      <Icon className="w-3 h-3" />
+      {label}
+    </Badge>
+  );
+}
 
 export default function Shops() {
   const [page, setPage] = useState(1);
@@ -47,13 +82,19 @@ export default function Shops() {
             <>
               {/* Mobile: card list */}
               <div className="space-y-3 md:hidden">
-                {shops.map((shop: any) => (
+                {shops.map((shop: any) => {
+                  const sub = getShopSubscription(shop);
+                  return (
                   <div key={shop._id} className="rounded-lg border p-4">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Store className="w-4 h-4 text-primary shrink-0" />
-                      <span className="truncate">{shop.name || 'Unnamed Shop'}</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 font-medium min-w-0">
+                        <Store className="w-4 h-4 text-primary shrink-0" />
+                        <span className="truncate">{shop.name || 'Unnamed Shop'}</span>
+                      </div>
+                      <SubscriptionBadge status={sub.status} label={sub.label} />
                     </div>
                     <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                      <div className="text-xs font-medium text-foreground">{sub.detail}</div>
                       {shop.contact && (
                         <div className="flex items-center gap-1.5">
                           <Phone className="w-3.5 h-3.5 shrink-0" />
@@ -71,7 +112,8 @@ export default function Shops() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Desktop: table */}
@@ -80,18 +122,27 @@ export default function Shops() {
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Shop Name</TableHead>
+                      <TableHead>Subscription</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Created</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {shops.map((shop: any) => (
+                    {shops.map((shop: any) => {
+                      const sub = getShopSubscription(shop);
+                      return (
                       <TableRow key={shop._id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <Store className="w-4 h-4 text-primary" />
                             {shop.name || 'Unnamed Shop'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <SubscriptionBadge status={sub.status} label={sub.label} />
+                            <div className="text-xs text-muted-foreground">{sub.detail}</div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -118,7 +169,8 @@ export default function Shops() {
                           {shop.createAt ? format(new Date(shop.createAt), "MMM d, yyyy") : "Unknown"}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
