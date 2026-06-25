@@ -14,6 +14,7 @@ import Users from "@/pages/users";
 import UserShops from "@/pages/user-shops";
 import Shops from "@/pages/shops";
 import Categories from "@/pages/categories";
+import Partners from "@/pages/partners";
 import Products from "@/pages/products";
 import Attendants from "@/pages/attendants";
 import Sales from "@/pages/sales";
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/users/:id/shops"><ProtectedRoute component={UserShops} /></Route>
       <Route path="/shops"><ProtectedRoute component={Shops} /></Route>
       <Route path="/categories"><ProtectedRoute component={Categories} /></Route>
+      <Route path="/partners"><ProtectedRoute component={Partners} /></Route>
       <Route path="/products"><ProtectedRoute component={Products} /></Route>
       <Route path="/attendants"><ProtectedRoute component={Attendants} /></Route>
       <Route path="/sales"><ProtectedRoute component={Sales} /></Route>

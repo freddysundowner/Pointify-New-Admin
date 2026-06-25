@@ -451,6 +451,126 @@ export const DeleteShopCategoryResponse = zod.object({
 })
 
 
+export const ListPartnersQueryParams = zod.object({
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListPartnersResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * Creates a partner via the upstream affiliate registration, which hashes the password (auto-generating one when omitted) and emails the partner a welcome message with their credentials. A duplicate email returns 400.
+ * @summary Register a new partner (affiliate)
+ */
+export const CreatePartnerBody = zod.object({
+  "name": zod.string(),
+  "email": zod.string().optional(),
+  "phonenumber": zod.string().optional(),
+  "country": zod.string().optional(),
+  "commission": zod.number().optional(),
+  "password": zod.string().optional()
+})
+
+
+export const GetPartnerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetPartnerResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+export const UpdatePartnerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdatePartnerBody = zod.object({
+  "name": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phonenumber": zod.string().optional(),
+  "address": zod.string().optional(),
+  "country": zod.string().optional(),
+  "commission": zod.number().optional(),
+  "password": zod.string().optional(),
+  "blocked": zod.boolean().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdatePartnerResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+export const DeletePartnerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeletePartnerResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
 export const ListShopsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),

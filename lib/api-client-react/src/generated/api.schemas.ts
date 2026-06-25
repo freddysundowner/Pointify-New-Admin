@@ -11,6 +11,72 @@ export interface HealthStatus {
 
 export interface GenericObject { [key: string]: unknown }
 
+export interface Partner {
+  _id: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phonenumber?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  commission?: number | null;
+  /** @nullable */
+  wallet?: number | null;
+  /** @nullable */
+  blocked?: boolean | null;
+  /** @nullable */
+  active?: boolean | null;
+  /** @nullable */
+  code?: string | null;
+  /** @nullable */
+  createAt?: string | null;
+  shops?: GenericObject[];
+  admins?: GenericObject[];
+  [key: string]: unknown;
+ }
+
+export interface PartnerCreateInput {
+  name: string;
+  email?: string;
+  phonenumber?: string;
+  country?: string;
+  commission?: number;
+  password?: string;
+}
+
+export interface PartnerUpdate {
+  name?: string;
+  email?: string;
+  phonenumber?: string;
+  address?: string;
+  country?: string;
+  commission?: number;
+  password?: string;
+  blocked?: boolean;
+  active?: boolean;
+}
+
+export interface PartnerListResult {
+  data?: Partner[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface PartnerRegisterResult {
+  message?: string;
+  status?: boolean;
+  error?: string;
+  token?: string;
+  userdata?: GenericObject;
+  [key: string]: unknown;
+ }
+
 export interface ErrorResponse {
   error?: string;
 }
@@ -934,6 +1000,11 @@ export const ListAdminsBySubscriptionSubscriptionType = {
   trial: 'trial',
   production: 'production',
 } as const;
+
+export type ListPartnersParams = {
+page?: number;
+limit?: number;
+};
 
 export type ListShopsParams = {
 page?: number;

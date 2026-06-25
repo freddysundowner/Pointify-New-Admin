@@ -287,6 +287,84 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResult" }
 
+  /partners:
+    get:
+      operationId: listPartners
+      tags: [partners]
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Partners
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerListResult" }
+    post:
+      operationId: createPartner
+      tags: [partners]
+      summary: Register a new partner (affiliate)
+      description: >-
+        Creates a partner via the upstream affiliate registration, which hashes
+        the password (auto-generating one when omitted) and emails the partner a
+        welcome message with their credentials. A duplicate email returns 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerCreateInput" }
+      responses:
+        "201":
+          description: Partner created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerRegisterResult" }
+        "400":
+          description: Duplicate email or invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /partners/{id}:
+    get:
+      operationId: getPartner
+      tags: [partners]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+    put:
+      operationId: updatePartner
+      tags: [partners]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerUpdate" }
+      responses:
+        "200":
+          description: Updated partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+    delete:
+      operationId: deletePartner
+      tags: [partners]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Deleted partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+
   /shops:
     get:
       operationId: listShops
@@ -997,6 +1075,74 @@ components:
     GenericObject:
       type: object
       additionalProperties: true
+
+    Partner:
+      type: object
+      additionalProperties: true
+      required: [_id]
+      properties:
+        _id: { type: string }
+        name: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        phonenumber: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        country: { type: ["string", "null"] }
+        commission: { type: ["number", "null"] }
+        wallet: { type: ["number", "null"] }
+        blocked: { type: ["boolean", "null"] }
+        active: { type: ["boolean", "null"] }
+        code: { type: ["string", "null"] }
+        createAt: { type: ["string", "null"] }
+        shops:
+          type: array
+          items: { $ref: "#/components/schemas/GenericObject" }
+        admins:
+          type: array
+          items: { $ref: "#/components/schemas/GenericObject" }
+
+    PartnerCreateInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phonenumber: { type: string }
+        country: { type: string }
+        commission: { type: number }
+        password: { type: string }
+
+    PartnerUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phonenumber: { type: string }
+        address: { type: string }
+        country: { type: string }
+        commission: { type: number }
+        password: { type: string }
+        blocked: { type: boolean }
+        active: { type: boolean }
+
+    PartnerListResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Partner" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    PartnerRegisterResult:
+      type: object
+      additionalProperties: true
+      properties:
+        message: { type: string }
+        status: { type: boolean }
+        error: { type: string }
+        token: { type: string }
+        userdata: { $ref: "#/components/schemas/GenericObject" }
 
     ErrorResponse:
       type: object
