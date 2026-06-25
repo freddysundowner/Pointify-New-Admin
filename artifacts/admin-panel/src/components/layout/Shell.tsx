@@ -2,12 +2,9 @@ import { ReactNode, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { AccountDialog } from "@/components/AccountDialog";
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, Users, Store, PackageSearch, 
-  UserSquare2, ReceiptText, ShoppingCart, Package, 
-  CreditCard, MessageSquare, Settings, LogOut,
-  BarChart3, Menu, Tags, UserCog, Handshake
-} from "lucide-react";
+import { Store, LogOut, UserCog } from "lucide-react";
+import { navItems, isNavActive } from "./nav-items";
+import { MobileNav } from "./MobileNav";
 import {
   Sidebar,
   SidebarContent,
@@ -31,23 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const navItems = [
-  { title: "Dashboard", href: "/", icon: LayoutDashboard },
-  { title: "Statistics", href: "/statistics", icon: BarChart3 },
-  { title: "Platform Users", href: "/users", icon: Users },
-  { title: "Shops", href: "/shops", icon: Store },
-  { title: "Shop Categories", href: "/categories", icon: Tags },
-  { title: "Partners", href: "/partners", icon: Handshake },
-  { title: "Products", href: "/products", icon: PackageSearch },
-  { title: "Attendants", href: "/attendants", icon: UserSquare2 },
-  { title: "Sales", href: "/sales", icon: ReceiptText },
-  { title: "Purchases", href: "/purchases", icon: ShoppingCart },
-  { title: "Packages", href: "/packages", icon: Package },
-  { title: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-  { title: "SMS Hub", href: "/sms", icon: MessageSquare },
-  { title: "Settings", href: "/settings", icon: Settings },
-];
 
 export function Shell({ children }: { children: ReactNode }) {
   const { logout, userdata } = useAuth();
@@ -79,7 +59,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 <SidebarMenu>
                   {navItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={location === item.href || (item.href !== "/" && location.startsWith(item.href))}>
+                      <SidebarMenuButton asChild isActive={isNavActive(location, item.href)}>
                         <Link href={item.href}>
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
@@ -139,9 +119,13 @@ export function Shell({ children }: { children: ReactNode }) {
         </Sidebar>
 
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background px-4 shadow-sm md:h-16 md:px-6">
-            <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
-            {/* App brand: shown on mobile where the sidebar is hidden in the drawer */}
+          <header
+            className="sticky top-0 z-20 flex min-h-14 items-center gap-3 border-b bg-background px-4 shadow-sm md:min-h-16 md:px-6"
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
+          >
+            {/* Desktop: collapse/expand the sidebar. Hidden on mobile (bottom nav replaces it). */}
+            <SidebarTrigger className="-ml-1 hidden text-muted-foreground hover:text-foreground md:flex" />
+            {/* Mobile app bar brand */}
             <div className="flex items-center gap-2 font-bold tracking-tight md:hidden">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Store className="h-5 w-5" />
@@ -149,12 +133,49 @@ export function Shell({ children }: { children: ReactNode }) {
               <span className="text-base">Pointify Admin</span>
             </div>
             <div className="flex-1" />
+            {/* Mobile account menu (the sidebar footer is hidden on mobile) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild className="md:hidden">
+                <button type="button" aria-label="Open account menu" className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {getInitials(userdata?.username || userdata?.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" sideOffset={8}>
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarFallback className="rounded-lg">{getInitials(userdata?.username || userdata?.email)}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">{userdata?.username || "Admin"}</span>
+                      <span className="truncate text-xs text-muted-foreground">{userdata?.email}</span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setAccountOpen(true)} className="cursor-pointer">
+                  <UserCog className="mr-2 h-4 w-4" />
+                  My account
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6">
             {children}
           </main>
         </div>
+
+        <MobileNav />
       </div>
       <AccountDialog open={accountOpen} onOpenChange={setAccountOpen} />
     </SidebarProvider>

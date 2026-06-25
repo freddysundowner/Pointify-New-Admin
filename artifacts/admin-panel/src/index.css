@@ -161,4 +161,20 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Native-app feel on touch devices: remove the blue tap flash and make
+     interactive controls feel like native buttons (no text selection / callout). */
+  a,
+  button,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  @media (max-width: 767px) {
+    body {
+      overscroll-behavior-y: none;
+    }
+  }
 }

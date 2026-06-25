@@ -21,3 +21,4 @@
 - [Partner portal session auth](portal-session-auth.md) — portal must mint its OWN SESSION_SECRET-signed token (not trust upstream JWT) since upstream is open + proxy lacks its secret; else forgeable IDOR over money/PII; stale tokens 401 → client self-heals via global QueryClient onError.
 - [Partners = affiliates](partners-affiliates.md) — admin "Partners" = upstream Affliate; create via /affiliates/auth/register (hashes pw); deep-strip secrets incl nested admins; proxy must gate Bearer auth (upstream open).
 - [Shop categories upstream](shop-categories-upstream.md) — /shop/category list is a bare array (use plain proxy not proxyList); create returns 201 even on duplicate with body {error}; detect result.error in onSuccess.
+- [Admin-panel mobile nav](admin-mobile-nav.md) — phone UI = top app bar + fixed bottom tab bar (NOT hamburger drawer); nav items shared via nav-items.ts; "More" active = no primary route matches.
