@@ -791,6 +791,8 @@ export const SubscriptionCreateInputPaymentType = {
 export interface SubscriptionCreateInput {
   userId: string;
   package: string;
+  /** Primary shop id. Upstream Subscription.shop is required, so send the first selected shop here in addition to the shops array. */
+  shop: string;
   shops: string[];
   phonenumber: string;
   paymentType?: SubscriptionCreateInputPaymentType;

@@ -1720,10 +1720,13 @@ components:
 
     SubscriptionCreateInput:
       type: object
-      required: [userId, package, shops, phonenumber]
+      required: [userId, package, shop, shops, phonenumber]
       properties:
         userId: { type: string }
         package: { type: string }
+        shop:
+          type: string
+          description: "Primary shop id. Upstream Subscription.shop is required, so send the first selected shop here in addition to the shops array."
         shops:
           type: array
           items: { type: string }

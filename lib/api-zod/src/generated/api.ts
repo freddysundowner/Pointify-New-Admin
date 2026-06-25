@@ -1210,6 +1210,7 @@ export const WithdrawMpesaResponse = zod.object({
 export const CreateSubscriptionBody = zod.object({
   "userId": zod.string(),
   "package": zod.string(),
+  "shop": zod.string().describe('Primary shop id. Upstream Subscription.shop is required, so send the first selected shop here in addition to the shops array.'),
   "shops": zod.array(zod.string()),
   "phonenumber": zod.string(),
   "paymentType": zod.enum(['mpesa']).optional(),

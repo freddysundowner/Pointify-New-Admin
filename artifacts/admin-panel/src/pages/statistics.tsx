@@ -833,6 +833,9 @@ function PaymentPromptDialog({ open, onClose }: { open: boolean; onClose: () => 
       data: {
         userId: user.id,
         package: packageId,
+        // Upstream's Subscription.shop is required, so send the first selected
+        // shop as the primary shop in addition to the full shops array.
+        shop: selectedShops[0],
         shops: selectedShops,
         paymentType: "mpesa",
         phonenumber: phonenumber.trim(),
