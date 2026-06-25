@@ -165,18 +165,23 @@ publish_site "$PARTNER_SRC" "$PARTNER_ROOT" "partner"
 # env file so it survives re-runs (rotating it would invalidate live sessions).
 log "Preparing API runtime secrets ($ENV_FILE)"
 mkdir -p "$ENV_DIR"
-if [ -f "$ENV_FILE" ] && grep -q '^SESSION_SECRET=' "$ENV_FILE" && [ -z "$SESSION_SECRET" ]; then
-  ok "Reusing existing SESSION_SECRET"
-else
-  if [ -z "$SESSION_SECRET" ]; then
-    SESSION_SECRET="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
-    log "Generated a new SESSION_SECRET"
-  fi
-  {
-    printf 'SESSION_SECRET=%s\n' "$SESSION_SECRET"
-    [ -n "$POS_API_BASE_URL" ] && printf 'POS_API_BASE_URL=%s\n' "$POS_API_BASE_URL"
-  } > "$ENV_FILE"
+# Resolve SESSION_SECRET deterministically: explicit env var wins; otherwise
+# reuse the value already on disk; otherwise generate one. Rotating it would
+# invalidate live sessions, so we never change it unless the operator passes one.
+if [ -z "$SESSION_SECRET" ] && [ -f "$ENV_FILE" ]; then
+  SESSION_SECRET="$(sed -n 's/^SESSION_SECRET=//p' "$ENV_FILE" | head -n1)"
+  [ -n "$SESSION_SECRET" ] && ok "Reusing existing SESSION_SECRET"
 fi
+if [ -z "$SESSION_SECRET" ]; then
+  SESSION_SECRET="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+  log "Generated a new SESSION_SECRET"
+fi
+# Always (re)write the env file so a changed/cleared POS_API_BASE_URL takes
+# effect on re-runs. Omitting the line reverts the API to its default upstream.
+{
+  printf 'SESSION_SECRET=%s\n' "$SESSION_SECRET"
+  if [ -n "$POS_API_BASE_URL" ]; then printf 'POS_API_BASE_URL=%s\n' "$POS_API_BASE_URL"; fi
+} > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 chown root:root "$ENV_FILE"
 
@@ -188,6 +193,16 @@ elif ! id "$APP_USER" >/dev/null 2>&1; then
   die "APP_USER '$APP_USER' does not exist."
 fi
 APP_GROUP="$(id -gn "$APP_USER" 2>/dev/null || echo "$APP_USER")"
+
+# Pre-flight: a non-root service user must be able to execute node and read the
+# built API. This catches repos cloned under /root (mode 700) before the service
+# silently fails to start.
+if [ "$APP_USER" != "root" ] && have sudo; then
+  sudo -u "$APP_USER" test -x "$NODE_BIN" 2>/dev/null \
+    || warn "User '$APP_USER' may not be able to execute node ($NODE_BIN). If node is under /root or a private dir, install it system-wide or set APP_USER=root."
+  sudo -u "$APP_USER" test -r "$REPO_DIR/artifacts/api-server/dist/index.mjs" 2>/dev/null \
+    || warn "User '$APP_USER' cannot read $REPO_DIR. If the repo lives under /root, move it (e.g. to the user's home or /opt) or set APP_USER=root, then re-run."
+fi
 
 log "Installing API proxy service ($SERVICE_NAME, user: $APP_USER)"
 {
@@ -217,6 +232,13 @@ systemctl restart "$SERVICE_NAME" || true
 sleep 2
 if systemctl is-active --quiet "$SERVICE_NAME"; then
   ok "API proxy running on 127.0.0.1:$API_PORT"
+  if have curl; then
+    if curl -fsS -m 5 "http://127.0.0.1:$API_PORT/api/healthz" >/dev/null 2>&1; then
+      ok "API health check passed (/api/healthz)"
+    else
+      warn "API is up but /api/healthz did not respond OK. Inspect: journalctl -u $SERVICE_NAME -n 50"
+    fi
+  fi
 else
   warn "API proxy failed to start. Inspect: journalctl -u $SERVICE_NAME -n 50"
 fi
