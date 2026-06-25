@@ -110,7 +110,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-auto p-4 pb-24 md:p-8 md:pb-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="w-full">
             {children}
           </div>
         </main>
