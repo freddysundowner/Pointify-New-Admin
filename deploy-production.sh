@@ -22,8 +22,10 @@
 #   3. Persist API runtime config (SESSION_SECRET, port) in a root-only env file.
 #   4. Start/reload the pointify-api process under PM2 and save the PM2 list.
 #   5. Create each subdomain's nginx server block IF it does not already exist
-#      (existing configs are left untouched so certbot's SSL edits survive).
-#   6. Obtain/enable SSL via certbot IF a certificate does not already exist.
+#      (set FORCE_NGINX=1 to regenerate). The script writes the full vhost
+#      itself — both the HTTP->HTTPS redirect and the HTTPS proxy block.
+#   6. Obtain SSL via "certbot certonly" IF a certificate does not already exist
+#      (certbot only fetches the cert; it never edits the nginx config).
 #   7. Test and reload nginx.
 #
 # Usage:
@@ -278,6 +280,74 @@ fi
 # ----------------------------------------------------------------------------
 # 5. nginx server blocks (create only if missing) — proxy ALL traffic to PM2
 # ----------------------------------------------------------------------------
+# True only when BOTH cert files actually exist (not just the live dir, which can
+# linger as a broken/empty directory). Gates whether we emit a 443 block.
+has_cert() { [ -f "/etc/letsencrypt/live/$1/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$1/privkey.pem" ]; }
+
+# Emit the nginx vhost for $1 ourselves. If a Let's Encrypt cert already exists
+# we write a complete HTTP->HTTPS redirect block PLUS a separate HTTPS proxy
+# block, so we never rely on certbot rewriting the file. certbot's in-place
+# --redirect edit can leave the `if ($host) return 301 https` inside the 443
+# block, producing an infinite https->https loop — this avoids that entirely.
+emit_vhost() {
+  local domain="$1"
+  local conf="/etc/nginx/sites-available/$domain.conf"
+  local live="/etc/letsencrypt/live/$domain"
+
+  local proxy_block
+  proxy_block=$(cat <<NGINX
+    # Everything (both SPAs and /api) is served by the pointify-api process. The
+    # original Host header is forwarded so it can pick the right front-end.
+    location / {
+        proxy_pass http://127.0.0.1:$API_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+NGINX
+)
+
+  if has_cert "$domain"; then
+    local ssl_opts="" ssl_dh=""
+    [ -f /etc/letsencrypt/options-ssl-nginx.conf ] && ssl_opts="    include /etc/letsencrypt/options-ssl-nginx.conf;"
+    [ -f /etc/letsencrypt/ssl-dhparams.pem ]       && ssl_dh="    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;"
+    cat > "$conf" <<NGINX
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $domain;
+    return 301 https://\$host\$request_uri;
+}
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name $domain;
+
+    ssl_certificate $live/fullchain.pem;
+    ssl_certificate_key $live/privkey.pem;
+$ssl_opts
+$ssl_dh
+
+$proxy_block
+}
+NGINX
+  else
+    cat > "$conf" <<NGINX
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $domain;
+
+$proxy_block
+}
+NGINX
+  fi
+}
+
 write_nginx() {
   local domain="$1"
   local conf="/etc/nginx/sites-available/$domain.conf"
@@ -290,26 +360,7 @@ write_nginx() {
     grep -q "127.0.0.1:$API_PORT" "$conf" || warn "  existing $conf does not proxy to 127.0.0.1:$API_PORT — it may point at a stale/dead backend (this is the usual cause of a 502). Set FORCE_NGINX=1 to regenerate."
   else
     log "Writing nginx config for $domain"
-    cat > "$conf" <<NGINX
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $domain;
-
-    # Everything (the SPA and /api) is served by the pointify-api process. The
-    # original Host header is forwarded so it can pick the right front-end.
-    location / {
-        proxy_pass http://127.0.0.1:$API_PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
-NGINX
+    emit_vhost "$domain"
     ok "wrote $conf"
   fi
 
@@ -346,17 +397,19 @@ else
   ensure_ssl() {
     local domain="$1"
     local conf="/etc/nginx/sites-available/$domain.conf"
-    if [ -d "/etc/letsencrypt/live/$domain" ]; then
-      # Certificate exists. Make sure nginx is actually wired to use it (a
-      # FORCE_NGINX rewrite produces an HTTP-only block that drops the 443
-      # listener); if so, re-install the cert into the current config.
+    if has_cert "$domain"; then
+      # Certificate exists. Ensure the vhost actually serves HTTPS. A plain
+      # FORCE_NGINX rewrite before the cert existed (or an old HTTP-only file)
+      # leaves no 443 listener; regenerate it ourselves — never via a certbot
+      # in-place edit, which can leave the redirect inside the 443 block (loop).
       if grep -q "listen 443" "$conf" 2>/dev/null; then
         ok "SSL already enabled for $domain"
       else
-        log "Certificate exists but HTTPS not wired for $domain; re-installing"
-        certbot install --nginx --cert-name "$domain" --non-interactive --redirect \
-          && ok "SSL re-enabled for https://$domain" \
-          || warn "certbot install failed for $domain; inspect: certbot certificates"
+        log "Certificate exists but HTTPS not wired for $domain; regenerating vhost"
+        emit_vhost "$domain"
+        nginx -t && systemctl reload nginx \
+          && ok "SSL wired for https://$domain" \
+          || warn "nginx test failed after wiring SSL for $domain; inspect: nginx -t"
       fi
       return
     fi
@@ -365,10 +418,28 @@ else
       return
     fi
     log "Obtaining SSL certificate for $domain"
-    certbot --nginx -d "$domain" --non-interactive --agree-tos -m "$LE_EMAIL" --redirect \
-      && ok "SSL enabled for https://$domain" \
-      || warn "certbot failed for $domain (is its DNS A/AAAA record pointing here, and ports 80/443 open?)."
+    # certonly: fetch the cert WITHOUT letting certbot edit nginx, then write the
+    # HTTPS vhost ourselves (emit_vhost) to avoid certbot's redirect-in-443 loop.
+    if certbot certonly --nginx -d "$domain" --non-interactive --agree-tos -m "$LE_EMAIL"; then
+      emit_vhost "$domain"
+      nginx -t && systemctl reload nginx \
+        && ok "SSL enabled for https://$domain" \
+        || warn "nginx test failed after enabling SSL for $domain; inspect: nginx -t"
+    else
+      warn "certbot failed for $domain (is its DNS A/AAAA record pointing here, and ports 80/443 open?)."
+    fi
   }
+
+  # certbot renew won't reload nginx on its own, so renewed certs wouldn't be
+  # served until the next manual reload. Install a deploy hook that does it.
+  renew_hook="/etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh"
+  if [ ! -f "$renew_hook" ]; then
+    mkdir -p "$(dirname "$renew_hook")"
+    printf '#!/usr/bin/env bash\nsystemctl reload nginx\n' > "$renew_hook"
+    chmod +x "$renew_hook"
+    ok "installed certbot renewal hook: $renew_hook"
+  fi
+
   ensure_ssl "$ADMIN_DOMAIN"
   ensure_ssl "$PARTNER_DOMAIN"
   systemctl reload nginx

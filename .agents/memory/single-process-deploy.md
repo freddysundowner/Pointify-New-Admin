@@ -32,9 +32,33 @@ therefore runs `pointify-api` under PM2.
   `127.0.0.1:$API_PORT` for both subdomains, forwarding the original `Host` so
   hostname routing works. A 502 on the root domain almost always means an old
   nginx server block still points `/` at a dead upstream — regenerate with
-  `FORCE_NGINX=1` (the script leaves existing configs untouched otherwise so
-  certbot's SSL edits survive; certbot re-installs the cert into the rewritten
-  HTTP block).
+  `FORCE_NGINX=1`.
+
+## nginx/SSL is written by the script, NOT by certbot edits
+
+**Why:** letting `certbot --nginx --redirect` edit the vhost in-place is fragile.
+Two failures actually hit prod here:
+1. With a legacy `sites-enabled/<domain>` (no `.conf`) still enabled, certbot
+   wired the cert into the OLD dead vhost → 502 on HTTPS, or a wildcard/default
+   443 block served a *completely different old app* (e.g. "Marketing Partners").
+2. certbot left its `if ($host=...) return 301 https://...` **inside the 443
+   block**, so every HTTPS request redirected to HTTPS → infinite loop, app never
+   served.
+
+**How to apply:**
+- `emit_vhost()` writes the full config itself: a port-80 `return 301` redirect
+  block PLUS a separate `listen 443 ssl` proxy block (cert paths from
+  `/etc/letsencrypt/live/$domain`, ssl options included only if the files exist).
+  If no cert yet, it writes an HTTP-only proxy block so the site works and the
+  http-01 challenge can pass.
+- `ensure_ssl()` uses `certbot certonly --nginx` (fetch only, no nginx edit),
+  then calls `emit_vhost` + `nginx -t && reload`. Never `certbot install
+  --redirect`.
+- `write_nginx()` also disables a legacy per-domain enabled symlink named exactly
+  `$domain` (without `.conf`) before linking ours, so duplicates can't shadow us.
+- The redirect (`return 301 https`) must ONLY ever live in the port-80 server
+  block. If it appears in the 443 block, that's the loop — fix by rewriting the
+  vhost as two clean blocks.
 - Runtime config persists in `/etc/pointify/api.env` (`SESSION_SECRET`, `PORT`,
   `NODE_ENV`, `ADMIN_DIST`, `PARTNER_DIST`). Port is reused across re-runs unless
   the operator pins `API_PORT`. The script `pm2 delete`s the old process before
