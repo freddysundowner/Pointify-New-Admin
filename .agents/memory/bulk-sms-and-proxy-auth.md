@@ -5,8 +5,10 @@ description: Upstream bulk-SMS auth gap + how the proxy gates it and derives the
 
 # Bulk SMS (`/api/sms/bulk` → upstream `/communication/bulk/sms`)
 
-- Body contract: `{ userType, message }` required. `userType` enum: `trial_active | trial_expired | production_active | production_expired` (targets Admins by their primaryShop's subscription type + endDate). Empty audience → HTTP 200 with `{ total: 0 }`, nothing sent.
-- Result shape: `{ message, userType, total, sent, failed }`. **Treat `total>0 && sent===0` as a failure in the UI** — upstream returns 200 even when every recipient fails.
+- Body contract: `{ userType, message }` required. `userType` enum: `all | trial_active | trial_expired | production_active | production_expired`.
+- **Async per-user model (current upstream, rewritten 2026-06).** Upstream now dedupes to **one SMS per Admin/user** (segments root at Admin, join ALL their shops via `shop.adminId` — NOT just `primaryShop` — then `$group` by user; `all` = every admin with a phone). It accepts the job and sends in the **background**, returning **HTTP 202** immediately `{ message, userType, total, status:"processing" }`; empty audience → **200** `{ total:0 }`; bad input → **400**. It no longer returns final `sent`/`failed` (delivery shows up in SMS logs).
+- Proxy just **forwards natively** (no more 4-way `all` fan-out) — `proxy()` passes the 202 through, and the generated client's `customFetch` treats any `response.ok` (incl. 202) as success. UI keys its toast off `total` only ("sending in background"), audiences are labelled **users** not shops.
+- **History (pre-2026-06):** old upstream looped Admins by `primaryShop` only (skipped null-primaryShop users), had no `all`, returned synchronous `{ total, sent, failed }` (200 even if all failed), and had a `sendSms(phone,…)` undefined-var bug that failed every send. The rewrite (which the user deploys to their own upstream) fixed all of that. Never fire a real bulk send to "test".
 
 ## Upstream auth reality (snapshot in attached_assets) — IMPORTANT
 - The upstream auth middleware `middleware/auth.js` `verifyToken` is **disabled**: its first line is `return next();`. So **every upstream route accepts any/no token** — even routes "protected" by `verifyToken` (`/shop`, `/subscriptions`, `/counts`, …). There is therefore **no upstream endpoint that validates a token**, so the proxy cannot validate a token by calling upstream.

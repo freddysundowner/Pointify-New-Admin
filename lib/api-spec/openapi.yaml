@@ -916,7 +916,12 @@ paths:
     post:
       operationId: sendBulkSms
       tags: [sms]
-      summary: Send a bulk SMS to an audience segment
+      summary: Start a bulk SMS to an audience segment
+      description: >-
+        Enqueues a bulk SMS, deduplicated to one message per user. Upstream
+        accepts the job and sends in the background, so a successful call returns
+        202 with the recipient `total` and `status: "processing"`. When no users
+        match the audience it returns 200 with `total: 0`.
       requestBody:
         required: true
         content:
@@ -924,10 +929,17 @@ paths:
             schema: { $ref: "#/components/schemas/BulkSmsInput" }
       responses:
         "200":
-          description: Bulk SMS result
+          description: No recipients matched the audience
           content:
             application/json:
               schema: { $ref: "#/components/schemas/BulkSmsResult" }
+        "202":
+          description: Bulk SMS accepted and sending in the background
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkSmsResult" }
+        "400":
+          description: Invalid audience or missing message
 
   /communications:
     get:
@@ -1790,6 +1802,7 @@ components:
       properties:
         message: { type: string }
         userType: { type: string }
+        status: { type: string }
         total: { type: number }
         sent: { type: number }
         failed: { type: number }

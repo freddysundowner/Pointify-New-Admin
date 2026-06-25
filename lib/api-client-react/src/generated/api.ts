@@ -4203,7 +4203,8 @@ export const getSendBulkSmsUrl = () => {
 }
 
 /**
- * @summary Send a bulk SMS to an audience segment
+ * Enqueues a bulk SMS, deduplicated to one message per user. Upstream accepts the job and sends in the background, so a successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * @summary Start a bulk SMS to an audience segment
  */
 export const sendBulkSms = async (bulkSmsInput: BulkSmsInput, options?: RequestInit): Promise<BulkSmsResult> => {
 
@@ -4220,7 +4221,7 @@ export const sendBulkSms = async (bulkSmsInput: BulkSmsInput, options?: RequestI
 
 
 
-export const getSendBulkSmsMutationOptions = <TError = ErrorType<unknown>,
+export const getSendBulkSmsMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBulkSms>>, TError,{data: BodyType<BulkSmsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof sendBulkSms>>, TError,{data: BodyType<BulkSmsInput>}, TContext> => {
 
@@ -4249,12 +4250,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SendBulkSmsMutationResult = NonNullable<Awaited<ReturnType<typeof sendBulkSms>>>
     export type SendBulkSmsMutationBody = BodyType<BulkSmsInput>
-    export type SendBulkSmsMutationError = ErrorType<unknown>
+    export type SendBulkSmsMutationError = ErrorType<void>
 
     /**
- * @summary Send a bulk SMS to an audience segment
+ * @summary Start a bulk SMS to an audience segment
  */
-export const useSendBulkSms = <TError = ErrorType<unknown>,
+export const useSendBulkSms = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBulkSms>>, TError,{data: BodyType<BulkSmsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof sendBulkSms>>,

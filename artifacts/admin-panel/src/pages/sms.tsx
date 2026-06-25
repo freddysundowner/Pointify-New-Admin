@@ -44,28 +44,28 @@ type Audience = BulkSmsInput["userType"];
 const AUDIENCES: { value: Audience; label: string; description: string }[] = [
   {
     value: "all",
-    label: "All shops",
-    description: "Everyone across every plan and status",
+    label: "All users",
+    description: "Every user with a registered phone number",
   },
   {
     value: "trial_active",
     label: "Trial · Active",
-    description: "Shops on a trial that hasn't expired yet",
+    description: "Users with a trial that hasn't expired yet",
   },
   {
     value: "trial_expired",
     label: "Trial · Expired",
-    description: "Shops whose trial has ended",
+    description: "Users whose trial has ended",
   },
   {
     value: "production_active",
     label: "Paid · Active",
-    description: "Shops on a paid plan that is still active",
+    description: "Users on a paid plan that is still active",
   },
   {
     value: "production_expired",
     label: "Paid · Expired",
-    description: "Shops whose paid plan has lapsed",
+    description: "Users whose paid plan has lapsed",
   },
 ];
 
@@ -98,29 +98,15 @@ export default function SMS() {
         onSuccess: (result) => {
           setConfirmOpen(false);
           const total = Number(result?.total ?? 0);
-          const sent = Number(result?.sent ?? 0);
-          const failed = Number(result?.failed ?? 0);
           if (total === 0) {
             toast({
               title: "No recipients",
               description: "No users matched this audience, so nothing was sent.",
             });
-          } else if (sent === 0) {
-            toast({
-              title: "Bulk SMS failed",
-              description: `None of the ${total} messages went through (${failed} failed). Please try again.`,
-              variant: "destructive",
-            });
-            return;
-          } else if (result?.partialFailure) {
-            toast({
-              title: "Bulk SMS partly sent",
-              description: `${sent} sent · ${failed} failed. Some groups couldn't be reached — send again to retry them.`,
-            });
           } else {
             toast({
-              title: "Bulk SMS sent",
-              description: `${sent} sent · ${failed} failed · ${total} recipients.`,
+              title: "Bulk SMS started",
+              description: `Sending to ${total} user${total === 1 ? "" : "s"} in the background. Delivery will appear in the logs below shortly.`,
             });
           }
           setMessage("");
@@ -153,8 +139,9 @@ export default function SMS() {
             Send bulk SMS
           </CardTitle>
           <CardDescription>
-            Message every shop in an audience at once. Messages are sent to the
-            owner's registered phone number.
+            Message every user in an audience at once. Each user receives a
+            single message on their registered phone, even if they own multiple
+            shops. Sending runs in the background.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -296,9 +283,10 @@ export default function SMS() {
               Send to {selectedAudience?.label ?? "this audience"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This sends the message to every shop in the{" "}
+              This sends the message to every user in the{" "}
               <span className="font-medium">{selectedAudience?.label}</span>{" "}
-              audience. This can't be undone.
+              audience — one message per user, even if they own several shops.
+              This can't be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="rounded-md border bg-muted/40 p-3 text-sm">

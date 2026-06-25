@@ -850,6 +850,7 @@ export interface BulkSmsInput {
 export interface BulkSmsResult {
   message?: string;
   userType?: string;
+  status?: string;
   total?: number;
   sent?: number;
   failed?: number;

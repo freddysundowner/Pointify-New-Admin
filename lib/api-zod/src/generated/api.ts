@@ -1426,7 +1426,8 @@ export const TopupSmsResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
- * @summary Send a bulk SMS to an audience segment
+ * Enqueues a bulk SMS, deduplicated to one message per user. Upstream accepts the job and sends in the background, so a successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * @summary Start a bulk SMS to an audience segment
  */
 export const SendBulkSmsBody = zod.object({
   "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired']),
@@ -1436,6 +1437,7 @@ export const SendBulkSmsBody = zod.object({
 export const SendBulkSmsResponse = zod.object({
   "message": zod.string().optional(),
   "userType": zod.string().optional(),
+  "status": zod.string().optional(),
   "total": zod.number().optional(),
   "sent": zod.number().optional(),
   "failed": zod.number().optional()
