@@ -17,9 +17,32 @@ import { useToast } from "@/hooks/use-toast";
 import { formatKES } from "@/lib/format";
 import { Banknote, Loader2, Wallet, Info } from "lucide-react";
 
+// Normalize any Kenyan number the user types into the 2547XXXXXXXX / 2541XXXXXXXX
+// format M-Pesa requires, so users never have to format it themselves.
+// Accepts: 0712345678, +254712345678, 254712345678, 2540712345678, 712345678,
+// with spaces/dashes/parens.
+function normalizeMpesaPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("254")) {
+    const rest = digits.slice(3);
+    return "254" + (rest.startsWith("0") ? rest.slice(1) : rest);
+  }
+  if (digits.startsWith("0")) return "254" + digits.slice(1);
+  if (digits.startsWith("7") || digits.startsWith("1")) return "254" + digits;
+  return digits;
+}
+
+// Mobile (Safaricom/Airtel) numbers normalize to 254 + (7|1) + 8 digits.
+const MPESA_PHONE_RE = /^254(7|1)\d{8}$/;
+
 const formSchema = z.object({
   amount: z.coerce.number().positive("Amount must be greater than 0"),
-  phonenumber: z.string().min(9, "Phone number is required"),
+  phonenumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine((v) => MPESA_PHONE_RE.test(normalizeMpesaPhone(v)), {
+      message: "Enter a valid Kenyan mobile number, e.g. 0712 345 678",
+    }),
 });
 
 export default function Withdraw() {
@@ -49,7 +72,12 @@ export default function Withdraw() {
       return;
     }
 
-    withdrawMutation.mutate({ data: values }, {
+    const payload = {
+      ...values,
+      phonenumber: normalizeMpesaPhone(values.phonenumber),
+    };
+
+    withdrawMutation.mutate({ data: payload }, {
       onSuccess: (res) => {
         if (res.status) {
           toast({
@@ -127,9 +155,9 @@ export default function Withdraw() {
                     <FormItem>
                       <Label>M-Pesa Phone Number</Label>
                       <FormControl>
-                        <Input placeholder="e.g. 254712345678" {...field} />
+                        <Input placeholder="e.g. 0712 345 678" {...field} />
                       </FormControl>
-                      <FormDescription>The number that will receive the funds</FormDescription>
+                      <FormDescription>The number that will receive the funds — any format works</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -155,11 +183,19 @@ export default function Withdraw() {
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                             KES
                           </span>
-                          <Input 
-                            type="number" 
-                            className="pl-12" 
-                            placeholder="0" 
-                            {...field} 
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            className="pl-12"
+                            placeholder="0"
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={field.value ? Math.round(field.value).toLocaleString("en-KE") : ""}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/[^0-9]/g, "");
+                              field.onChange(digits ? Number(digits) : 0);
+                            }}
                           />
                         </div>
                       </FormControl>
