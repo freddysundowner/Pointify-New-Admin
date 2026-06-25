@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdmins,
@@ -124,10 +125,7 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Users</h1>
-        <p className="text-muted-foreground">Manage shop owners and platform users.</p>
-      </div>
+      <PageHeader title="Users" description="Manage shop owners and platform users." />
 
       <Card>
         <CardHeader>

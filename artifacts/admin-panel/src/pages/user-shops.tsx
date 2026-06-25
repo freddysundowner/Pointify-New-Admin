@@ -1,4 +1,5 @@
 import { useRoute, Link } from "wouter";
+import { PageHeader } from "@/components/layout/PageHeader";
 import {
   useGetAdmin,
   useListAdminShops,
@@ -36,20 +37,15 @@ export default function UserShops() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-          <Link href="/users">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Back to users</span>
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Shops</h1>
-          <p className="text-muted-foreground">
+      <PageHeader
+        title="Shops"
+        description={
+          <>
             Shops owned by <span className="font-medium">{ownerLabel}</span>
-          </p>
-        </div>
-      </div>
+          </>
+        }
+        backHref="/users"
+      />
 
       <Card>
         <CardHeader>

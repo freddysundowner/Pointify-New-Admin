@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import {
   useListAttendants,
   useResetAttendantPassword,
@@ -62,10 +63,7 @@ export default function Attendants() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Attendants</h1>
-        <p className="text-muted-foreground">Manage shop attendants.</p>
-      </div>
+      <PageHeader title="Attendants" description="Manage shop attendants." />
 
       <Card>
         <CardHeader>

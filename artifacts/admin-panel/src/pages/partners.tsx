@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -247,18 +248,16 @@ export default function Partners() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Partners</h1>
-          <p className="text-muted-foreground">
-            Manage marketing program partners, their commission, and account access.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add partner
-        </Button>
-      </div>
+      <PageHeader
+        title="Partners"
+        description="Manage marketing program partners, their commission, and account access."
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add partner
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>

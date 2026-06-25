@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListPackages,
@@ -98,16 +99,16 @@ export default function Packages() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Packages</h1>
-          <p className="text-muted-foreground">Create, edit and remove subscription packages.</p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          New package
-        </Button>
-      </div>
+      <PageHeader
+        title="Packages"
+        description="Create, edit and remove subscription packages."
+        actions={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            New package
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>

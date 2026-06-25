@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetSettings,
@@ -592,23 +593,23 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">Global platform settings.</p>
-        </div>
-        {!isLoading && !isError && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openNewSection}
-            disabled={editingGroup !== null}
-          >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            New section
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Global platform settings."
+        actions={
+          !isLoading && !isError ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openNewSection}
+              disabled={editingGroup !== null}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              New section
+            </Button>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-6">

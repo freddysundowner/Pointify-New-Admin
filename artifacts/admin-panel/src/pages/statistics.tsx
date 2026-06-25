@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import {
   useGetStatistics,
   useGetRevenueRange,
@@ -164,24 +165,22 @@ export default function Statistics() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
-          <p className="text-muted-foreground">
-            Platform-wide performance, growth, payouts and payment prompts.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setWithdrawOpen(true)}>
-            <Banknote className="mr-2 h-4 w-4" />
-            Withdraw
-          </Button>
-          <Button onClick={() => setPromptOpen(true)}>
-            <Send className="mr-2 h-4 w-4" />
-            Send payment prompt
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Statistics"
+        description="Platform-wide performance, growth, payouts and payment prompts."
+        actions={
+          <>
+            <Button variant="outline" onClick={() => setWithdrawOpen(true)}>
+              <Banknote className="mr-2 h-4 w-4" />
+              Withdraw
+            </Button>
+            <Button onClick={() => setPromptOpen(true)}>
+              <Send className="mr-2 h-4 w-4" />
+              Send payment prompt
+            </Button>
+          </>
+        }
+      />
 
       {isLoading ? (
         <StatisticsSkeleton />

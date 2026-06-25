@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListSmsLogs,
@@ -129,10 +130,7 @@ export default function SMS() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">SMS Hub</h1>
-        <p className="text-muted-foreground">Manage platform communications.</p>
-      </div>
+      <PageHeader title="SMS Hub" description="Manage platform communications." />
 
       <Card>
         <CardHeader>

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { MobileHeaderProvider } from "@/lib/mobile-header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Shell } from "@/components/layout/Shell";
 import NotFound from "@/pages/not-found";
@@ -69,7 +70,9 @@ function App() {
         <ErrorBoundary>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <AuthProvider>
-              <Router />
+              <MobileHeaderProvider>
+                <Router />
+              </MobileHeaderProvider>
             </AuthProvider>
           </WouterRouter>
         </ErrorBoundary>

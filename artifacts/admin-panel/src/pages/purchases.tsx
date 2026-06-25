@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useListPurchases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,10 +90,7 @@ export default function Purchases() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Purchases</h1>
-        <p className="text-muted-foreground">View all platform purchases.</p>
-      </div>
+      <PageHeader title="Purchases" description="View all platform purchases." />
 
       <Card>
         <CardHeader>

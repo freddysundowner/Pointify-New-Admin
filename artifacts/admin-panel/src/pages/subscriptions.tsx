@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -243,10 +244,7 @@ export default function Subscriptions() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-        <p className="text-muted-foreground">Manage all shop subscriptions.</p>
-      </div>
+      <PageHeader title="Subscriptions" description="Manage all shop subscriptions." />
 
       <Card>
         <CardHeader>

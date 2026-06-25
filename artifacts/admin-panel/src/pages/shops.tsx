@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Link, useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -262,10 +263,7 @@ export default function Shops() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Shops</h1>
-        <p className="text-muted-foreground">Manage all shops registered on the platform.</p>
-      </div>
+      <PageHeader title="Shops" description="Manage all shops registered on the platform." />
 
       <Card>
         <CardHeader>

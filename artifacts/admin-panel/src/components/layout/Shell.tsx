@@ -2,9 +2,10 @@ import { ReactNode, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { AccountDialog } from "@/components/AccountDialog";
 import { Link, useLocation } from "wouter";
-import { Store, LogOut, UserCog } from "lucide-react";
+import { Store, LogOut, UserCog, ArrowLeft } from "lucide-react";
 import { navItems, isNavActive } from "./nav-items";
 import { MobileNav } from "./MobileNav";
+import { useMobileHeader } from "@/lib/mobile-header";
 import {
   Sidebar,
   SidebarContent,
@@ -31,8 +32,20 @@ import {
 
 export function Shell({ children }: { children: ReactNode }) {
   const { logout, userdata } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const { header } = useMobileHeader();
   const [accountOpen, setAccountOpen] = useState(false);
+
+  const isDashboard = location === "/";
+  const goBack = () => {
+    if (header?.backHref) {
+      navigate(header.backHref);
+    } else if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      navigate("/");
+    }
+  };
 
   const getInitials = (name?: string | null) => {
     if (!name) return "A";
@@ -125,13 +138,29 @@ export function Shell({ children }: { children: ReactNode }) {
           >
             {/* Desktop: collapse/expand the sidebar. Hidden on mobile (bottom nav replaces it). */}
             <SidebarTrigger className="-ml-1 hidden text-muted-foreground hover:text-foreground md:flex" />
-            {/* Mobile app bar brand */}
-            <div className="flex items-center gap-2 font-bold tracking-tight md:hidden">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Store className="h-5 w-5" />
+            {/* Mobile app bar: brand on the dashboard, back + page title elsewhere (native style). */}
+            {isDashboard ? (
+              <div className="flex items-center gap-2 font-bold tracking-tight md:hidden">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Store className="h-5 w-5" />
+                </div>
+                <span className="text-base">Pointify Admin</span>
               </div>
-              <span className="text-base">Pointify Admin</span>
-            </div>
+            ) : (
+              <div className="flex min-w-0 items-center gap-1 md:hidden">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  aria-label="Go back"
+                  className="-ml-2 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <span className="truncate text-lg font-semibold tracking-tight">
+                  {header?.title ?? ""}
+                </span>
+              </div>
+            )}
             <div className="flex-1" />
             {/* Mobile account menu (the sidebar footer is hidden on mobile) */}
             <DropdownMenu>

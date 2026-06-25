@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListShopCategories,
@@ -156,18 +157,16 @@ export default function Categories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Shop Categories</h1>
-          <p className="text-muted-foreground">
-            Manage the categories shops can be assigned to.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add category
-        </Button>
-      </div>
+      <PageHeader
+        title="Shop Categories"
+        description="Manage the categories shops can be assigned to."
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add category
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useRoute, Link } from "wouter";
 import {
   useGetPartner,
@@ -178,20 +179,11 @@ export default function PartnerDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-          <Link href="/partners">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Back to partners</span>
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
-          <p className="text-muted-foreground">
-            Everything referred by this partner — shops, users and transactions.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={name}
+        description="Everything referred by this partner — shops, users and transactions."
+        backHref="/partners"
+      />
 
       {/* Partner summary */}
       <Card>
