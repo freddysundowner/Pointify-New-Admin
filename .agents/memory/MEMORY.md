@@ -16,4 +16,5 @@
 - [Upstream subscriptions list](upstream-subscriptions-list.md) — filters: status/type/shop/shopname/invoiceNo/createAt(day)/expiry range(needs BOTH ends); pagination only when `page` sent (else bare array).
 - [Upstream attendants list](upstream-attendants-list.md) — list via /attendants/all/:id (id="admin"=all), supports page/limit/username; shopId NOT honored upstream yet; nested {pagination} shape.
 - [Subscription status semantics](subscription-status-semantics.md) — "Active" keys off `paid:true` + endDate, NOT the `status` boolean; status:true+paid:false (e.g. unpaid) must show Unpaid, not Active.
+- [Bulk SMS & proxy auth](bulk-sms-and-proxy-auth.md) — upstream verifyToken is a no-op (whole API open); proxy gates /sms/bulk by decoding JWT _id, injects it as sender, strips client `user`.
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
