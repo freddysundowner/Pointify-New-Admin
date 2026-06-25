@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Store, PackageSearch, 
   UserSquare2, ReceiptText, ShoppingCart, Package, 
   CreditCard, MessageSquare, Settings, LogOut,
-  BarChart3, Menu
+  BarChart3, Menu, Tags
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,6 +36,7 @@ const navItems = [
   { title: "Statistics", href: "/statistics", icon: BarChart3 },
   { title: "Platform Users", href: "/users", icon: Users },
   { title: "Shops", href: "/shops", icon: Store },
+  { title: "Shop Categories", href: "/categories", icon: Tags },
   { title: "Products", href: "/products", icon: PackageSearch },
   { title: "Attendants", href: "/attendants", icon: UserSquare2 },
   { title: "Sales", href: "/sales", icon: ReceiptText },

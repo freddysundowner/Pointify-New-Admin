@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { proxy, proxyList, upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
+import { proxy, upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
 
 const router: IRouter = Router();
 
@@ -25,7 +25,10 @@ function shopSortKey(shop: unknown): string {
 
 // Shop categories
 router.get("/shop-categories", async (req, res) => {
-  await proxyList(req, res, { path: "/shop/category", query: req.query as Record<string, unknown> });
+  // Upstream `/shop/category` returns a bare array when no `page` is sent; we
+  // forward it as-is (categories are a small global list, no pagination needed)
+  // so the response matches the spec's `ShopCategory[]` shape.
+  await proxy(req, res, { method: "GET", path: "/shop/category" });
 });
 
 router.post("/shop-categories", async (req, res) => {
