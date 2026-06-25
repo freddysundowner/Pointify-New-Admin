@@ -1,0 +1,159 @@
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# # show the redirect chain + final status + which server answers
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# curl -sIL https://partner.pointifypos.com | grep -iE 'HTTP/|location|server'
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0 (Ubuntu)
+Location: https://partner.pointifypos.com/
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# 
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# # follow redirects and print the FINAL page title
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# curl -sL https://partner.pointifypos.com | grep -io '<title>[^<]*</title>'
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# 
