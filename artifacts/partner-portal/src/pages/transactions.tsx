@@ -46,22 +46,77 @@ export default function Transactions() {
               <p className="text-muted-foreground">Your earnings and withdrawals will appear here.</p>
             </div>
           ) : (
-            <div className="border rounded-md overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map((tx: any) => {
-                    const isEarning = tx.type === "subscription";
-                    return (
-                      <TableRow key={tx._id}>
+            <>
+              {/* Mobile: card list */}
+              <div className="space-y-3 md:hidden">
+                {transactions.map((tx: any) => {
+                  const isEarning = tx.type === "subscription";
+                  return (
+                    <div key={tx._id} className="rounded-lg border p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isEarning ? (
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                              <ArrowDownLeft className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                              <ArrowUpRight className="w-4 h-4" />
+                            </div>
+                          )}
+                          <span className="font-medium capitalize truncate">{tx.type || "Unknown"}</span>
+                        </div>
+                        <span className={`font-semibold shrink-0 ${isEarning ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                          {isEarning ? "+" : "-"}{formatKES(isEarning ? tx.affliateAmount : tx.amount)}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-sm text-muted-foreground truncate">
+                        {isEarning ? (
+                          <>From: {tx.user?.username || tx.user?.phone || tx.user?.email || "Unknown User"}</>
+                        ) : (
+                          <>To: {tx.mpesaCode || "M-Pesa"} {tx.transId ? `(${tx.transId})` : ""}</>
+                        )}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {tx.createdAt ? format(new Date(tx.createdAt), "MMM d, yyyy HH:mm") : "Unknown"}
+                        </span>
+                        {tx.status === true ? (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
+                            <CheckCircle2 className="w-3 h-3" /> Confirmed
+                          </Badge>
+                        ) : tx.status === false ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
+                            <Clock className="w-3 h-3" /> Pending
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
+                            <XCircle className="w-3 h-3" /> Failed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((tx: any) => {
+                      const isEarning = tx.type === "subscription";
+                      return (
+                        <TableRow key={tx._id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {isEarning ? (
@@ -120,6 +175,7 @@ export default function Transactions() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>

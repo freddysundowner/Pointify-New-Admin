@@ -44,53 +44,85 @@ export default function Shops() {
               <p className="text-muted-foreground">When your referred users create shops, they will appear here.</p>
             </div>
           ) : (
-            <div className="border rounded-md overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead>Shop Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {shops.map((shop: any) => (
-                    <TableRow key={shop._id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Store className="w-4 h-4 text-primary" />
-                          {shop.name || 'Unnamed Shop'}
+            <>
+              {/* Mobile: card list */}
+              <div className="space-y-3 md:hidden">
+                {shops.map((shop: any) => (
+                  <div key={shop._id} className="rounded-lg border p-4">
+                    <div className="flex items-center gap-2 font-medium">
+                      <Store className="w-4 h-4 text-primary shrink-0" />
+                      <span className="truncate">{shop.name || 'Unnamed Shop'}</span>
+                    </div>
+                    <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                      {shop.contact && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{shop.contact}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {shop.contact ? (
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Phone className="w-3.5 h-3.5" />
-                            {shop.contact}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground italic">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {shop.address ? (
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {shop.address}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground italic">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {shop.createAt ? format(new Date(shop.createAt), "MMM d, yyyy") : "Unknown"}
-                      </TableCell>
+                      )}
+                      {shop.address && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{shop.address}</span>
+                        </div>
+                      )}
+                      <div className="text-xs pt-1">
+                        Created {shop.createAt ? format(new Date(shop.createAt), "MMM d, yyyy") : "Unknown"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Shop Name</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Created</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {shops.map((shop: any) => (
+                      <TableRow key={shop._id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Store className="w-4 h-4 text-primary" />
+                            {shop.name || 'Unnamed Shop'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {shop.contact ? (
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <Phone className="w-3.5 h-3.5" />
+                              {shop.contact}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground italic">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {shop.address ? (
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <MapPin className="w-3.5 h-3.5" />
+                              {shop.address}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground italic">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {shop.createAt ? format(new Date(shop.createAt), "MMM d, yyyy") : "Unknown"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

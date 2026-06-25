@@ -33,3 +33,22 @@ because it is the sole gate over per-partner money and PII.
 - Server-composed endpoints like `/portal/summary` must fail closed: if any
   upstream call returns >= 400, return an error rather than synthesizing zero
   metrics that look like real (empty) data.
+
+## Stale-token 401 self-heal (client)
+
+A token minted before the session system existed (or under a different
+`SESSION_SECRET`) fails `verifyPortalSession` and every `/portal/*` call returns
+**401** — surfaced as e.g. "Failed to load dashboard summary." It is NOT an
+upstream 502: confirm by probing upstream directly (it's open, no auth) — those
+calls return 200 while the proxy still 401s.
+
+**Why:** the portal stores the session token in `localStorage`
+(`pointify_partner_token`). Old/forged tokens never self-clear, so the user is
+stuck on a broken page until they manually log out.
+
+**How to apply:** the frontend QueryClient has a global `QueryCache` +
+`MutationCache` `onError` (`handleAuthError` in `App.tsx`) that, on
+`ApiError.status === 401`, clears token+userdata and redirects to `/login`
+(guarded by a `pathname !== loginPath` check to avoid a redirect loop on a
+login 401). `ApiError` is exported from `@workspace/api-client-react` for the
+`instanceof` check. A fresh login mints a valid token and fixes it.

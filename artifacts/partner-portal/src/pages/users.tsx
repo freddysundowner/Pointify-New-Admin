@@ -45,58 +45,98 @@ export default function ReferredUsers() {
               <p className="text-muted-foreground">Share your referral code to start earning commissions.</p>
             </div>
           ) : (
-            <div className="border rounded-md overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead>User Details</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Shops</TableHead>
-                    <TableHead>Joined</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user: any) => (
-                    <TableRow key={user._id}>
-                      <TableCell>
-                        <div className="font-medium text-foreground">{user.username || 'Unnamed User'}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col space-y-1">
-                          {user.email && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Mail className="w-3.5 h-3.5" />
-                              {user.email}
-                            </div>
-                          )}
-                          {user.phone && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Phone className="w-3.5 h-3.5" />
-                              {user.phone}
-                            </div>
-                          )}
+            <>
+              {/* Mobile: card list */}
+              <div className="space-y-3 md:hidden">
+                {users.map((user: any) => (
+                  <div key={user._id} className="rounded-lg border p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-medium text-foreground truncate">{user.username || 'Unnamed User'}</div>
+                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className={`shrink-0 ${user.status === 'active' ? 'bg-primary hover:bg-primary/90' : ''}`}>
+                        {user.status || 'Unknown'}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                      {user.email && (
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{user.email}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className={user.status === 'active' ? 'bg-primary hover:bg-primary/90' : ''}>
-                          {user.status || 'Unknown'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-xs font-medium">
-                          <Store className="w-3.5 h-3.5" />
-                          {user.shopCount || 0}
+                      )}
+                      {user.phone && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{user.phone}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      )}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted font-medium">
+                        <Store className="w-3.5 h-3.5" />
+                        {user.shopCount || 0} shops
+                      </div>
+                      <span className="text-muted-foreground">
                         {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "Unknown"}
-                      </TableCell>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>User Details</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Shops</TableHead>
+                      <TableHead>Joined</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user: any) => (
+                      <TableRow key={user._id}>
+                        <TableCell>
+                          <div className="font-medium text-foreground">{user.username || 'Unnamed User'}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col space-y-1">
+                            {user.email && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Mail className="w-3.5 h-3.5" />
+                                {user.email}
+                              </div>
+                            )}
+                            {user.phone && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Phone className="w-3.5 h-3.5" />
+                                {user.phone}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className={user.status === 'active' ? 'bg-primary hover:bg-primary/90' : ''}>
+                            {user.status || 'Unknown'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-xs font-medium">
+                            <Store className="w-3.5 h-3.5" />
+                            {user.shopCount || 0}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "Unknown"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
