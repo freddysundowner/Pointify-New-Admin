@@ -34,11 +34,68 @@ function spaRouter(distDir: string): Router {
   return router;
 }
 
+// A self-destructing ("kill-switch") service worker. The previous app that lived
+// on these domains registered a service worker which keeps intercepting requests
+// and serving its stale cached shell from already-visited browsers (the classic
+// "old site shows up unless you open incognito"). Our app ships no service worker
+// of its own, so by serving THIS at the old worker's URLs we let the browser's
+// routine update check replace the stale worker, wipe its caches, unregister it,
+// and reload every open tab onto the current app. Safe even where no old worker
+// exists — a fresh browser simply never requests these paths.
+const KILL_SWITCH_SW = `self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch (e) {}
+    try { await self.registration.unregister(); } catch (e) {}
+    try {
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const client of clients) {
+        try { client.navigate(client.url); } catch (e) {}
+      }
+    } catch (e) {}
+  })());
+});
+`;
+
+// Worker script paths used by the common build tools the old app might have used
+// (vite-plugin-pwa -> /sw.js, CRA/workbox -> /service-worker.js, etc). Browsers
+// fetch the registered worker's script directly from the network during their
+// update check, so overriding these URLs is enough to retire the stale worker.
+const SW_KILL_PATHS = new Set([
+  "/sw.js",
+  "/service-worker.js",
+  "/serviceworker.js",
+  "/workbox-sw.js",
+]);
+
+function mountServiceWorkerKillSwitch(app: Express): void {
+  app.use((req, res, next) => {
+    if (
+      (req.method === "GET" || req.method === "HEAD") &&
+      SW_KILL_PATHS.has(req.path.toLowerCase())
+    ) {
+      res.set("Content-Type", "text/javascript; charset=utf-8");
+      res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.set("Service-Worker-Allowed", "/");
+      res.send(KILL_SWITCH_SW);
+      return;
+    }
+    next();
+  });
+}
+
 // Serve the admin panel and partner portal SPAs from this same process, choosing
 // which build to serve by request hostname (admin.* vs partner.*). API requests
 // (/api) are left untouched. If a build is missing (e.g. local dev where Vite
 // serves the front-ends), that portal is simply skipped.
 export function mountSpa(app: Express): void {
+  // Always retire any stale service worker first, before host/SPA routing (which
+  // would otherwise answer these paths with index.html and break the update).
+  mountServiceWorkerKillSwitch(app);
+
   const adminDist = resolveDist("ADMIN_DIST", "../../admin-panel/dist/public");
   const partnerDist = resolveDist(
     "PARTNER_DIST",
