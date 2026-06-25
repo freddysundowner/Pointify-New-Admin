@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Link, useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -270,7 +271,10 @@ export default function Shops() {
           <CardTitle>All Shops</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <FilterBar
+            className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end"
+            active={hasAnyFilter}
+          >
             <div className="space-y-1.5">
               <Label htmlFor="search">Search shop</Label>
               <div className="relative">
@@ -316,7 +320,7 @@ export default function Shops() {
                 Clear
               </Button>
             )}
-          </div>
+          </FilterBar>
           <p className="pb-4 text-xs text-muted-foreground">
             Search matches shop names. The POS backend exposes the owner&apos;s email and phone
             (not their name), and supports filtering by active/expired status rather than a

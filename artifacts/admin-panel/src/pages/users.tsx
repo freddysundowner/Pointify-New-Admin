@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -132,8 +133,10 @@ export default function Users() {
           <CardTitle>All Users</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <FilterBar
+            className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-end"
+            active={hasAnyFilter}
+          >
               <div className="space-y-1.5">
                 <Label htmlFor="search">Search</Label>
                 <div className="relative">
@@ -175,8 +178,7 @@ export default function Users() {
                   Clear
                 </Button>
               )}
-            </div>
-          </div>
+          </FilterBar>
 
           {hasDateFilter && !isLoading && (
             <div className="mb-4 rounded-md border bg-muted/40 px-4 py-3 text-sm">

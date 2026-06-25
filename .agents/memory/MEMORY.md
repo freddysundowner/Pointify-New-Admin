@@ -17,6 +17,7 @@
 - [Upstream attendants list](upstream-attendants-list.md) — list via /attendants/all/:id (id="admin"=all), supports page/limit/username; shopId NOT honored upstream yet; nested {pagination} shape.
 - [Subscription status semantics](subscription-status-semantics.md) — "Active" keys off `paid:true` + endDate, NOT the `status` boolean; status:true+paid:false (e.g. unpaid) must show Unpaid, not Active.
 - [Bulk SMS & proxy auth](bulk-sms-and-proxy-auth.md) — upstream verifyToken is a no-op (whole API open); proxy gates /sms/bulk by decoding JWT _id, injects it as sender, strips client `user`.
+- [Admin-panel mobile filter sheet](admin-mobile-filters.md) — list-page filters collapse into a bottom Sheet on mobile via FilterBar (render children ONCE on a runtime useIsMobile branch, never hidden/md: duplicate).
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
 - [Partner portal session auth](portal-session-auth.md) — portal must mint its OWN SESSION_SECRET-signed token (not trust upstream JWT) since upstream is open + proxy lacks its secret; else forgeable IDOR over money/PII; stale tokens 401 → client self-heals via global QueryClient onError.
 - [Partners = affiliates](partners-affiliates.md) — admin "Partners" = upstream Affliate; create via /affiliates/auth/register (hashes pw); deep-strip secrets incl nested admins; proxy must gate Bearer auth (upstream open).

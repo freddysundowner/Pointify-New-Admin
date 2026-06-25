@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -253,7 +254,10 @@ export default function Subscriptions() {
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
 
-          <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <FilterBar
+            className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end"
+            active={hasAnyFilter}
+          >
             {!shopId && (
               <div className="space-y-1.5">
                 <Label htmlFor="sub-shopname">Search shop</Label>
@@ -342,7 +346,7 @@ export default function Subscriptions() {
                 Clear
               </Button>
             )}
-          </div>
+          </FilterBar>
           {(expFrom || expTo) && !expiryActive && (
             <p className="pb-4 text-xs text-amber-600">
               Set both “Expiry from” and “Expiry to” to filter by expiry date range.

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useListSales } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -118,7 +119,10 @@ export default function Sales() {
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
 
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+          <FilterBar
+            className="mb-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end"
+            active={hasFilters}
+          >
             <div className="lg:w-56">
               <label className="mb-1 block text-xs text-muted-foreground">Receipt No</label>
               <Input
@@ -173,7 +177,7 @@ export default function Sales() {
                 Clear filters
               </Button>
             )}
-          </div>
+          </FilterBar>
 
           {isLoading ? (
             <div className="p-4">Loading sales...</div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -120,7 +121,10 @@ export default function Products() {
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
 
-          <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <FilterBar
+            className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end"
+            active={Boolean(nameInput || shopInput)}
+          >
             <div className="space-y-1.5">
               <Label htmlFor="product-search">Search product</Label>
               <div className="relative">
@@ -155,7 +159,7 @@ export default function Products() {
                 Searching…
               </div>
             )}
-          </div>
+          </FilterBar>
 
           {isLoading ? (
             <div className="p-4">Loading products...</div>
