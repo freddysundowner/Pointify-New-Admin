@@ -657,8 +657,14 @@ function WithdrawDialog({ open, onClose }: { open: boolean; onClose: () => void 
           onClose();
         }
       },
-      onError: () => {
-        toast({ title: "Withdrawal failed", variant: "destructive" });
+      onError: (err) => {
+        const data = (err as { data?: Record<string, unknown> })?.data;
+        const description =
+          (data?.["message"] as string | undefined) ||
+          (data?.["errorMessage"] as string | undefined) ||
+          (data?.["error"] as string | undefined) ||
+          "The POS server did not respond. M-Pesa payouts can stall if the upstream B2C service is unavailable — please try again shortly.";
+        toast({ title: "Withdrawal failed", description, variant: "destructive" });
       },
     },
   });

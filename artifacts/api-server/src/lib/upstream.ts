@@ -2,6 +2,23 @@ import type { Request, Response } from "express";
 
 const DEFAULT_BASE = "https://api.pointifypos.com";
 
+/**
+ * Hard cap on how long we wait for the upstream POS API before giving up.
+ * The platform reverse proxy cuts hanging requests at ~50s with a generic 504;
+ * we abort earlier so we can return a clear, actionable message instead. No
+ * legitimate upstream endpoint takes anywhere near this long (reads are sub-second,
+ * STK push ~1.5s). A long hang means an upstream stall (e.g. its M-Pesa B2C call
+ * to Safaricom not responding), which we surface as a 504 rather than a dead wait.
+ */
+const UPSTREAM_TIMEOUT_MS = 30_000;
+
+export class UpstreamTimeoutError extends Error {
+  constructor(path: string) {
+    super(`Upstream request timed out after ${UPSTREAM_TIMEOUT_MS}ms: ${path}`);
+    this.name = "UpstreamTimeoutError";
+  }
+}
+
 export function upstreamBase(): string {
   const raw = process.env["POS_API_BASE_URL"]?.trim();
   const base = raw && raw.length > 0 ? raw : DEFAULT_BASE;
@@ -45,7 +62,15 @@ export async function upstreamFetch(
     init.body = JSON.stringify(opts.body);
   }
 
-  const resp = await fetch(url, init);
+  let resp: Awaited<ReturnType<typeof fetch>>;
+  try {
+    resp = await fetch(url, { ...init, signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new UpstreamTimeoutError(opts.path);
+    }
+    throw err;
+  }
   const text = await resp.text();
   let data: unknown = null;
   if (text) {
@@ -82,6 +107,14 @@ export async function proxy(
     });
     res.status(result.status).json(result.data);
   } catch (err) {
+    if (err instanceof UpstreamTimeoutError) {
+      req.log.error({ err, path: opts.path }, "Upstream request timed out");
+      res.status(504).json({
+        message:
+          "The POS server did not respond in time. For M-Pesa payouts this usually means the upstream B2C request to Safaricom stalled. Please try again, and if it persists check the POS server's M-Pesa configuration.",
+      });
+      return;
+    }
     req.log.error({ err, path: opts.path }, "Upstream request failed");
     res.status(502).json({ message: "Upstream request failed" });
   }
@@ -178,6 +211,11 @@ export async function proxyList(
     }
     res.status(200).json(normalizeList(result.data));
   } catch (err) {
+    if (err instanceof UpstreamTimeoutError) {
+      req.log.error({ err, path: opts.path }, "Upstream list request timed out");
+      res.status(504).json({ message: "The POS server did not respond in time. Please try again." });
+      return;
+    }
     req.log.error({ err, path: opts.path }, "Upstream list request failed");
     res.status(502).json({ message: "Upstream request failed" });
   }
