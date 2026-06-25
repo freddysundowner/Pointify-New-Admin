@@ -71,7 +71,9 @@ const AUDIENCES: { value: Audience; label: string; description: string }[] = [
 
 export default function SMS() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useListSmsLogs({ page, limit: 20 });
+  const { data, isLoading, isFetching } = useListSmsLogs({ page, limit: 20 });
+  const totalPages = Math.max(1, data?.totalPages ?? 1);
+  const totalCount = data?.count ?? 0;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -269,6 +271,32 @@ export default function SMS() {
                     No SMS logs found.
                   </div>
                 )}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                  {totalCount > 0
+                    ? `Page ${page} of ${totalPages} · ${totalCount} message${totalCount === 1 ? "" : "s"}`
+                    : ""}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1 || isFetching}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages || isFetching}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </>
           )}
