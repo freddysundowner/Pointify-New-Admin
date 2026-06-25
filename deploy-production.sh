@@ -142,11 +142,20 @@ have apt-get || die "This script targets Debian/Ubuntu (apt-get not found). Inst
 # ----------------------------------------------------------------------------
 log "Checking prerequisites"
 
-if ! have node; then
-  die "Node.js is not installed. Install Node.js 20+ (24 recommended), e.g. via https://github.com/nodesource/distributions, then re-run."
+# NODE_BIN lets you point this deploy at a non-default Node (e.g. when the
+# server's default `node` is too old for Vite but you have a newer one
+# installed elsewhere): NODE_BIN=/opt/node20/bin/node bash deploy-production.sh
+# Its directory is put first on PATH so the build (pnpm/vite/corepack) and the
+# systemd service both use it, while the system default node stays untouched.
+if [ -n "${NODE_BIN:-}" ]; then
+  [ -x "$NODE_BIN" ] || die "NODE_BIN='$NODE_BIN' is not executable. Point it at a Node 20+ binary, e.g. /opt/node20/bin/node."
+  PATH="$(dirname "$NODE_BIN"):$PATH"
+  export PATH
+elif ! have node; then
+  die "Node.js is not installed. Install Node.js 20+ (24 recommended), e.g. via https://github.com/nodesource/distributions, then re-run. To use a non-default Node, set NODE_BIN=/path/to/node."
 fi
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-[ "$NODE_MAJOR" -ge 20 ] || die "Node.js $NODE_MAJOR detected; need 20+ (Vite 7 requires 20.19+; 24 recommended)."
+[ "$NODE_MAJOR" -ge 20 ] || die "Node.js $NODE_MAJOR detected; need 20+ (Vite 7 requires 20.19+; 24 recommended). Tip: install a newer Node elsewhere and run with NODE_BIN=/opt/node20/bin/node to use it just for this deploy."
 ok "node $(node -v)"
 NODE_BIN="$(command -v node)"
 
