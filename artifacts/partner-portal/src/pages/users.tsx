@@ -1,19 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListPortalUsers, getListPortalUsersQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Loader2, Phone, Mail, Store } from "lucide-react";
+import { Users, Loader2, Phone, Mail, Store, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+const PAGE_SIZE = 10;
 
 export default function ReferredUsers() {
   const [page, setPage] = useState(1);
   const { data: result, isLoading, isError } = useListPortalUsers(
-    { page, limit: 50 },
-    { query: { queryKey: getListPortalUsersQueryKey({ page, limit: 50 }) } }
+    { page, limit: PAGE_SIZE },
+    { query: { queryKey: getListPortalUsersQueryKey({ page, limit: PAGE_SIZE }) } }
   );
 
   const users = result?.data || [];
+  const totalPages = result?.totalPages || 1;
+  const totalCount = result?.count || 0;
+  const currentPage = result?.currentPage || page;
+
+  // Mirror the server's reported page back into local state so Prev/Next resume
+  // from the correct page if the request was out of range.
+  useEffect(() => {
+    if (result?.currentPage && result.currentPage !== page) {
+      setPage(result.currentPage);
+    }
+  }, [result?.currentPage, page]);
 
   return (
     <div className="space-y-5">
@@ -36,7 +50,7 @@ export default function ReferredUsers() {
             <div className="text-center py-12 text-destructive">
               Failed to load users. Please try again later.
             </div>
-          ) : users.length === 0 ? (
+          ) : totalCount === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Users className="w-6 h-6 text-muted-foreground" />
@@ -136,6 +150,34 @@ export default function ReferredUsers() {
                   </TableBody>
                 </Table>
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between gap-4 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages} · {totalCount} users
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>
