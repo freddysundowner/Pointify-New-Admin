@@ -18,5 +18,6 @@
 - [Subscription status semantics](subscription-status-semantics.md) — "Active" keys off `paid:true` + endDate, NOT the `status` boolean; status:true+paid:false (e.g. unpaid) must show Unpaid, not Active.
 - [Bulk SMS & proxy auth](bulk-sms-and-proxy-auth.md) — upstream verifyToken is a no-op (whole API open); proxy gates /sms/bulk by decoding JWT _id, injects it as sender, strips client `user`.
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
+- [Partner portal session auth](portal-session-auth.md) — portal must mint its OWN SESSION_SECRET-signed token (not trust upstream JWT) since upstream is open + proxy lacks its secret; else forgeable IDOR over money/PII.
 - [Partners = affiliates](partners-affiliates.md) — admin "Partners" = upstream Affliate; create via /affiliates/auth/register (hashes pw); deep-strip secrets incl nested admins; proxy must gate Bearer auth (upstream open).
 - [Shop categories upstream](shop-categories-upstream.md) — /shop/category list is a bare array (use plain proxy not proxyList); create returns 201 even on duplicate with body {error}; detect result.error in onSuccess.

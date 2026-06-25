@@ -112,6 +112,69 @@ export interface TransactionListResult {
   currentPage?: number;
 }
 
+export interface PortalRegisterInput {
+  name: string;
+  email: string;
+  phonenumber: string;
+  country?: string;
+  password: string;
+}
+
+export interface PortalProfileUpdate {
+  name?: string;
+  email?: string;
+  phonenumber?: string;
+  address?: string;
+  country?: string;
+  password?: string;
+}
+
+export interface PortalUserData {
+  _id: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  wallet?: number | null;
+  /** @nullable */
+  code?: string | null;
+  [key: string]: unknown;
+ }
+
+export interface PortalAuthResult {
+  message?: string;
+  status?: boolean;
+  token?: string;
+  expiresIn?: number;
+  userdata?: PortalUserData;
+  [key: string]: unknown;
+ }
+
+export interface PortalSummary {
+  wallet?: number;
+  /** @nullable */
+  commission?: number | null;
+  /** @nullable */
+  code?: string | null;
+  shopCount?: number;
+  userCount?: number;
+  totalEarned?: number;
+  totalWithdrawn?: number;
+  pendingWithdrawals?: number;
+}
+
+export interface PortalWithdrawInput {
+  amount: number;
+  phonenumber: string;
+}
+
+export interface PortalWithdrawResult {
+  status?: boolean;
+  message?: string;
+  [key: string]: unknown;
+ }
+
 export interface ErrorResponse {
   error?: string;
 }
@@ -1050,6 +1113,21 @@ export type ListPartnerTransactionsParams = {
  * Partner (affiliate) id
  */
 id: string;
+page?: number;
+limit?: number;
+};
+
+export type ListPortalShopsParams = {
+page?: number;
+limit?: number;
+};
+
+export type ListPortalUsersParams = {
+page?: number;
+limit?: number;
+};
+
+export type ListPortalTransactionsParams = {
 page?: number;
 limit?: number;
 };

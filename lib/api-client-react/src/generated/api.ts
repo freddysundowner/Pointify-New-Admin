@@ -46,6 +46,9 @@ import type {
   ListCommunicationsParams,
   ListPartnerTransactionsParams,
   ListPartnersParams,
+  ListPortalShopsParams,
+  ListPortalTransactionsParams,
+  ListPortalUsersParams,
   ListProductPurchasesHistoryParams,
   ListProductSalesHistoryParams,
   ListProductStockHistoryParams,
@@ -68,6 +71,12 @@ import type {
   PartnerListResult,
   PartnerRegisterResult,
   PartnerUpdate,
+  PortalAuthResult,
+  PortalProfileUpdate,
+  PortalRegisterInput,
+  PortalSummary,
+  PortalWithdrawInput,
+  PortalWithdrawResult,
   Product,
   ProductCategory,
   ProductHistorySummary,
@@ -1711,6 +1720,700 @@ export function useListPartnerTransactions<TData = Awaited<ReturnType<typeof lis
 
 
 
+
+export const getPortalRegisterUrl = () => {
+
+
+
+
+  return `/api/portal/auth/register`
+}
+
+/**
+ * Public endpoint. Creates a partner via the upstream affiliate registration (hashes the password, generates a referral code, and emails a welcome message) and returns an auth token plus the partner profile. A duplicate email returns 400.
+ * @summary Partner self-registration
+ */
+export const portalRegister = async (portalRegisterInput: PortalRegisterInput, options?: RequestInit): Promise<PortalAuthResult> => {
+
+  return customFetch<PortalAuthResult>(getPortalRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      portalRegisterInput,)
+  }
+);}
+
+
+
+
+export const getPortalRegisterMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof portalRegister>>, TError,{data: BodyType<PortalRegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof portalRegister>>, TError,{data: BodyType<PortalRegisterInput>}, TContext> => {
+
+const mutationKey = ['portalRegister'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof portalRegister>>, {data: BodyType<PortalRegisterInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  portalRegister(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PortalRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof portalRegister>>>
+    export type PortalRegisterMutationBody = BodyType<PortalRegisterInput>
+    export type PortalRegisterMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Partner self-registration
+ */
+export const usePortalRegister = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof portalRegister>>, TError,{data: BodyType<PortalRegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof portalRegister>>,
+        TError,
+        {data: BodyType<PortalRegisterInput>},
+        TContext
+      > => {
+      return useMutation(getPortalRegisterMutationOptions(options));
+    }
+
+export const getPortalLoginUrl = () => {
+
+
+
+
+  return `/api/portal/auth/login`
+}
+
+/**
+ * Public endpoint. Returns an auth token and the partner profile. Suspended accounts are rejected upstream.
+ * @summary Partner login
+ */
+export const portalLogin = async (loginInput: LoginInput, options?: RequestInit): Promise<PortalAuthResult> => {
+
+  return customFetch<PortalAuthResult>(getPortalLoginUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      loginInput,)
+  }
+);}
+
+
+
+
+export const getPortalLoginMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof portalLogin>>, TError,{data: BodyType<LoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof portalLogin>>, TError,{data: BodyType<LoginInput>}, TContext> => {
+
+const mutationKey = ['portalLogin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof portalLogin>>, {data: BodyType<LoginInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  portalLogin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PortalLoginMutationResult = NonNullable<Awaited<ReturnType<typeof portalLogin>>>
+    export type PortalLoginMutationBody = BodyType<LoginInput>
+    export type PortalLoginMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Partner login
+ */
+export const usePortalLogin = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof portalLogin>>, TError,{data: BodyType<LoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof portalLogin>>,
+        TError,
+        {data: BodyType<LoginInput>},
+        TContext
+      > => {
+      return useMutation(getPortalLoginMutationOptions(options));
+    }
+
+export const getGetPortalProfileUrl = () => {
+
+
+
+
+  return `/api/portal/me`
+}
+
+/**
+ * @summary The authenticated partner's own profile
+ */
+export const getPortalProfile = async ( options?: RequestInit): Promise<Partner> => {
+
+  return customFetch<Partner>(getGetPortalProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPortalProfileQueryKey = () => {
+    return [
+    `/api/portal/me`
+    ] as const;
+    }
+
+
+export const getGetPortalProfileQueryOptions = <TData = Awaited<ReturnType<typeof getPortalProfile>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPortalProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortalProfile>>> = ({ signal }) => getPortalProfile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPortalProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPortalProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getPortalProfile>>>
+export type GetPortalProfileQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary The authenticated partner's own profile
+ */
+
+export function useGetPortalProfile<TData = Awaited<ReturnType<typeof getPortalProfile>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPortalProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdatePortalProfileUrl = () => {
+
+
+
+
+  return `/api/portal/me`
+}
+
+/**
+ * Updates the calling partner only (id is taken from the auth token, never the client). Account-control fields (wallet, commission, blocked, active, code) are ignored. Setting a password triggers an upstream confirmation email.
+ * @summary Update the authenticated partner's own profile or password
+ */
+export const updatePortalProfile = async (portalProfileUpdate: PortalProfileUpdate, options?: RequestInit): Promise<Partner> => {
+
+  return customFetch<Partner>(getUpdatePortalProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      portalProfileUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdatePortalProfileMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortalProfile>>, TError,{data: BodyType<PortalProfileUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePortalProfile>>, TError,{data: BodyType<PortalProfileUpdate>}, TContext> => {
+
+const mutationKey = ['updatePortalProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePortalProfile>>, {data: BodyType<PortalProfileUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePortalProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePortalProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updatePortalProfile>>>
+    export type UpdatePortalProfileMutationBody = BodyType<PortalProfileUpdate>
+    export type UpdatePortalProfileMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update the authenticated partner's own profile or password
+ */
+export const useUpdatePortalProfile = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortalProfile>>, TError,{data: BodyType<PortalProfileUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePortalProfile>>,
+        TError,
+        {data: BodyType<PortalProfileUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdatePortalProfileMutationOptions(options));
+    }
+
+export const getGetPortalSummaryUrl = () => {
+
+
+
+
+  return `/api/portal/summary`
+}
+
+/**
+ * @summary Dashboard totals for the authenticated partner
+ */
+export const getPortalSummary = async ( options?: RequestInit): Promise<PortalSummary> => {
+
+  return customFetch<PortalSummary>(getGetPortalSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPortalSummaryQueryKey = () => {
+    return [
+    `/api/portal/summary`
+    ] as const;
+    }
+
+
+export const getGetPortalSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getPortalSummary>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPortalSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortalSummary>>> = ({ signal }) => getPortalSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPortalSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPortalSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getPortalSummary>>>
+export type GetPortalSummaryQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Dashboard totals for the authenticated partner
+ */
+
+export function useGetPortalSummary<TData = Awaited<ReturnType<typeof getPortalSummary>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPortalSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListPortalShopsUrl = (params?: ListPortalShopsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/portal/shops?${stringifiedParams}` : `/api/portal/shops`
+}
+
+/**
+ * @summary Shops owned by users the authenticated partner referred
+ */
+export const listPortalShops = async (params?: ListPortalShopsParams, options?: RequestInit): Promise<ShopListResult> => {
+
+  return customFetch<ShopListResult>(getListPortalShopsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPortalShopsQueryKey = (params?: ListPortalShopsParams,) => {
+    return [
+    `/api/portal/shops`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPortalShopsQueryOptions = <TData = Awaited<ReturnType<typeof listPortalShops>>, TError = ErrorType<ErrorResponse>>(params?: ListPortalShopsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalShops>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPortalShopsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortalShops>>> = ({ signal }) => listPortalShops(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPortalShops>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPortalShopsQueryResult = NonNullable<Awaited<ReturnType<typeof listPortalShops>>>
+export type ListPortalShopsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Shops owned by users the authenticated partner referred
+ */
+
+export function useListPortalShops<TData = Awaited<ReturnType<typeof listPortalShops>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListPortalShopsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalShops>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPortalShopsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListPortalUsersUrl = (params?: ListPortalUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/portal/users?${stringifiedParams}` : `/api/portal/users`
+}
+
+/**
+ * @summary Users (shop owners) the authenticated partner referred
+ */
+export const listPortalUsers = async (params?: ListPortalUsersParams, options?: RequestInit): Promise<AdminListResult> => {
+
+  return customFetch<AdminListResult>(getListPortalUsersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPortalUsersQueryKey = (params?: ListPortalUsersParams,) => {
+    return [
+    `/api/portal/users`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPortalUsersQueryOptions = <TData = Awaited<ReturnType<typeof listPortalUsers>>, TError = ErrorType<ErrorResponse>>(params?: ListPortalUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPortalUsersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortalUsers>>> = ({ signal }) => listPortalUsers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPortalUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPortalUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listPortalUsers>>>
+export type ListPortalUsersQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Users (shop owners) the authenticated partner referred
+ */
+
+export function useListPortalUsers<TData = Awaited<ReturnType<typeof listPortalUsers>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListPortalUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPortalUsersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListPortalTransactionsUrl = (params?: ListPortalTransactionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/portal/transactions?${stringifiedParams}` : `/api/portal/transactions`
+}
+
+/**
+ * @summary Earnings and withdrawals for the authenticated partner
+ */
+export const listPortalTransactions = async (params?: ListPortalTransactionsParams, options?: RequestInit): Promise<TransactionListResult> => {
+
+  return customFetch<TransactionListResult>(getListPortalTransactionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPortalTransactionsQueryKey = (params?: ListPortalTransactionsParams,) => {
+    return [
+    `/api/portal/transactions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPortalTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof listPortalTransactions>>, TError = ErrorType<ErrorResponse>>(params?: ListPortalTransactionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPortalTransactionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortalTransactions>>> = ({ signal }) => listPortalTransactions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPortalTransactions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPortalTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPortalTransactions>>>
+export type ListPortalTransactionsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Earnings and withdrawals for the authenticated partner
+ */
+
+export function useListPortalTransactions<TData = Awaited<ReturnType<typeof listPortalTransactions>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListPortalTransactionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPortalTransactionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getRequestPortalWithdrawalUrl = () => {
+
+
+
+
+  return `/api/portal/withdraw`
+}
+
+/**
+ * Initiates a real M-Pesa payout from the authenticated partner's wallet to the given phone number. The affiliate id is taken from the auth token. Insufficient balance or a blocked account is reported in the response body with status false (HTTP 200).
+ * @summary Request a wallet withdrawal (M-Pesa payout)
+ */
+export const requestPortalWithdrawal = async (portalWithdrawInput: PortalWithdrawInput, options?: RequestInit): Promise<PortalWithdrawResult> => {
+
+  return customFetch<PortalWithdrawResult>(getRequestPortalWithdrawalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      portalWithdrawInput,)
+  }
+);}
+
+
+
+
+export const getRequestPortalWithdrawalMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPortalWithdrawal>>, TError,{data: BodyType<PortalWithdrawInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestPortalWithdrawal>>, TError,{data: BodyType<PortalWithdrawInput>}, TContext> => {
+
+const mutationKey = ['requestPortalWithdrawal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestPortalWithdrawal>>, {data: BodyType<PortalWithdrawInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestPortalWithdrawal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestPortalWithdrawalMutationResult = NonNullable<Awaited<ReturnType<typeof requestPortalWithdrawal>>>
+    export type RequestPortalWithdrawalMutationBody = BodyType<PortalWithdrawInput>
+    export type RequestPortalWithdrawalMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Request a wallet withdrawal (M-Pesa payout)
+ */
+export const useRequestPortalWithdrawal = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPortalWithdrawal>>, TError,{data: BodyType<PortalWithdrawInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestPortalWithdrawal>>,
+        TError,
+        {data: BodyType<PortalWithdrawInput>},
+        TContext
+      > => {
+      return useMutation(getRequestPortalWithdrawalMutationOptions(options));
+    }
 
 export const getListShopsUrl = (params?: ListShopsParams,) => {
   const normalizedParams = new URLSearchParams();

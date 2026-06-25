@@ -382,6 +382,202 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/TransactionListResult" }
 
+  /portal/auth/register:
+    post:
+      operationId: portalRegister
+      tags: [portal]
+      summary: Partner self-registration
+      description: >-
+        Public endpoint. Creates a partner via the upstream affiliate
+        registration (hashes the password, generates a referral code, and emails
+        a welcome message) and returns an auth token plus the partner profile. A
+        duplicate email returns 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PortalRegisterInput" }
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PortalAuthResult" }
+        "400":
+          description: Duplicate email or invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/auth/login:
+    post:
+      operationId: portalLogin
+      tags: [portal]
+      summary: Partner login
+      description: Public endpoint. Returns an auth token and the partner profile. Suspended accounts are rejected upstream.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginInput" }
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PortalAuthResult" }
+        "401":
+          description: Invalid credentials or suspended account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/me:
+    get:
+      operationId: getPortalProfile
+      tags: [portal]
+      summary: The authenticated partner's own profile
+      responses:
+        "200":
+          description: Partner profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    put:
+      operationId: updatePortalProfile
+      tags: [portal]
+      summary: Update the authenticated partner's own profile or password
+      description: >-
+        Updates the calling partner only (id is taken from the auth token, never
+        the client). Account-control fields (wallet, commission, blocked, active,
+        code) are ignored. Setting a password triggers an upstream confirmation
+        email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PortalProfileUpdate" }
+      responses:
+        "200":
+          description: Updated partner profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/summary:
+    get:
+      operationId: getPortalSummary
+      tags: [portal]
+      summary: Dashboard totals for the authenticated partner
+      responses:
+        "200":
+          description: Partner dashboard summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PortalSummary" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/shops:
+    get:
+      operationId: listPortalShops
+      tags: [portal]
+      summary: Shops owned by users the authenticated partner referred
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Shops
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopListResult" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/users:
+    get:
+      operationId: listPortalUsers
+      tags: [portal]
+      summary: Users (shop owners) the authenticated partner referred
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Referred users
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminListResult" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/transactions:
+    get:
+      operationId: listPortalTransactions
+      tags: [portal]
+      summary: Earnings and withdrawals for the authenticated partner
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Partner transactions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionListResult" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/withdraw:
+    post:
+      operationId: requestPortalWithdrawal
+      tags: [portal]
+      summary: Request a wallet withdrawal (M-Pesa payout)
+      description: >-
+        Initiates a real M-Pesa payout from the authenticated partner's wallet to
+        the given phone number. The affiliate id is taken from the auth token.
+        Insufficient balance or a blocked account is reported in the response body
+        with status false (HTTP 200).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PortalWithdrawInput" }
+      responses:
+        "200":
+          description: Withdrawal result (check status field)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PortalWithdrawResult" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /shops:
     get:
       operationId: listShops
@@ -1189,6 +1385,73 @@ components:
         count: { type: number }
         totalPages: { type: number }
         currentPage: { type: number }
+
+    PortalRegisterInput:
+      type: object
+      required: [name, email, phonenumber, password]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phonenumber: { type: string }
+        country: { type: string }
+        password: { type: string }
+
+    PortalProfileUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phonenumber: { type: string }
+        address: { type: string }
+        country: { type: string }
+        password: { type: string }
+
+    PortalAuthResult:
+      type: object
+      additionalProperties: true
+      properties:
+        message: { type: string }
+        status: { type: boolean }
+        token: { type: string }
+        expiresIn: { type: number }
+        userdata: { $ref: "#/components/schemas/PortalUserData" }
+
+    PortalUserData:
+      type: object
+      additionalProperties: true
+      required: [_id]
+      properties:
+        _id: { type: string }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        wallet: { type: ["number", "null"] }
+        code: { type: ["string", "null"] }
+
+    PortalSummary:
+      type: object
+      properties:
+        wallet: { type: number }
+        commission: { type: ["number", "null"] }
+        code: { type: ["string", "null"] }
+        shopCount: { type: number }
+        userCount: { type: number }
+        totalEarned: { type: number }
+        totalWithdrawn: { type: number }
+        pendingWithdrawals: { type: number }
+
+    PortalWithdrawInput:
+      type: object
+      required: [amount, phonenumber]
+      properties:
+        amount: { type: number }
+        phonenumber: { type: string }
+
+    PortalWithdrawResult:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: boolean }
+        message: { type: string }
 
     ErrorResponse:
       type: object

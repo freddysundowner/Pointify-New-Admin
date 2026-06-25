@@ -609,6 +609,220 @@ export const ListPartnerTransactionsResponse = zod.object({
 })
 
 
+/**
+ * Public endpoint. Creates a partner via the upstream affiliate registration (hashes the password, generates a referral code, and emails a welcome message) and returns an auth token plus the partner profile. A duplicate email returns 400.
+ * @summary Partner self-registration
+ */
+export const PortalRegisterBody = zod.object({
+  "name": zod.string(),
+  "email": zod.string(),
+  "phonenumber": zod.string(),
+  "country": zod.string().optional(),
+  "password": zod.string()
+})
+
+
+/**
+ * Public endpoint. Returns an auth token and the partner profile. Suspended accounts are rejected upstream.
+ * @summary Partner login
+ */
+export const PortalLoginBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string()
+})
+
+export const PortalLoginResponse = zod.object({
+  "message": zod.string().optional(),
+  "status": zod.boolean().optional(),
+  "token": zod.string().optional(),
+  "expiresIn": zod.number().optional(),
+  "userdata": zod.object({
+  "_id": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "wallet": zod.number().nullish(),
+  "code": zod.string().nullish()
+}).optional()
+})
+
+
+/**
+ * @summary The authenticated partner's own profile
+ */
+export const GetPortalProfileResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
+  "userCount": zod.number().optional(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+/**
+ * Updates the calling partner only (id is taken from the auth token, never the client). Account-control fields (wallet, commission, blocked, active, code) are ignored. Setting a password triggers an upstream confirmation email.
+ * @summary Update the authenticated partner's own profile or password
+ */
+export const UpdatePortalProfileBody = zod.object({
+  "name": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phonenumber": zod.string().optional(),
+  "address": zod.string().optional(),
+  "country": zod.string().optional(),
+  "password": zod.string().optional()
+})
+
+export const UpdatePortalProfileResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
+  "userCount": zod.number().optional(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+/**
+ * @summary Dashboard totals for the authenticated partner
+ */
+export const GetPortalSummaryResponse = zod.object({
+  "wallet": zod.number().optional(),
+  "commission": zod.number().nullish(),
+  "code": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
+  "userCount": zod.number().optional(),
+  "totalEarned": zod.number().optional(),
+  "totalWithdrawn": zod.number().optional(),
+  "pendingWithdrawals": zod.number().optional()
+})
+
+
+/**
+ * @summary Shops owned by users the authenticated partner referred
+ */
+export const ListPortalShopsQueryParams = zod.object({
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListPortalShopsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "contact": zod.string().nullish(),
+  "currency": zod.string().nullish(),
+  "tax": zod.number().nullish(),
+  "warehouse": zod.boolean().nullish(),
+  "production": zod.boolean().nullish(),
+  "productCount": zod.number().nullish(),
+  "createAt": zod.string().nullish(),
+  "adminId": zod.record(zod.string(), zod.unknown()).optional(),
+  "shopCategoryId": zod.record(zod.string(), zod.unknown()).optional(),
+  "subscription": zod.record(zod.string(), zod.unknown()).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * @summary Users (shop owners) the authenticated partner referred
+ */
+export const ListPortalUsersQueryParams = zod.object({
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListPortalUsersResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string(),
+  "email": zod.string().nullish(),
+  "username": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "status": zod.string().nullish(),
+  "pricingGroup": zod.string().nullish(),
+  "emailVerified": zod.boolean().nullish(),
+  "phoneVerified": zod.boolean().nullish(),
+  "smscredit": zod.number().nullish(),
+  "saleSmsEnabled": zod.boolean().nullish(),
+  "shopCount": zod.number().nullish(),
+  "createdAt": zod.string().nullish(),
+  "last_seen": zod.string().nullish(),
+  "platform": zod.string().nullish(),
+  "app_version": zod.string().nullish(),
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * @summary Earnings and withdrawals for the authenticated partner
+ */
+export const ListPortalTransactionsQueryParams = zod.object({
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListPortalTransactionsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string().optional(),
+  "createdAt": zod.string().nullish(),
+  "amount": zod.number().nullish(),
+  "affliateAmount": zod.number().nullish(),
+  "balance": zod.number().nullish(),
+  "transId": zod.string().nullish(),
+  "mpesaCode": zod.string().nullish(),
+  "type": zod.string().nullish().describe('withdraw or subscription'),
+  "status": zod.boolean().nullish(),
+  "user": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.record(zod.string(), zod.unknown()).optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * Initiates a real M-Pesa payout from the authenticated partner's wallet to the given phone number. The affiliate id is taken from the auth token. Insufficient balance or a blocked account is reported in the response body with status false (HTTP 200).
+ * @summary Request a wallet withdrawal (M-Pesa payout)
+ */
+export const RequestPortalWithdrawalBody = zod.object({
+  "amount": zod.number(),
+  "phonenumber": zod.string()
+})
+
+export const RequestPortalWithdrawalResponse = zod.object({
+  "status": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
 export const ListShopsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),

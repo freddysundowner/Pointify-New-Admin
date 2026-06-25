@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/partner/"
+title = "Pointify Partners"
+version = "1.0.0"
+id = "artifacts/partner-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/partner/" ]
+localPort = 25041
+
+[services.development]
+run = "pnpm --filter @workspace/partner-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/partner-portal", "run", "build" ]
+publicDir = "artifacts/partner-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25041"
+BASE_PATH = "/partner/"
