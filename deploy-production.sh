@@ -66,6 +66,71 @@ warn() { printf '\033[1;33m  ! \033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# --- Port helpers -----------------------------------------------------------
+# List the PIDs currently LISTENing on a TCP port (best-effort, root-only info).
+listening_pids() {
+  local port="$1"
+  if have ss; then
+    ss -ltnpH "( sport = :$port )" 2>/dev/null | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u
+  elif have lsof; then
+    lsof -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | sort -u
+  fi
+}
+
+# True if anything is LISTENing on the given TCP port.
+port_in_use() {
+  local port="$1"
+  if have ss; then
+    ss -ltnH "( sport = :$port )" 2>/dev/null | grep -q .
+  elif have lsof; then
+    lsof -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1
+  else
+    return 1  # no probe available; assume free
+  fi
+}
+
+# True if the port is held ONLY by our own systemd service (so a normal
+# re-deploy keeps the same port — restarting the service frees and rebinds it).
+port_owned_by_service() {
+  local port="$1" pids p
+  pids="$(listening_pids "$port")"
+  [ -n "$pids" ] || return 1
+  for p in $pids; do
+    grep -q "$SERVICE_NAME.service" "/proc/$p/cgroup" 2>/dev/null || return 1
+  done
+  return 0
+}
+
+# Resolve API_PORT to a free port, incrementing past unrelated squatters. A port
+# held only by the existing pointify-api service counts as available.
+resolve_api_port() {
+  if ! have ss && ! have lsof; then
+    warn "No port probe (ss/lsof) found; using API_PORT=$API_PORT without conflict detection."
+    return
+  fi
+  local desired="$API_PORT" max_attempts=20 attempt=0
+  while [ "$attempt" -lt "$max_attempts" ]; do
+    if ! port_in_use "$API_PORT"; then
+      break  # free to use
+    fi
+    if port_owned_by_service "$API_PORT"; then
+      ok "Port $API_PORT is held only by the existing $SERVICE_NAME service; reusing it (a restart rebinds it)."
+      break
+    fi
+    warn "Port $API_PORT is in use by another process; trying $((API_PORT + 1))."
+    API_PORT=$((API_PORT + 1))
+    attempt=$((attempt + 1))
+  done
+  if [ "$attempt" -ge "$max_attempts" ]; then
+    die "Could not find a free API port within $max_attempts attempts starting at $desired. Free a port or set API_PORT explicitly."
+  fi
+  if [ "$API_PORT" = "$desired" ]; then
+    ok "Using API_PORT=$API_PORT"
+  else
+    log "Resolved API_PORT=$API_PORT (desired $desired was busy)"
+  fi
+}
+
 # ----------------------------------------------------------------------------
 # 0. Sanity
 # ----------------------------------------------------------------------------
@@ -203,6 +268,11 @@ if [ "$APP_USER" != "root" ] && have sudo; then
   sudo -u "$APP_USER" test -r "$REPO_DIR/artifacts/api-server/dist/index.mjs" 2>/dev/null \
     || warn "User '$APP_USER' cannot read $REPO_DIR. If the repo lives under /root, move it (e.g. to the user's home or /opt) or set APP_USER=root, then re-run."
 fi
+
+# Resolve a free API port before writing the systemd unit, the health check,
+# and the nginx proxy_pass — all of which reference $API_PORT downstream.
+log "Resolving API port (desired: $API_PORT)"
+resolve_api_port
 
 log "Installing API proxy service ($SERVICE_NAME, user: $APP_USER)"
 {
