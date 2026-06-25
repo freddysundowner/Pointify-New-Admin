@@ -7,6 +7,7 @@ interface AuthState {
   userdata: Admin | null;
   isAuthenticated: boolean;
   login: (token: string, userdata: Admin) => void;
+  updateUserdata: (patch: Partial<Admin>) => void;
   logout: () => void;
 }
 
@@ -31,6 +32,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserdata(data);
   };
 
+  const updateUserdata = (patch: Partial<Admin>) => {
+    setUserdata((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      localStorage.setItem("pointify_userdata", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = () => {
     localStorage.removeItem("pointify_token");
     localStorage.removeItem("pointify_userdata");
@@ -40,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, userdata, isAuthenticated: !!token, login, logout }}>
+    <AuthContext.Provider value={{ token, userdata, isAuthenticated: !!token, login, updateUserdata, logout }}>
       {children}
     </AuthContext.Provider>
   );

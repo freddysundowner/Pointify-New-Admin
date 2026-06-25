@@ -1,11 +1,12 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { AccountDialog } from "@/components/AccountDialog";
 import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, Users, Store, PackageSearch, 
   UserSquare2, ReceiptText, ShoppingCart, Package, 
   CreditCard, MessageSquare, Settings, LogOut,
-  BarChart3, Menu, Tags
+  BarChart3, Menu, Tags, UserCog
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,6 +51,7 @@ const navItems = [
 export function Shell({ children }: { children: ReactNode }) {
   const { logout, userdata } = useAuth();
   const [location] = useLocation();
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const getInitials = (name?: string | null) => {
     if (!name) return "A";
@@ -119,6 +121,11 @@ export function Shell({ children }: { children: ReactNode }) {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setAccountOpen(true)} className="cursor-pointer">
+                      <UserCog className="mr-2 h-4 w-4" />
+                      My account
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
@@ -148,6 +155,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
+      <AccountDialog open={accountOpen} onOpenChange={setAccountOpen} />
     </SidebarProvider>
   );
 }
