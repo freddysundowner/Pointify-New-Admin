@@ -1,4 +1,5 @@
-import { useRoute, Link } from "wouter";
+import { useRoute } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   useGetAdmin,
@@ -9,8 +10,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ShopActionsMenu } from "@/components/ShopActionsMenu";
 
 function asText(value: unknown): string | undefined {
   if (value == null) return undefined;
@@ -25,6 +25,7 @@ function asText(value: unknown): string | undefined {
 export default function UserShops() {
   const [, params] = useRoute("/users/:id/shops");
   const userId = params?.id ?? "";
+  const queryClient = useQueryClient();
 
   const { data: user } = useGetAdmin(userId, {
     query: { enabled: !!userId, queryKey: getGetAdminQueryKey(userId) },
@@ -32,6 +33,10 @@ export default function UserShops() {
   const { data, isLoading } = useListAdminShops(userId, {
     query: { enabled: !!userId, queryKey: getListAdminShopsQueryKey(userId) },
   });
+  // After an edit/delete from the shop actions menu, refresh this user's shop
+  // list (the menu already invalidates the global shops list).
+  const refreshUserShops = () =>
+    queryClient.invalidateQueries({ queryKey: getListAdminShopsQueryKey(userId) });
   const shops = data?.data ?? [];
   const ownerLabel = user?.username || user?.email || "User";
 
@@ -68,6 +73,7 @@ export default function UserShops() {
                       <TableHead>Type</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Address</TableHead>
+                      <TableHead className="w-[56px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -83,11 +89,14 @@ export default function UserShops() {
                           </TableCell>
                           <TableCell>{shop.contact || "—"}</TableCell>
                           <TableCell>{shop.address || "—"}</TableCell>
+                          <TableCell className="text-right">
+                            <ShopActionsMenu shop={shop} onChanged={refreshUserShops} />
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                           This user has no shops.
                         </TableCell>
                       </TableRow>
@@ -111,12 +120,12 @@ export default function UserShops() {
                             {asText(shop.shopCategoryId) || "—"}
                           </p>
                         </div>
-                        <Badge
-                          variant={shop.warehouse ? "secondary" : "default"}
-                          className="shrink-0"
-                        >
-                          {shop.warehouse ? "Warehouse" : "Shop"}
-                        </Badge>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Badge variant={shop.warehouse ? "secondary" : "default"}>
+                            {shop.warehouse ? "Warehouse" : "Shop"}
+                          </Badge>
+                          <ShopActionsMenu shop={shop} onChanged={refreshUserShops} />
+                        </div>
                       </div>
                       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
