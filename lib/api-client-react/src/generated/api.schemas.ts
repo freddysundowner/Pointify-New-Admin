@@ -594,6 +594,24 @@ export interface SaleListResult {
   currentPage?: number;
 }
 
+export interface SaleDateUpdateInput {
+  /** New receipt date/time as an ISO-8601 string. */
+  createdAt: string;
+}
+
+export interface SaleReturnItemInput {
+  /** Product id of the line item being returned. */
+  product: string;
+  /** Quantity of that product to return. */
+  quantity: number;
+}
+
+export interface SaleReturnInput {
+  items: SaleReturnItemInput[];
+  /** Optional reason for the refund. */
+  reason?: string;
+}
+
 export interface Purchase {
   _id: string;
   /** @nullable */

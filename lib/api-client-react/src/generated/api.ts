@@ -89,7 +89,9 @@ import type {
   ResetResult,
   RevenueRange,
   Sale,
+  SaleDateUpdateInput,
   SaleListResult,
+  SaleReturnInput,
   SalesHistoryResult,
   SettingsInput,
   Shop,
@@ -4121,6 +4123,150 @@ export function useGetSale<TData = Awaited<ReturnType<typeof getSale>>, TError =
 
 
 
+
+export const getUpdateSaleDateUrl = (id: string,) => {
+
+
+
+
+  return `/api/sales/${id}`
+}
+
+/**
+ * @summary Change the date/time of a completed (cashed) receipt
+ */
+export const updateSaleDate = async (id: string,
+    saleDateUpdateInput: SaleDateUpdateInput, options?: RequestInit): Promise<GenericObject> => {
+
+  return customFetch<GenericObject>(getUpdateSaleDateUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      saleDateUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateSaleDateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSaleDate>>, TError,{id: string;data: BodyType<SaleDateUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSaleDate>>, TError,{id: string;data: BodyType<SaleDateUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateSaleDate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSaleDate>>, {id: string;data: BodyType<SaleDateUpdateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSaleDate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSaleDateMutationResult = NonNullable<Awaited<ReturnType<typeof updateSaleDate>>>
+    export type UpdateSaleDateMutationBody = BodyType<SaleDateUpdateInput>
+    export type UpdateSaleDateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Change the date/time of a completed (cashed) receipt
+ */
+export const useUpdateSaleDate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSaleDate>>, TError,{id: string;data: BodyType<SaleDateUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSaleDate>>,
+        TError,
+        {id: string;data: BodyType<SaleDateUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateSaleDateMutationOptions(options));
+    }
+
+export const getCreateSaleReturnUrl = (id: string,) => {
+
+
+
+
+  return `/api/sales/${id}/returns`
+}
+
+/**
+ * @summary Refund (return) one or more items on a receipt
+ */
+export const createSaleReturn = async (id: string,
+    saleReturnInput: SaleReturnInput, options?: RequestInit): Promise<GenericObject> => {
+
+  return customFetch<GenericObject>(getCreateSaleReturnUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      saleReturnInput,)
+  }
+);}
+
+
+
+
+export const getCreateSaleReturnMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSaleReturn>>, TError,{id: string;data: BodyType<SaleReturnInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSaleReturn>>, TError,{id: string;data: BodyType<SaleReturnInput>}, TContext> => {
+
+const mutationKey = ['createSaleReturn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSaleReturn>>, {id: string;data: BodyType<SaleReturnInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSaleReturn(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSaleReturnMutationResult = NonNullable<Awaited<ReturnType<typeof createSaleReturn>>>
+    export type CreateSaleReturnMutationBody = BodyType<SaleReturnInput>
+    export type CreateSaleReturnMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Refund (return) one or more items on a receipt
+ */
+export const useCreateSaleReturn = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSaleReturn>>, TError,{id: string;data: BodyType<SaleReturnInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSaleReturn>>,
+        TError,
+        {id: string;data: BodyType<SaleReturnInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSaleReturnMutationOptions(options));
+    }
 
 export const getListPurchasesUrl = (params?: ListPurchasesParams,) => {
   const normalizedParams = new URLSearchParams();

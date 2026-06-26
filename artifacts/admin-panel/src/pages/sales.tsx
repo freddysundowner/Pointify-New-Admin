@@ -17,6 +17,7 @@ import {
 import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 import { formatDateTime, formatKes } from "@/lib/utils";
 import { ReceiptDialog } from "@/components/ReceiptDialog";
+import { SaleManageDialog } from "@/components/SaleManageDialog";
 
 const PAGE_SIZE = 20;
 
@@ -53,6 +54,7 @@ export default function Sales() {
   const { shopId, shopName, from } = useShopFilter();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
+  const [managed, setManaged] = useState<Record<string, unknown> | null>(null);
 
   const [receiptSearch, setReceiptSearch] = useState("");
   const [debouncedReceipt, setDebouncedReceipt] = useState("");
@@ -194,7 +196,7 @@ export default function Sales() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date &amp; Time</TableHead>
-                      <TableHead className="text-right">Receipt</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -212,9 +214,14 @@ export default function Sales() {
                             {formatDateTime(sale.createdAt ?? sale.createAt)}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" onClick={() => setSelected(sale)}>
-                              View
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setSelected(sale)}>
+                                View
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => setManaged(sale)}>
+                                Manage
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -262,14 +269,22 @@ export default function Sales() {
                           <dd>{formatDateTime(sale.createdAt ?? sale.createAt)}</dd>
                         </div>
                       </dl>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 w-full"
-                        onClick={() => setSelected(sale)}
-                      >
-                        View receipt
-                      </Button>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelected(sale)}
+                        >
+                          View receipt
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setManaged(sale)}
+                        >
+                          Manage
+                        </Button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -307,6 +322,7 @@ export default function Sales() {
       </Card>
 
       <ReceiptDialog kind="sale" record={selected} onClose={() => setSelected(null)} />
+      <SaleManageDialog sale={managed} onClose={() => setManaged(null)} />
     </div>
   );
 }

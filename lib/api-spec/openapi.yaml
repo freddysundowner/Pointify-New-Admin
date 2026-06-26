@@ -941,6 +941,42 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Sale" }
+    put:
+      operationId: updateSaleDate
+      tags: [sales]
+      summary: Change the date/time of a completed (cashed) receipt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SaleDateUpdateInput" }
+      responses:
+        "200":
+          description: Updated sale
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GenericObject" }
+
+  /sales/{id}/returns:
+    post:
+      operationId: createSaleReturn
+      tags: [sales]
+      summary: Refund (return) one or more items on a receipt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SaleReturnInput" }
+      responses:
+        "201":
+          description: Sale return created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GenericObject" }
 
   /purchases:
     get:
@@ -1863,6 +1899,36 @@ components:
         count: { type: number }
         totalPages: { type: number }
         currentPage: { type: number }
+
+    SaleDateUpdateInput:
+      type: object
+      required: [createdAt]
+      properties:
+        createdAt:
+          type: string
+          description: New receipt date/time as an ISO-8601 string.
+
+    SaleReturnItemInput:
+      type: object
+      required: [product, quantity]
+      properties:
+        product:
+          type: string
+          description: Product id of the line item being returned.
+        quantity:
+          type: number
+          description: Quantity of that product to return.
+
+    SaleReturnInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SaleReturnItemInput" }
+        reason:
+          type: string
+          description: Optional reason for the refund.
 
     Purchase:
       type: object

@@ -1398,6 +1398,36 @@ export const GetSaleResponse = zod.object({
 })
 
 
+/**
+ * @summary Change the date/time of a completed (cashed) receipt
+ */
+export const UpdateSaleDateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateSaleDateBody = zod.object({
+  "createdAt": zod.string().describe('New receipt date\/time as an ISO-8601 string.')
+})
+
+export const UpdateSaleDateResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Refund (return) one or more items on a receipt
+ */
+export const CreateSaleReturnParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CreateSaleReturnBody = zod.object({
+  "items": zod.array(zod.object({
+  "product": zod.string().describe('Product id of the line item being returned.'),
+  "quantity": zod.number().describe('Quantity of that product to return.')
+})),
+  "reason": zod.string().optional().describe('Optional reason for the refund.')
+})
+
+
 export const ListPurchasesQueryParams = zod.object({
   "shopId": zod.coerce.string().optional(),
   "supplierId": zod.coerce.string().optional(),
