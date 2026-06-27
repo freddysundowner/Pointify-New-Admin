@@ -9,6 +9,7 @@ A platform/super-admin panel for Pointify POS. A web admin frontend plus an Expr
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - Optional env: `POS_API_BASE_URL` — upstream POS API base URL (defaults to `https://api.pointifypos.com`). Not a secret.
+- Optional env: `POS_PACKAGES_REF_USER_ID` — a user id with an **active production subscription**, injected on the packages list so upstream returns the full catalog including the `trial` package (see Gotchas). Not a secret. If the trial package ever disappears from the list, this user likely lost their production subscription — point the var at another such user.
 
 ## Stack
 
@@ -43,6 +44,7 @@ Operator-facing pages: dashboard analytics, users/admins, shops + shop categorie
 - The upstream has **no get-admin-by-id endpoint**; `/api/admins/{id}` fetches the admin list and finds the match.
 - Relation fields (adminId, shopId, packageId, etc.) come back as either populated objects or bare id strings — render defensively.
 - Generated client paths are absolute `/api/...` and route through the shared proxy; do not set a base URL for the web app.
+- The upstream packages list **hides the `trial` package** unless the request's `id` query param is a user with a production subscription. The `/api/packages` proxy injects `POS_PACKAGES_REF_USER_ID` to force the full catalog. Because that reference user is in the `old` pricing group, production rows show raw stored amounts (not computed tiers) — fine here since the list is display-only and edit forms prefill from raw `getById`.
 
 ## Pointers
 

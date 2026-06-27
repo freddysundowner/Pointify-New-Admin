@@ -3,8 +3,22 @@ import { proxy, proxyList } from "../lib/upstream";
 
 const router: IRouter = Router();
 
+// Upstream `GET /packages/` only includes the `trial` package when the supplied
+// `id` belongs to a user who has a production subscription (its `getAllPackages`
+// excludes `type: 'trial'` otherwise). For the operator-facing catalog we always
+// want every package (including the trial) visible, so we inject a reference
+// user id known to carry a production subscription. Override with
+// POS_PACKAGES_REF_USER_ID if that user ever changes. A client-supplied `id`
+// still takes precedence.
+const PACKAGES_REF_USER_ID =
+  process.env.POS_PACKAGES_REF_USER_ID || "6597cf1b9611b3e649ace43f";
+
 router.get("/packages", async (req, res) => {
-  await proxyList(req, res, { path: "/packages/", query: req.query as Record<string, unknown> });
+  const query = { ...(req.query as Record<string, unknown>) };
+  if (query.id == null || query.id === "") {
+    query.id = PACKAGES_REF_USER_ID;
+  }
+  await proxyList(req, res, { path: "/packages/", query });
 });
 
 // Packages priced for a specific user (reflects old/new pricing group).

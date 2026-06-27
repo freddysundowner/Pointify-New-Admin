@@ -7,6 +7,13 @@ description: How the upstream packages list transforms data, and what edit forms
 
 The upstream `getAllPackages` (`GET /packages/`) does NOT return stored package objects faithfully:
 - Returns only `status: true` packages (inactive ones are invisible in the list).
+- **Hides the `trial` package** unless the request's `id` query param is a user whose
+  subscriptions include a production-type package (`hasProductionType`). With no `id` (or an id
+  without a production sub) it filters `type: {$nin: ['trial']}`. The `/api/packages` proxy injects
+  `POS_PACKAGES_REF_USER_ID` (a real user with a production sub) so the operator catalog shows the
+  trial. Side effect: that ref user is `pricingGroup: "old"`, so production rows return RAW stored
+  amounts (not computed tiers) — acceptable since the list is display-only and edits prefill from raw
+  getById. If the trial vanishes again, the ref user lost their production subscription.
 - Title shown = `newTitle || title` (the customer-facing name lives in `newTitle`).
 - For `type: "production"`, the displayed `amount` is COMPUTED from a shop-tier
   pricing formula on `maxShops` (`calculateNewPriceByShops` in `shared/functions.js`:
