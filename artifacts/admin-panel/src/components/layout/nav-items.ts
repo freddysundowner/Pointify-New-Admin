@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Users, Store, PackageSearch,
   UserSquare2, ReceiptText, ShoppingCart, Package,
   CreditCard, MessageSquare, Settings, BarChart3, Tags, Handshake,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ export const navItems: NavItem[] = [
   { title: "Packages", href: "/packages", icon: Package },
   { title: "Subscriptions", href: "/subscriptions", icon: CreditCard },
   { title: "SMS Hub", href: "/sms", icon: MessageSquare },
+  { title: "AI Insights", href: "/ai-logs", icon: Sparkles },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
 

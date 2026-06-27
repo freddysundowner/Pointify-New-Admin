@@ -1206,6 +1206,42 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SubscriptionVerifyResult" }
 
+  /ai-logs:
+    get:
+      operationId: listAiLogs
+      tags: [ai-logs]
+      summary: List AI insight SMS logs
+      parameters:
+        - { name: adminId, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: sent, in: query, schema: { type: boolean } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: AI insight logs
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiLogListResult" }
+
+  /ai-logs/stats:
+    get:
+      operationId: getAiLogStats
+      tags: [ai-logs]
+      summary: AI insight log statistics
+      parameters:
+        - { name: adminId, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: AI insight log stats
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiLogStats" }
+
   /sms/logs:
     get:
       operationId: listSmsLogs
@@ -2240,6 +2276,71 @@ components:
         count: { type: number }
         totalPages: { type: number }
         currentPage: { type: number }
+
+    AiLogStatsBucket:
+      type: object
+      additionalProperties: true
+      properties:
+        revenue: { type: ["number", "null"] }
+        transactions: { type: ["number", "null"] }
+        profit: { type: ["number", "null"] }
+        expenses: { type: ["number", "null"] }
+
+    AiLog:
+      type: object
+      additionalProperties: true
+      required: [_id]
+      properties:
+        _id: { type: string }
+        adminId: { type: ["string", "null"] }
+        shopId: { type: ["string", "null"] }
+        shopName: { type: ["string", "null"] }
+        ownerPhone: { type: ["string", "null"] }
+        insightType: { type: ["string", "null"] }
+        message: { type: ["string", "null"] }
+        smsSent: { type: ["boolean", "null"] }
+        smsError: { type: ["string", "null"] }
+        stats: { $ref: "#/components/schemas/AiLogStatsBucket" }
+        createdAt: { type: ["string", "null"] }
+        updatedAt: { type: ["string", "null"] }
+
+    AiLogListResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/AiLog" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    AiLogStatsTotals:
+      type: object
+      additionalProperties: true
+      properties:
+        total: { type: ["number", "null"] }
+        sent: { type: ["number", "null"] }
+        failed: { type: ["number", "null"] }
+
+    AiLogStatsBreakdown:
+      type: object
+      additionalProperties: true
+      properties:
+        _id: { type: ["string", "null"] }
+        total: { type: ["number", "null"] }
+        sent: { type: ["number", "null"] }
+        failed: { type: ["number", "null"] }
+        lastSentAt: { type: ["string", "null"] }
+
+    AiLogStats:
+      type: object
+      additionalProperties: true
+      properties:
+        success: { type: boolean }
+        totals: { $ref: "#/components/schemas/AiLogStatsTotals" }
+        breakdown:
+          type: array
+          items: { $ref: "#/components/schemas/AiLogStatsBreakdown" }
 
     AttendantListResult:
       type: object

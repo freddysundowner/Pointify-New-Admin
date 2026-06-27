@@ -25,6 +25,8 @@ import type {
   AdminResetPassword,
   AdminSubscriptionListResult,
   AdminUpdate,
+  AiLogListResult,
+  AiLogStats,
   AnalyticsOverview,
   Attendant,
   AttendantInput,
@@ -36,12 +38,14 @@ import type {
   CommunicationListResult,
   ErrorResponse,
   GenericObject,
+  GetAiLogStatsParams,
   GetProductHistorySummaryParams,
   GetRevenueRangeParams,
   GetSettingsParams,
   HealthStatus,
   ListAdminsBySubscriptionParams,
   ListAdminsParams,
+  ListAiLogsParams,
   ListAttendantsParams,
   ListCommunicationsParams,
   ListPartnerTransactionsParams,
@@ -5336,6 +5340,174 @@ export const useVerifySubscriptionPayment = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getVerifySubscriptionPaymentMutationOptions(options));
     }
+
+export const getListAiLogsUrl = (params?: ListAiLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ai-logs?${stringifiedParams}` : `/api/ai-logs`
+}
+
+/**
+ * @summary List AI insight SMS logs
+ */
+export const listAiLogs = async (params?: ListAiLogsParams, options?: RequestInit): Promise<AiLogListResult> => {
+
+  return customFetch<AiLogListResult>(getListAiLogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAiLogsQueryKey = (params?: ListAiLogsParams,) => {
+    return [
+    `/api/ai-logs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAiLogsQueryOptions = <TData = Awaited<ReturnType<typeof listAiLogs>>, TError = ErrorType<unknown>>(params?: ListAiLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAiLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAiLogsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAiLogs>>> = ({ signal }) => listAiLogs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAiLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAiLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listAiLogs>>>
+export type ListAiLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List AI insight SMS logs
+ */
+
+export function useListAiLogs<TData = Awaited<ReturnType<typeof listAiLogs>>, TError = ErrorType<unknown>>(
+ params?: ListAiLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAiLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAiLogsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAiLogStatsUrl = (params?: GetAiLogStatsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ai-logs/stats?${stringifiedParams}` : `/api/ai-logs/stats`
+}
+
+/**
+ * @summary AI insight log statistics
+ */
+export const getAiLogStats = async (params?: GetAiLogStatsParams, options?: RequestInit): Promise<AiLogStats> => {
+
+  return customFetch<AiLogStats>(getGetAiLogStatsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAiLogStatsQueryKey = (params?: GetAiLogStatsParams,) => {
+    return [
+    `/api/ai-logs/stats`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAiLogStatsQueryOptions = <TData = Awaited<ReturnType<typeof getAiLogStats>>, TError = ErrorType<unknown>>(params?: GetAiLogStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiLogStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAiLogStatsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiLogStats>>> = ({ signal }) => getAiLogStats(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAiLogStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAiLogStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getAiLogStats>>>
+export type GetAiLogStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary AI insight log statistics
+ */
+
+export function useGetAiLogStats<TData = Awaited<ReturnType<typeof getAiLogStats>>, TError = ErrorType<unknown>>(
+ params?: GetAiLogStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiLogStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAiLogStatsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListSmsLogsUrl = (params?: ListSmsLogsParams,) => {
   const normalizedParams = new URLSearchParams();

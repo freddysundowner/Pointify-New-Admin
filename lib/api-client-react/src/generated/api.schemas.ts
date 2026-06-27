@@ -943,6 +943,82 @@ export interface SmsLogListResult {
   currentPage?: number;
 }
 
+export interface AiLogStatsBucket {
+  /** @nullable */
+  revenue?: number | null;
+  /** @nullable */
+  transactions?: number | null;
+  /** @nullable */
+  profit?: number | null;
+  /** @nullable */
+  expenses?: number | null;
+  [key: string]: unknown;
+ }
+
+export interface AiLog {
+  _id: string;
+  /** @nullable */
+  adminId?: string | null;
+  /** @nullable */
+  shopId?: string | null;
+  /** @nullable */
+  shopName?: string | null;
+  /** @nullable */
+  ownerPhone?: string | null;
+  /** @nullable */
+  insightType?: string | null;
+  /** @nullable */
+  message?: string | null;
+  /** @nullable */
+  smsSent?: boolean | null;
+  /** @nullable */
+  smsError?: string | null;
+  stats?: AiLogStatsBucket;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
+  [key: string]: unknown;
+ }
+
+export interface AiLogListResult {
+  data?: AiLog[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface AiLogStatsTotals {
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
+  sent?: number | null;
+  /** @nullable */
+  failed?: number | null;
+  [key: string]: unknown;
+ }
+
+export interface AiLogStatsBreakdown {
+  /** @nullable */
+  _id?: string | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
+  sent?: number | null;
+  /** @nullable */
+  failed?: number | null;
+  /** @nullable */
+  lastSentAt?: string | null;
+  [key: string]: unknown;
+ }
+
+export interface AiLogStats {
+  success?: boolean;
+  totals?: AiLogStatsTotals;
+  breakdown?: AiLogStatsBreakdown[];
+  [key: string]: unknown;
+ }
+
 export interface AttendantListResult {
   data?: Attendant[];
   count?: number;
@@ -1300,6 +1376,22 @@ export const ListSubscriptionsType = {
   trial: 'trial',
   production: 'production',
 } as const;
+
+export type ListAiLogsParams = {
+adminId?: string;
+type?: string;
+sent?: boolean;
+from?: string;
+to?: string;
+page?: number;
+limit?: number;
+};
+
+export type GetAiLogStatsParams = {
+adminId?: string;
+from?: string;
+to?: string;
+};
 
 export type ListSmsLogsParams = {
 page?: number;

@@ -15,6 +15,7 @@ import packagesRouter from "./packages";
 import subscriptionsRouter from "./subscriptions";
 import paymentsRouter from "./payments";
 import smsRouter from "./sms";
+import aiLogsRouter from "./ai-logs";
 import settingsRouter from "./settings";
 
 const router: IRouter = Router();
@@ -35,6 +36,7 @@ router.use(packagesRouter);
 router.use(subscriptionsRouter);
 router.use(paymentsRouter);
 router.use(smsRouter);
+router.use(aiLogsRouter);
 router.use(settingsRouter);
 
 export default router;

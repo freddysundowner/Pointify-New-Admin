@@ -1793,6 +1793,71 @@ export const VerifySubscriptionPaymentResponse = zod.object({
 })
 
 
+/**
+ * @summary List AI insight SMS logs
+ */
+export const ListAiLogsQueryParams = zod.object({
+  "adminId": zod.coerce.string().optional(),
+  "type": zod.coerce.string().optional(),
+  "sent": zod.coerce.boolean().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListAiLogsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string(),
+  "adminId": zod.string().nullish(),
+  "shopId": zod.string().nullish(),
+  "shopName": zod.string().nullish(),
+  "ownerPhone": zod.string().nullish(),
+  "insightType": zod.string().nullish(),
+  "message": zod.string().nullish(),
+  "smsSent": zod.boolean().nullish(),
+  "smsError": zod.string().nullish(),
+  "stats": zod.object({
+  "revenue": zod.number().nullish(),
+  "transactions": zod.number().nullish(),
+  "profit": zod.number().nullish(),
+  "expenses": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * @summary AI insight log statistics
+ */
+export const GetAiLogStatsQueryParams = zod.object({
+  "adminId": zod.coerce.string().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional()
+})
+
+export const GetAiLogStatsResponse = zod.object({
+  "success": zod.boolean().optional(),
+  "totals": zod.object({
+  "total": zod.number().nullish(),
+  "sent": zod.number().nullish(),
+  "failed": zod.number().nullish()
+}).optional(),
+  "breakdown": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "total": zod.number().nullish(),
+  "sent": zod.number().nullish(),
+  "failed": zod.number().nullish(),
+  "lastSentAt": zod.string().nullish()
+})).optional()
+})
+
+
 export const ListSmsLogsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
