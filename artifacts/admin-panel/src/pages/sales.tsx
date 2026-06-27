@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useListSales } from "@workspace/api-client-react";
@@ -63,7 +63,7 @@ export default function Sales() {
   const [paymentType, setPaymentType] = useState(ANY);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [showFuture, setShowFuture] = useState(false);
+  const [showFuture, setShowFuture] = useState(true);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedReceipt(receiptSearch.trim()), 350);
@@ -97,23 +97,23 @@ export default function Sales() {
   const totalPages = Math.max(1, data?.totalPages ?? 1);
   const currentPage = data?.currentPage ?? page;
 
-  // Some sales come back with a timestamp later than "now" (e.g. device clock
-  // drift at the shop). Split them out so they can be folded away by default.
-  const { currentSales, futureSales } = useMemo(() => {
-    const now = Date.now();
-    const current: typeof sales = [];
-    const future: typeof sales = [];
-    for (const sale of sales) {
-      const ts = new Date((sale.createdAt ?? sale.createAt) as string).getTime();
-      if (Number.isFinite(ts) && ts > now) future.push(sale);
-      else current.push(sale);
-    }
-    return { currentSales: current, futureSales: future };
-  }, [sales]);
+  // A sale is "future-dated" only when its EAT (Africa/Nairobi, UTC+3, no DST)
+  // calendar day is later than today's EAT day. A sale timestamped later today
+  // is still today — not the future. They stay inline in the list and get a
+  // badge; a toggle lets the operator hide them when they want a clean view.
+  const EAT_OFFSET_MS = 3 * 60 * 60 * 1000;
+  const eatDayIndex = (ms: number) => Math.floor((ms + EAT_OFFSET_MS) / 86_400_000);
+  const todayEatDay = eatDayIndex(Date.now());
+  const isFuture = (sale: (typeof sales)[number]) => {
+    const ts = new Date((sale.createdAt ?? sale.createAt) as string).getTime();
+    return Number.isFinite(ts) && eatDayIndex(ts) > todayEatDay;
+  };
+  const futureCount = sales.filter(isFuture).length;
+  const visibleSales = showFuture ? sales : sales.filter((sale) => !isFuture(sale));
 
-  // Re-fold future-dated sales whenever the visible page changes.
+  // Show everything again whenever the visible page changes.
   useEffect(() => {
-    setShowFuture(false);
+    setShowFuture(true);
   }, [currentPage]);
 
   const hasFilters =
@@ -211,20 +211,26 @@ export default function Sales() {
     </div>
   );
 
-  const futureToggleLabel = (
-    <>
-      {showFuture ? (
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-      ) : (
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      )}
-      <CalendarClock className="h-4 w-4 text-amber-600" />
-      <span className="font-medium">Future-dated sales</span>
-      <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
-        {futureSales.length}
-      </Badge>
-      <span className="ml-auto text-muted-foreground">{showFuture ? "Hide" : "Show"}</span>
-    </>
+  const futureBanner = futureCount > 0 && (
+    <button
+      type="button"
+      aria-expanded={showFuture}
+      onClick={() => setShowFuture((v) => !v)}
+      className="mb-3 flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-left text-sm transition-colors hover:bg-amber-50"
+    >
+      <CalendarClock className="h-4 w-4 shrink-0 text-amber-600" />
+      <span className="font-medium text-amber-800">
+        {futureCount} sale{futureCount === 1 ? "" : "s"} dated in the future
+      </span>
+      <span className="ml-auto inline-flex items-center gap-1 text-amber-700">
+        {showFuture ? "Hide" : "Show"}
+        {showFuture ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
+        )}
+      </span>
+    </button>
   );
 
   return (
@@ -302,6 +308,8 @@ export default function Sales() {
             <div className="p-4">Loading sales...</div>
           ) : (
             <>
+              {futureBanner}
+
               {/* Desktop: table */}
               <div className="hidden md:block">
                 <Table>
@@ -317,34 +325,16 @@ export default function Sales() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sales.length === 0 ? (
+                    {visibleSales.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                          No sales found.
+                          {sales.length === 0
+                            ? "No sales found."
+                            : "All sales on this page are dated in the future."}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      <>
-                        {currentSales.map((sale) => renderSaleRow(sale))}
-                        {futureSales.length > 0 && (
-                          <>
-                            <TableRow className="hover:bg-transparent">
-                              <TableCell colSpan={7} className="p-0">
-                                <button
-                                  type="button"
-                                  aria-expanded={showFuture}
-                                  onClick={() => setShowFuture((v) => !v)}
-                                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-muted/50"
-                                >
-                                  {futureToggleLabel}
-                                </button>
-                              </TableCell>
-                            </TableRow>
-                            {showFuture &&
-                              futureSales.map((sale) => renderSaleRow(sale, true))}
-                          </>
-                        )}
-                      </>
+                      visibleSales.map((sale) => renderSaleRow(sale, isFuture(sale)))
                     )}
                   </TableBody>
                 </Table>
@@ -352,31 +342,14 @@ export default function Sales() {
 
               {/* Mobile: stacked cards */}
               <div className="space-y-3 md:hidden">
-                {sales.length === 0 ? (
+                {visibleSales.length === 0 ? (
                   <div className="rounded-lg border p-8 text-center text-muted-foreground">
-                    No sales found.
+                    {sales.length === 0
+                      ? "No sales found."
+                      : "All sales on this page are dated in the future."}
                   </div>
                 ) : (
-                  <>
-                    {currentSales.map((sale) => renderSaleCard(sale))}
-                    {futureSales.length > 0 && (
-                      <div className="overflow-hidden rounded-lg border border-amber-200 bg-amber-50/40">
-                        <button
-                          type="button"
-                          aria-expanded={showFuture}
-                          onClick={() => setShowFuture((v) => !v)}
-                          className="flex w-full items-center gap-2 p-3 text-left text-sm"
-                        >
-                          {futureToggleLabel}
-                        </button>
-                        {showFuture && (
-                          <div className="space-y-3 p-3 pt-0">
-                            {futureSales.map((sale) => renderSaleCard(sale, true))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
+                  visibleSales.map((sale) => renderSaleCard(sale, isFuture(sale)))
                 )}
               </div>
 

@@ -19,6 +19,7 @@
 - [Bulk SMS & proxy auth](bulk-sms-and-proxy-auth.md) — upstream verifyToken is a no-op (whole API open); proxy gates /sms/bulk by decoding JWT _id, injects it as sender, strips client `user`.
 - [Admin-panel mobile spacing](admin-mobile-spacing.md) — tighten on phones, restore on desktop via md:: cards p-4 md:p-6, page wrappers space-y-4 md:space-y-6.
 - [Admin-panel mobile filter sheet](admin-mobile-filters.md) — list-page filters collapse into a bottom Sheet on mobile via FilterBar (render children ONCE on a runtime useIsMobile branch, never hidden/md: duplicate).
+- [Sales future-dating](sales-future-dating.md) — "future-dated" sale = EAT calendar-day later than today (not raw instant); keep them inline+badged, never default-hidden.
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
 - [AI Insights ai-logs upstream](ai-logs-upstream.md) — /ai-logs list (proxyList) + /ai-logs/stats (non-list, register first); no source in attached_assets, shapes from live API.
 - [Sales date-edit & refund upstream](sales-edit-refund-upstream.md) — date-edit guarded to cashed-only (hold deducts wallet); refund resolves shop/attendant server-side, aggregates dup products, allows fractional qty only for manageByPrice.
