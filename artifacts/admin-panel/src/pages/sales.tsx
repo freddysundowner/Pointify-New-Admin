@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useListSales } from "@workspace/api-client-react";
@@ -18,6 +18,7 @@ import { ShopFilterBanner, useShopFilter } from "@/lib/shop-filter";
 import { formatDateTime, formatKes } from "@/lib/utils";
 import { ReceiptDialog } from "@/components/ReceiptDialog";
 import { SaleManageDialog } from "@/components/SaleManageDialog";
+import { CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -62,6 +63,7 @@ export default function Sales() {
   const [paymentType, setPaymentType] = useState(ANY);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [showFuture, setShowFuture] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedReceipt(receiptSearch.trim()), 350);
@@ -95,6 +97,25 @@ export default function Sales() {
   const totalPages = Math.max(1, data?.totalPages ?? 1);
   const currentPage = data?.currentPage ?? page;
 
+  // Some sales come back with a timestamp later than "now" (e.g. device clock
+  // drift at the shop). Split them out so they can be folded away by default.
+  const { currentSales, futureSales } = useMemo(() => {
+    const now = Date.now();
+    const current: typeof sales = [];
+    const future: typeof sales = [];
+    for (const sale of sales) {
+      const ts = new Date((sale.createdAt ?? sale.createAt) as string).getTime();
+      if (Number.isFinite(ts) && ts > now) future.push(sale);
+      else current.push(sale);
+    }
+    return { currentSales: current, futureSales: future };
+  }, [sales]);
+
+  // Re-fold future-dated sales whenever the visible page changes.
+  useEffect(() => {
+    setShowFuture(false);
+  }, [currentPage]);
+
   const hasFilters =
     Boolean(receiptSearch) ||
     status !== ANY ||
@@ -109,6 +130,102 @@ export default function Sales() {
     setStart("");
     setEnd("");
   };
+
+  type SaleItem = (typeof sales)[number];
+
+  const futureBadge = (
+    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+      Future
+    </Badge>
+  );
+
+  const renderSaleRow = (sale: SaleItem, future = false) => (
+    <TableRow key={sale._id} className={future ? "bg-amber-50/40" : undefined}>
+      <TableCell className="font-medium">{sale.receiptNo || "—"}</TableCell>
+      <TableCell>{getShopName(sale.shopId)}</TableCell>
+      <TableCell>{getAttendantName(sale.attendantId)}</TableCell>
+      <TableCell>{formatKes(sale.totalAmount)}</TableCell>
+      <TableCell>
+        <Badge variant="outline">{sale.status}</Badge>
+      </TableCell>
+      <TableCell className="whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          {formatDateTime(sale.createdAt ?? sale.createAt)}
+          {future && futureBadge}
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSelected(sale)}>
+            View
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setManaged(sale)}>
+            Manage
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+
+  const renderSaleCard = (sale: SaleItem, future = false) => (
+    <div
+      key={sale._id}
+      className={`rounded-lg border bg-card p-4 shadow-sm ${
+        future ? "border-amber-200 bg-amber-50/40" : ""
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{sale.receiptNo || "—"}</p>
+          <p className="truncate text-sm text-muted-foreground">{getShopName(sale.shopId)}</p>
+        </div>
+        <Badge variant="outline" className="shrink-0">
+          {sale.status}
+        </Badge>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">Amount</dt>
+          <dd>{formatKes(sale.totalAmount)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Attendant</dt>
+          <dd>{getAttendantName(sale.attendantId)}</dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-xs text-muted-foreground">Date &amp; Time</dt>
+          <dd className="flex items-center gap-2">
+            {formatDateTime(sale.createdAt ?? sale.createAt)}
+            {future && futureBadge}
+          </dd>
+        </div>
+      </dl>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" onClick={() => setSelected(sale)}>
+          View receipt
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setManaged(sale)}>
+          Manage
+        </Button>
+      </div>
+    </div>
+  );
+
+  const futureToggleLabel = (
+    <>
+      {showFuture ? (
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+      ) : (
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      )}
+      <CalendarClock className="h-4 w-4 text-amber-600" />
+      <span className="font-medium">Future-dated sales</span>
+      <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+        {futureSales.length}
+      </Badge>
+      <span className="ml-auto text-muted-foreground">{showFuture ? "Hide" : "Show"}</span>
+    </>
+  );
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -200,37 +317,34 @@ export default function Sales() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sales.length ? (
-                      sales.map((sale) => (
-                        <TableRow key={sale._id}>
-                          <TableCell className="font-medium">{sale.receiptNo || "—"}</TableCell>
-                          <TableCell>{getShopName(sale.shopId)}</TableCell>
-                          <TableCell>{getAttendantName(sale.attendantId)}</TableCell>
-                          <TableCell>{formatKes(sale.totalAmount)}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{sale.status}</Badge>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDateTime(sale.createdAt ?? sale.createAt)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm" onClick={() => setSelected(sale)}>
-                                View
-                              </Button>
-                              <Button variant="outline" size="sm" onClick={() => setManaged(sale)}>
-                                Manage
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
+                    {sales.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                           No sales found.
                         </TableCell>
                       </TableRow>
+                    ) : (
+                      <>
+                        {currentSales.map((sale) => renderSaleRow(sale))}
+                        {futureSales.length > 0 && (
+                          <>
+                            <TableRow className="hover:bg-transparent">
+                              <TableCell colSpan={7} className="p-0">
+                                <button
+                                  type="button"
+                                  aria-expanded={showFuture}
+                                  onClick={() => setShowFuture((v) => !v)}
+                                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-muted/50"
+                                >
+                                  {futureToggleLabel}
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                            {showFuture &&
+                              futureSales.map((sale) => renderSaleRow(sale, true))}
+                          </>
+                        )}
+                      </>
                     )}
                   </TableBody>
                 </Table>
@@ -238,59 +352,31 @@ export default function Sales() {
 
               {/* Mobile: stacked cards */}
               <div className="space-y-3 md:hidden">
-                {sales.length ? (
-                  sales.map((sale) => (
-                    <div
-                      key={sale._id}
-                      className="rounded-lg border bg-card p-4 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">
-                            {sale.receiptNo || "—"}
-                          </p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {getShopName(sale.shopId)}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="shrink-0">{sale.status}</Badge>
-                      </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div>
-                          <dt className="text-xs text-muted-foreground">Amount</dt>
-                          <dd>{formatKes(sale.totalAmount)}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-muted-foreground">Attendant</dt>
-                          <dd>{getAttendantName(sale.attendantId)}</dd>
-                        </div>
-                        <div className="col-span-2">
-                          <dt className="text-xs text-muted-foreground">Date &amp; Time</dt>
-                          <dd>{formatDateTime(sale.createdAt ?? sale.createAt)}</dd>
-                        </div>
-                      </dl>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelected(sale)}
-                        >
-                          View receipt
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setManaged(sale)}
-                        >
-                          Manage
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
+                {sales.length === 0 ? (
                   <div className="rounded-lg border p-8 text-center text-muted-foreground">
                     No sales found.
                   </div>
+                ) : (
+                  <>
+                    {currentSales.map((sale) => renderSaleCard(sale))}
+                    {futureSales.length > 0 && (
+                      <div className="overflow-hidden rounded-lg border border-amber-200 bg-amber-50/40">
+                        <button
+                          type="button"
+                          aria-expanded={showFuture}
+                          onClick={() => setShowFuture((v) => !v)}
+                          className="flex w-full items-center gap-2 p-3 text-left text-sm"
+                        >
+                          {futureToggleLabel}
+                        </button>
+                        {showFuture && (
+                          <div className="space-y-3 p-3 pt-0">
+                            {futureSales.map((sale) => renderSaleCard(sale, true))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
