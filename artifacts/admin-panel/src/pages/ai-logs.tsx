@@ -290,16 +290,16 @@ export default function AiLogs() {
           ) : (
             <>
               {/* Desktop: table */}
-              <div className="hidden md:block">
-                <Table>
+              <div className="hidden overflow-x-auto md:block">
+                <Table className="min-w-[1000px] table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Shop</TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead className="w-[200px]">Shop</TableHead>
+                      <TableHead className="w-[150px]">Type</TableHead>
                       <TableHead>Message</TableHead>
-                      <TableHead>Revenue</TableHead>
-                      <TableHead>Delivery</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead className="w-[120px]">Revenue</TableHead>
+                      <TableHead className="w-[110px]">Delivery</TableHead>
+                      <TableHead className="w-[180px]">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -307,17 +307,19 @@ export default function AiLogs() {
                       logs.map((log) => (
                         <TableRow key={log._id}>
                           <TableCell className="font-medium">
-                            <div className="max-w-[180px]">
-                              <p className="truncate">{log.shopName?.trim() || "—"}</p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {log.ownerPhone || "—"}
-                              </p>
-                            </div>
+                            <p className="truncate" title={log.shopName ?? undefined}>
+                              {log.shopName?.trim() || "—"}
+                            </p>
+                            <p className="truncate text-xs font-normal text-muted-foreground">
+                              {log.ownerPhone || "—"}
+                            </p>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{insightLabel(log.insightType)}</Badge>
+                            <Badge variant="secondary" className="max-w-full truncate">
+                              {insightLabel(log.insightType)}
+                            </Badge>
                           </TableCell>
-                          <TableCell className="max-w-xs">
+                          <TableCell>
                             <p className="truncate" title={log.message ?? undefined}>
                               {log.message || "—"}
                             </p>
