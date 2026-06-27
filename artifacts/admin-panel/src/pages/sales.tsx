@@ -63,7 +63,7 @@ export default function Sales() {
   const [paymentType, setPaymentType] = useState(ANY);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [showFuture, setShowFuture] = useState(true);
+  const [showFuture, setShowFuture] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedReceipt(receiptSearch.trim()), 350);
@@ -111,9 +111,9 @@ export default function Sales() {
   const futureCount = sales.filter(isFuture).length;
   const visibleSales = showFuture ? sales : sales.filter((sale) => !isFuture(sale));
 
-  // Show everything again whenever the visible page changes.
+  // Re-hide future-dated sales whenever the visible page changes.
   useEffect(() => {
-    setShowFuture(true);
+    setShowFuture(false);
   }, [currentPage]);
 
   const hasFilters =

@@ -22,5 +22,8 @@ Only `eatDayIndex(saleTs) > eatDayIndex(now)` is future. Same-day-later-time = t
   block — upstream sorts newest-first, so a whole page can be future-dated and
   default-hiding makes the page look empty (the user explicitly rejected this).
 - A top banner appears only when `futureCount > 0`: "N sales dated in the future"
-  with a Hide/Show toggle. `showFuture` defaults to **true** (everything visible),
-  resets to true on page change.
+  with a Show/Hide toggle. `showFuture` defaults to **false** (future-dated sales
+  hidden by default), and re-hides on page change. The earlier default-visible
+  behavior was reverted per the operator's request — but note this is safe ONLY
+  because detection is now EAT day-granular, so default-hiding no longer empties
+  a page of same-day sales.
