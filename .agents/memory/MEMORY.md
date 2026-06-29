@@ -1,3 +1,4 @@
+- [Invalid hook call = stale Vite cache](invalid-hook-call-dev-cache.md) — dev-preview "Invalid hook call" with provably-correct hooks + single React = stale .vite optimize cache; `rm -rf artifacts/<app>/node_modules/.vite` + restart + hard-refresh.
 - [List normalization contract](list-normalization-contract.md) — proxy normalizes all lists to {data,count,totalPages,currentPage}; spec wrapper schema + page `.data` access must match.
 - [Upstream analytics endpoints](upstream-analytics-endpoints.md) — use /subscriptions/shop/stats for trial/active counts (NOT /shop/stats/metrics, which lies); upstream source is in attached_assets/.
 - [Upstream admins endpoint](upstream-admins-endpoint.md) — upstream `name` searches username/email/phone; NO date filter (proxy filters createdAt in EAT); strip leaked `password` hashes.
