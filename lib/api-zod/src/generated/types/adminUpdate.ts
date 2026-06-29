@@ -17,4 +17,9 @@ export interface AdminUpdate {
   saleSmsEnabled?: boolean;
   saleSmsSender?: string;
   saleSmsTemplate?: string;
+  /**
+     * Referring partner (affiliate) id; send null or empty string to unassign
+     * @nullable
+     */
+  affliate?: string | null;
 }

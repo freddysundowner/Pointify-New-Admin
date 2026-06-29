@@ -44,7 +44,8 @@ export const LoginResponse = zod.object({
   "last_seen": zod.string().nullish(),
   "platform": zod.string().nullish(),
   "app_version": zod.string().nullish(),
-  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Referring partner (affiliate) — bare id string, populated object, or null')
 }).optional()
 })
 
@@ -259,7 +260,8 @@ export const ListAdminsResponse = zod.object({
   "last_seen": zod.string().nullish(),
   "platform": zod.string().nullish(),
   "app_version": zod.string().nullish(),
-  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Referring partner (affiliate) — bare id string, populated object, or null')
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),
@@ -294,7 +296,8 @@ export const ListAdminsBySubscriptionResponse = zod.object({
   "last_seen": zod.string().nullish(),
   "platform": zod.string().nullish(),
   "app_version": zod.string().nullish(),
-  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Referring partner (affiliate) — bare id string, populated object, or null')
 })).optional(),
   "totalAdmins": zod.number().optional(),
   "totalPages": zod.number().optional(),
@@ -322,7 +325,8 @@ export const GetAdminResponse = zod.object({
   "last_seen": zod.string().nullish(),
   "platform": zod.string().nullish(),
   "app_version": zod.string().nullish(),
-  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Referring partner (affiliate) — bare id string, populated object, or null')
 })
 
 
@@ -340,7 +344,8 @@ export const UpdateAdminBody = zod.object({
   "phoneVerified": zod.boolean().optional(),
   "saleSmsEnabled": zod.boolean().optional(),
   "saleSmsSender": zod.string().optional(),
-  "saleSmsTemplate": zod.string().optional()
+  "saleSmsTemplate": zod.string().optional(),
+  "affliate": zod.string().nullish().describe('Referring partner (affiliate) id; send null or empty string to unassign')
 })
 
 export const UpdateAdminResponse = zod.object({
@@ -359,7 +364,8 @@ export const UpdateAdminResponse = zod.object({
   "last_seen": zod.string().nullish(),
   "platform": zod.string().nullish(),
   "app_version": zod.string().nullish(),
-  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Referring partner (affiliate) — bare id string, populated object, or null')
 })
 
 
@@ -772,7 +778,8 @@ export const ListPortalUsersResponse = zod.object({
   "last_seen": zod.string().nullish(),
   "platform": zod.string().nullish(),
   "app_version": zod.string().nullish(),
-  "primaryShop": zod.record(zod.string(), zod.unknown()).optional()
+  "primaryShop": zod.record(zod.string(), zod.unknown()).optional(),
+  "affliate": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Referring partner (affiliate) — bare id string, populated object, or null')
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),

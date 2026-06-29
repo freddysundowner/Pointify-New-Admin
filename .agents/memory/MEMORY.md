@@ -21,6 +21,7 @@
 - [Admin-panel mobile filter sheet](admin-mobile-filters.md) — list-page filters collapse into a bottom Sheet on mobile via FilterBar (render children ONCE on a runtime useIsMobile branch, never hidden/md: duplicate).
 - [Sales future-dating](sales-future-dating.md) — "future-dated" sale = EAT calendar-day later than today (not raw instant); keep them inline+badged, never default-hidden.
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
+- [User→partner assignment](user-partner-assignment.md) — user↔partner link is Admin.`affliate` (set only at signup); upstream updateAdmin DROPS it, so reassigning needs an upstream one-line change.
 - [AI Insights ai-logs upstream](ai-logs-upstream.md) — /ai-logs list (proxyList) + /ai-logs/stats (non-list, register first); no source in attached_assets, shapes from live API.
 - [Sales date-edit & refund upstream](sales-edit-refund-upstream.md) — date-edit guarded to cashed-only (hold deducts wallet); refund resolves shop/attendant server-side, aggregates dup products, allows fractional qty only for manageByPrice.
 - [Stale service worker kill-switch](stale-service-worker-killswitch.md) — old app's SW shows stale site in normal browser but works in incognito; fix = self-destructing SW served as JS at /sw.js etc. before SPA fallback.

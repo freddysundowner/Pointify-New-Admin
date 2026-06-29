@@ -7,8 +7,10 @@ import {
   useUpdateAdmin,
   useDeleteAdmin,
   useResetAdminPassword,
+  useListPartners,
   getListAdminsQueryKey,
   type Admin,
+  type Partner,
 } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -40,6 +42,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   MoreHorizontal,
@@ -48,6 +57,7 @@ import {
   KeyRound,
   Trash2,
   Store,
+  UserCog,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -56,7 +66,26 @@ import {
 
 const LIMIT = 20;
 
-type DialogMode = "view" | "edit" | "reset" | "delete" | null;
+type DialogMode = "view" | "edit" | "partner" | "reset" | "delete" | null;
+
+/** A user's `affliate` may be a bare id string or a populated object; normalize to an id. */
+function affliateId(user: Admin): string | undefined {
+  const a = (user as { affliate?: unknown }).affliate;
+  if (!a) return undefined;
+  if (typeof a === "string") return a;
+  if (typeof a === "object") {
+    const id = (a as { _id?: unknown })._id;
+    return typeof id === "string" ? id : undefined;
+  }
+  return undefined;
+}
+
+function partnerLabel(p: Partner): string {
+  const name = (p as { name?: unknown }).name;
+  const code = (p as { code?: unknown }).code;
+  const base = typeof name === "string" && name.trim() ? name.trim() : "Partner";
+  return code ? `${base} (${code})` : base;
+}
 
 export default function Users() {
   const [page, setPage] = useState(1);
@@ -86,6 +115,11 @@ export default function Users() {
   };
 
   const { data, isLoading, isFetching } = useListAdmins(params);
+  // Partners are few (referral program); pull them all for the assign picker and
+  // to resolve a user's current partner name.
+  const { data: partnersData } = useListPartners({ page: 1, limit: 1000 });
+  const partners = partnersData?.data ?? [];
+  const partnersById = new Map(partners.map((p) => [String(p._id), p]));
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -325,6 +359,41 @@ export default function Users() {
           open={mode === "view"}
           onClose={closeDialog}
           user={selected}
+          partnerName={(() => {
+            const id = affliateId(selected);
+            const p = id ? partnersById.get(id) : undefined;
+            return p ? partnerLabel(p) : undefined;
+          })()}
+        />
+      )}
+
+      {selected && (
+        <AssignPartnerDialog
+          open={mode === "partner"}
+          onClose={closeDialog}
+          user={selected}
+          partners={partners}
+          currentPartnerId={affliateId(selected)}
+          onSave={(affliate) => {
+            updateAdmin.mutate(
+              { id: selected._id, data: { affliate } },
+              {
+                onSuccess: (res) => {
+                  const err = (res as { error?: string } | undefined)?.error;
+                  if (err) {
+                    toast({ title: "Couldn't update partner", description: err, variant: "destructive" });
+                    return;
+                  }
+                  toast({ title: affliate ? "Partner assigned" : "Partner removed" });
+                  invalidate();
+                  closeDialog();
+                },
+                onError: () =>
+                  toast({ title: "Couldn't update partner", variant: "destructive" }),
+              },
+            );
+          }}
+          saving={updateAdmin.isPending}
         />
       )}
 
@@ -450,6 +519,10 @@ function UserActions({
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => openDialog("partner", user)}>
+          <UserCog className="mr-2 h-4 w-4" />
+          Assign Partner
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={`/users/${user._id}/shops`}>
             <Store className="mr-2 h-4 w-4" />
@@ -496,10 +569,12 @@ function ViewDialog({
   open,
   onClose,
   user,
+  partnerName,
 }: {
   open: boolean;
   onClose: () => void;
   user: Admin;
+  partnerName?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -515,6 +590,7 @@ function ViewDialog({
           <Row label="Date Registered" value={formatDate(user.createdAt)} />
           <Row label="Last Seen" value={formatDate(user.last_seen)} />
           <Row label="Shops" value={user.shopCount} />
+          <Row label="Partner" value={partnerName ?? "Unassigned"} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
@@ -585,6 +661,76 @@ function EditDialog({
             disabled={saving}
           >
             {saving ? "Saving..." : "Save changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const UNASSIGNED = "__none__";
+
+function AssignPartnerDialog({
+  open,
+  onClose,
+  user,
+  partners,
+  currentPartnerId,
+  onSave,
+  saving,
+}: {
+  open: boolean;
+  onClose: () => void;
+  user: Admin;
+  partners: Partner[];
+  currentPartnerId?: string;
+  onSave: (affliate: string | null) => void;
+  saving: boolean;
+}) {
+  // Re-seed the selection from the user whenever the dialog opens for a new row.
+  const [value, setValue] = useState<string>(currentPartnerId ?? UNASSIGNED);
+  useEffect(() => {
+    if (open) setValue(currentPartnerId ?? UNASSIGNED);
+  }, [open, currentPartnerId]);
+
+  const changed = value !== (currentPartnerId ?? UNASSIGNED);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Assign partner</DialogTitle>
+          <DialogDescription>
+            Choose the partner who should be credited for{" "}
+            <span className="font-medium">{user.username || user.email || "this user"}</span>.
+            Future subscription commissions go to this partner.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="partner">Partner</Label>
+          <Select value={value} onValueChange={setValue}>
+            <SelectTrigger id="partner">
+              <SelectValue placeholder="Select a partner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNASSIGNED}>Unassigned (no partner)</SelectItem>
+              {partners.map((p) => (
+                <SelectItem key={String(p._id)} value={String(p._id)}>
+                  {partnerLabel(p)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => onSave(value === UNASSIGNED ? null : value)}
+            disabled={saving || !changed}
+          >
+            {saving ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

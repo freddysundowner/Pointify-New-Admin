@@ -1570,6 +1570,12 @@ components:
         platform: { type: ["string", "null"] }
         app_version: { type: ["string", "null"] }
         primaryShop: { $ref: "#/components/schemas/GenericObject" }
+        affliate:
+          description: Referring partner (affiliate) — bare id string, populated object, or null
+          oneOf:
+            - { type: "string" }
+            - { $ref: "#/components/schemas/GenericObject" }
+            - { type: "null" }
 
     AdminUpdate:
       type: object
@@ -1584,6 +1590,7 @@ components:
         saleSmsEnabled: { type: boolean }
         saleSmsSender: { type: string }
         saleSmsTemplate: { type: string }
+        affliate: { type: ["string", "null"], description: "Referring partner (affiliate) id; send null or empty string to unassign" }
 
     AdminResetPassword:
       type: object

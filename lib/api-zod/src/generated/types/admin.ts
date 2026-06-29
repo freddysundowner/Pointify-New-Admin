@@ -38,5 +38,7 @@ export interface Admin {
   /** @nullable */
   app_version?: string | null;
   primaryShop?: GenericObject;
+  /** Referring partner (affiliate) — bare id string, populated object, or null */
+  affliate?: string | GenericObject | null;
   [key: string]: unknown;
  }
