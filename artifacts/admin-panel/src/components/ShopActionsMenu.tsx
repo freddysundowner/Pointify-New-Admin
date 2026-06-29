@@ -110,6 +110,11 @@ export const dateFmt = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
+export const timeFmt = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 export function TypeBadge({ shop }: { shop: Shop }) {
   const t = shopType(shop);
   if (!t) return <span className="text-muted-foreground">—</span>;
@@ -321,7 +326,18 @@ function ViewShopDialog({ shop, onClose }: { shop: Shop | null; onClose: () => v
             <DetailRow label="Products" value={shop.productCount ?? 0} />
             <DetailRow
               label="Created"
-              value={shop.createAt ? dateFmt.format(new Date(shop.createAt)) : "—"}
+              value={
+                shop.createAt ? (
+                  <div className="flex flex-col">
+                    <span>{dateFmt.format(new Date(shop.createAt))}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {timeFmt.format(new Date(shop.createAt))}
+                    </span>
+                  </div>
+                ) : (
+                  "—"
+                )
+              }
             />
           </div>
         )}

@@ -254,7 +254,7 @@ export default function Users() {
                           <TableCell className="font-medium">{user.email}</TableCell>
                           <TableCell>{user.username}</TableCell>
                           <TableCell>{user.phone}</TableCell>
-                          <TableCell>{formatDate(user.createdAt)}</TableCell>
+                          <TableCell><DateTime value={user.createdAt} /></TableCell>
                           <TableCell>{formatDate(user.last_seen)}</TableCell>
                           <TableCell>{user.shopCount}</TableCell>
                           <TableCell className="text-right">
@@ -303,7 +303,14 @@ export default function Users() {
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Registered</dt>
-                          <dd>{formatDate(user.createdAt)}</dd>
+                          <dd>
+                            {formatDate(user.createdAt)}
+                            {formatTime(user.createdAt) && (
+                              <span className="ml-1 text-xs text-muted-foreground">
+                                {formatTime(user.createdAt)}
+                              </span>
+                            )}
+                          </dd>
                         </div>
                         <div>
                           <dt className="text-xs text-muted-foreground">Last Seen</dt>
@@ -556,6 +563,26 @@ function formatDate(value?: string | null): string {
   });
 }
 
+function formatTime(value?: string | null): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function DateTime({ value }: { value?: string | null }) {
+  const time = formatTime(value);
+  return (
+    <div className="flex flex-col">
+      <span>{formatDate(value)}</span>
+      {time && <span className="text-xs text-muted-foreground">{time}</span>}
+    </div>
+  );
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid grid-cols-3 gap-2 py-1.5 text-sm">
@@ -587,7 +614,7 @@ function ViewDialog({
           <Row label="Username" value={user.username} />
           <Row label="Email" value={user.email} />
           <Row label="Phone" value={user.phone} />
-          <Row label="Date Registered" value={formatDate(user.createdAt)} />
+          <Row label="Date Registered" value={<DateTime value={user.createdAt} />} />
           <Row label="Last Seen" value={formatDate(user.last_seen)} />
           <Row label="Shops" value={user.shopCount} />
           <Row label="Partner" value={partnerName ?? "Unassigned"} />
