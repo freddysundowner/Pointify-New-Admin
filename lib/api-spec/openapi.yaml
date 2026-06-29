@@ -672,9 +672,7 @@ paths:
           description: Product categories
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/ProductCategory" }
+              schema: { $ref: "#/components/schemas/ProductCategoryListResult" }
 
   /products:
     get:
@@ -1790,6 +1788,16 @@ components:
         data:
           type: array
           items: { $ref: "#/components/schemas/Product" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    ProductCategoryListResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ProductCategory" }
         count: { type: number }
         totalPages: { type: number }
         currentPage: { type: number }

@@ -7,7 +7,7 @@ The api-server proxies an external POS API whose list endpoints return inconsist
 
 **Rule:** any list endpoint must (1) use `proxyList` in the route, (2) declare a `*ListResult` wrapper schema in `lib/api-spec/openapi.yaml` (not a bare array, not a custom key like `logs`), and (3) be consumed in the page as `data?.data?.map(...)`. All three must agree.
 
-**Why:** the design subagent and the spec initially diverged — some endpoints were typed as bare arrays (attendants, packages) or custom keys (`logs` for sms) while the proxy returned the wrapped object, producing empty tables at runtime that typecheck still passed.
+**Why:** the design subagent and the spec initially diverged — some endpoints were typed as bare arrays (attendants, packages, product-categories) or custom keys (`logs` for sms) while the proxy returned the wrapped object. typecheck still passes (the generated type lies), but at runtime the data is the envelope object, not an array. Symptoms range from empty tables to a hard CRASH: `/product-categories` was speced as a bare array, so a consumer did `(categories ?? []).filter(...)` on the envelope object → `filter is not a function` thrown during render → caught by ErrorBoundary. Note this can be MISDIAGNOSED as a React "Invalid hook call" — do not chase duplicate-React / stale-Vite-cache theories; curl the endpoint and compare its real shape to the generated return type first.
 
 **How to apply:** when adding a list endpoint, mirror an existing wrapped schema (e.g. `AdminListResult`), regen with `pnpm --filter @workspace/api-spec run codegen`, and read `.data`.
 

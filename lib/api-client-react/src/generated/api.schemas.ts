@@ -443,6 +443,13 @@ export interface ProductListResult {
   currentPage?: number;
 }
 
+export interface ProductCategoryListResult {
+  data?: ProductCategory[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
 export interface StockMovement {
   /** @nullable */
   type?: string | null;

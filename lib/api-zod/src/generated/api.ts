@@ -964,11 +964,15 @@ export const DeleteShopResponse = zod.object({
 })
 
 
-export const ListProductCategoriesResponseItem = zod.object({
+export const ListProductCategoriesResponse = zod.object({
+  "data": zod.array(zod.object({
   "_id": zod.string(),
   "name": zod.string().nullish()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
 })
-export const ListProductCategoriesResponse = zod.array(ListProductCategoriesResponseItem)
 
 
 export const ListProductsQueryParams = zod.object({

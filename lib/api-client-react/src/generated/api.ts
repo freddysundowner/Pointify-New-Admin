@@ -82,7 +82,7 @@ import type {
   PortalWithdrawInput,
   PortalWithdrawResult,
   Product,
-  ProductCategory,
+  ProductCategoryListResult,
   ProductHistorySummary,
   ProductInput,
   ProductListResult,
@@ -2850,9 +2850,9 @@ export const getListProductCategoriesUrl = () => {
   return `/api/product-categories`
 }
 
-export const listProductCategories = async ( options?: RequestInit): Promise<ProductCategory[]> => {
+export const listProductCategories = async ( options?: RequestInit): Promise<ProductCategoryListResult> => {
 
-  return customFetch<ProductCategory[]>(getListProductCategoriesUrl(),
+  return customFetch<ProductCategoryListResult>(getListProductCategoriesUrl(),
   {
     ...options,
     method: 'GET'

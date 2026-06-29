@@ -89,6 +89,7 @@ export * from './portalWithdrawInput';
 export * from './portalWithdrawResult';
 export * from './product';
 export * from './productCategory';
+export * from './productCategoryListResult';
 export * from './productHistorySummary';
 export * from './productInput';
 export * from './productListResult';
