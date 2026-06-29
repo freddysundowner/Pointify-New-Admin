@@ -197,6 +197,70 @@ router.put("/partners/:id", async (req, res) => {
   }
 });
 
+// Credit (add funds to) a partner's wallet. Upstream has no atomic increment
+// for affiliates, so read-modify-write: fetch the current wallet, add the
+// requested amount, then PUT the new total. Admin-only, low-concurrency, so the
+// race window is acceptable.
+router.post("/partners/:id/credit", async (req, res) => {
+  if (!requireBearer(req, res)) return;
+
+  const raw = (req.body as Record<string, unknown> | undefined)?.["amount"];
+  const amount = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    res.status(400).json({ message: "Amount must be a positive number" });
+    return;
+  }
+
+  try {
+    const current = await upstreamFetch({
+      method: "GET",
+      path: `/affiliates/${req.params.id}`,
+      authHeader: authHeaderFrom(req),
+    });
+    if (current.status >= 400) {
+      res.status(current.status).json(current.data);
+      return;
+    }
+    const partner = (current.data ?? {}) as Record<string, unknown>;
+    // Fail closed on money math: an unset wallet is the model default (0), but a
+    // present-yet-non-numeric balance must NOT be coerced to 0 — that would wipe
+    // a real balance. Reject instead so we never write a wrong total.
+    const rawBalance = partner["wallet"];
+    let balance: number;
+    if (rawBalance === null || rawBalance === undefined) {
+      balance = 0;
+    } else {
+      balance = Number(rawBalance);
+      if (!Number.isFinite(balance)) {
+        req.log.error(
+          { rawBalance },
+          "Partner wallet is non-numeric; refusing to credit",
+        );
+        res
+          .status(502)
+          .json({ message: "Partner wallet balance is invalid upstream" });
+        return;
+      }
+    }
+    const newWallet = balance + amount;
+
+    const result = await upstreamFetch({
+      method: "PUT",
+      path: `/affiliates/${req.params.id}`,
+      body: { wallet: newWallet },
+      authHeader: authHeaderFrom(req),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    res.status(200).json(sanitizePartner(result.data));
+  } catch (err) {
+    req.log.error({ err }, "Failed to credit partner wallet");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
+});
+
 router.delete("/partners/:id", async (req, res) => {
   if (!requireBearer(req, res)) return;
   try {

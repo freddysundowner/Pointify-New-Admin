@@ -587,6 +587,37 @@ export const DeletePartnerResponse = zod.object({
 
 
 /**
+ * @summary Credit (add funds to) a partner's wallet
+ */
+export const CreditPartnerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CreditPartnerBody = zod.object({
+  "amount": zod.number().describe('Positive amount (KES) to add to the partner\'s wallet.')
+})
+
+export const CreditPartnerResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "commission": zod.number().nullish(),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "code": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "shopCount": zod.number().optional(),
+  "userCount": zod.number().optional(),
+  "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "admins": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+/**
  * @summary Subscription earnings and withdrawals for a partner
  */
 export const ListPartnerTransactionsQueryParams = zod.object({

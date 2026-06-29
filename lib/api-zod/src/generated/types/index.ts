@@ -77,6 +77,7 @@ export * from './packageUpdateDurationUnit';
 export * from './packageUpdateType';
 export * from './partner';
 export * from './partnerCreateInput';
+export * from './partnerCreditInput';
 export * from './partnerListResult';
 export * from './partnerRegisterResult';
 export * from './partnerUpdate';

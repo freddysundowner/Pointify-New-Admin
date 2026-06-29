@@ -366,6 +366,25 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Partner" }
 
+  /partners/{id}/credit:
+    post:
+      operationId: creditPartner
+      tags: [partners]
+      summary: Credit (add funds to) a partner's wallet
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerCreditInput" }
+      responses:
+        "200":
+          description: Updated partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+
   /partners/transactions:
     get:
       operationId: listPartnerTransactions
@@ -1409,6 +1428,14 @@ components:
         password: { type: string }
         blocked: { type: boolean }
         active: { type: boolean }
+
+    PartnerCreditInput:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          description: Positive amount (KES) to add to the partner's wallet.
 
     PartnerListResult:
       type: object

@@ -63,6 +63,11 @@ export interface PartnerUpdate {
   active?: boolean;
 }
 
+export interface PartnerCreditInput {
+  /** Positive amount (KES) to add to the partner's wallet. */
+  amount: number;
+}
+
 export interface PartnerListResult {
   data?: Partner[];
   count?: number;

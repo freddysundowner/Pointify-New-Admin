@@ -7,6 +7,7 @@ import {
   useCreatePartner,
   useUpdatePartner,
   useDeletePartner,
+  useCreditPartner,
   getListPartnersQueryKey,
   type Partner,
 } from "@workspace/api-client-react";
@@ -49,12 +50,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus,
   Pencil,
   Trash2,
   Loader2,
   Handshake,
   Eye,
+  Wallet,
+  MoreHorizontal,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -88,6 +98,52 @@ function shopsCount(p: Partner): number {
   return typeof p.shopCount === "number" ? p.shopCount : 0;
 }
 
+function PartnerActions({
+  partner,
+  onEdit,
+  onCredit,
+  onDelete,
+}: {
+  partner: Partner;
+  onEdit: (p: Partner) => void;
+  onCredit: (p: Partner) => void;
+  onDelete: (p: Partner) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Partner actions">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/partners/${partner._id}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit(partner)}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onCredit(partner)}>
+          <Wallet className="mr-2 h-4 w-4" />
+          Credit wallet
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onDelete(partner)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function Partners() {
   const [page, setPage] = useState(1);
   const { data, isLoading, isError, isFetching, refetch } = useListPartners({
@@ -101,10 +157,13 @@ export default function Partners() {
   const [editing, setEditing] = useState<Partner | null>(null);
   const [form, setForm] = useState<PartnerForm>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<Partner | null>(null);
+  const [creditTarget, setCreditTarget] = useState<Partner | null>(null);
+  const [creditAmount, setCreditAmount] = useState("");
 
   const create = useCreatePartner();
   const update = useUpdatePartner();
   const remove = useDeletePartner();
+  const credit = useCreditPartner();
 
   const partners = data?.data ?? [];
   const count = data?.count ?? 0;
@@ -218,6 +277,43 @@ export default function Partners() {
             title: "Couldn't create partner",
             description:
               "The email may already be in use, or the request failed. Please try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  const openCredit = (partner: Partner) => {
+    setCreditTarget(partner);
+    setCreditAmount("");
+  };
+
+  const parsedCreditAmount = () => {
+    const t = creditAmount.trim();
+    if (t === "") return NaN;
+    const n = Number(t);
+    return Number.isFinite(n) ? n : NaN;
+  };
+
+  const handleCredit = () => {
+    if (!creditTarget) return;
+    const amount = parsedCreditAmount();
+    if (!(amount > 0)) return;
+    credit.mutate(
+      { id: creditTarget._id, data: { amount } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Wallet credited",
+            description: `KES ${amount.toLocaleString()} added to ${creditTarget.name || "partner"}'s wallet.`,
+          });
+          setCreditTarget(null);
+          refresh();
+        },
+        onError: () =>
+          toast({
+            title: "Couldn't credit wallet",
+            description: "Please try again.",
             variant: "destructive",
           }),
       },
@@ -345,34 +441,12 @@ export default function Partners() {
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                asChild
-                                variant="ghost"
-                                size="icon"
-                                aria-label="View partner"
-                              >
-                                <Link href={`/partners/${p._id}`}>
-                                  <Eye className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEdit(p)}
-                                aria-label="Edit partner"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeleteTarget(p)}
-                                aria-label="Delete partner"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
+                            <PartnerActions
+                              partner={p}
+                              onEdit={openEdit}
+                              onCredit={openCredit}
+                              onDelete={setDeleteTarget}
+                            />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -401,33 +475,13 @@ export default function Partners() {
                             </p>
                           ) : null}
                         </div>
-                        <div className="flex shrink-0 gap-1">
-                          <Button
-                            asChild
-                            variant="ghost"
-                            size="icon"
-                            aria-label="View partner"
-                          >
-                            <Link href={`/partners/${p._id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(p)}
-                            aria-label="Edit partner"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteTarget(p)}
-                            aria-label="Delete partner"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                        <div className="flex shrink-0">
+                          <PartnerActions
+                            partner={p}
+                            onEdit={openEdit}
+                            onCredit={openCredit}
+                            onDelete={setDeleteTarget}
+                          />
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -613,6 +667,62 @@ export default function Partners() {
             <Button onClick={handleSave} disabled={!trimmedName || isSaving}>
               {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {editing ? "Save changes" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit wallet dialog */}
+      <Dialog
+        open={Boolean(creditTarget)}
+        onOpenChange={(open) => !open && setCreditTarget(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Credit wallet</DialogTitle>
+            <DialogDescription>
+              Add funds to {creditTarget?.name || "this partner"}'s wallet. This
+              increases their available balance.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+              <span className="text-muted-foreground">Current balance: </span>
+              <span className="font-medium">
+                KES{" "}
+                {Number(creditTarget?.wallet ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="credit-amount">Amount to add (KES)</Label>
+              <Input
+                id="credit-amount"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(e.target.value)}
+                placeholder="1000"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreditTarget(null)}
+              disabled={credit.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCredit}
+              disabled={!(parsedCreditAmount() > 0) || credit.isPending}
+            >
+              {credit.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Credit wallet
             </Button>
           </DialogFooter>
         </DialogContent>

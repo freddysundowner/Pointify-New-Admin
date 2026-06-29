@@ -72,6 +72,7 @@ import type {
   PackageUpdate,
   Partner,
   PartnerCreateInput,
+  PartnerCreditInput,
   PartnerListResult,
   PartnerRegisterResult,
   PartnerUpdate,
@@ -1641,6 +1642,78 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeletePartnerMutationOptions(options));
+    }
+
+export const getCreditPartnerUrl = (id: string,) => {
+
+
+
+
+  return `/api/partners/${id}/credit`
+}
+
+/**
+ * @summary Credit (add funds to) a partner's wallet
+ */
+export const creditPartner = async (id: string,
+    partnerCreditInput: PartnerCreditInput, options?: RequestInit): Promise<Partner> => {
+
+  return customFetch<Partner>(getCreditPartnerUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      partnerCreditInput,)
+  }
+);}
+
+
+
+
+export const getCreditPartnerMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof creditPartner>>, TError,{id: string;data: BodyType<PartnerCreditInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof creditPartner>>, TError,{id: string;data: BodyType<PartnerCreditInput>}, TContext> => {
+
+const mutationKey = ['creditPartner'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof creditPartner>>, {id: string;data: BodyType<PartnerCreditInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  creditPartner(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreditPartnerMutationResult = NonNullable<Awaited<ReturnType<typeof creditPartner>>>
+    export type CreditPartnerMutationBody = BodyType<PartnerCreditInput>
+    export type CreditPartnerMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Credit (add funds to) a partner's wallet
+ */
+export const useCreditPartner = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof creditPartner>>, TError,{id: string;data: BodyType<PartnerCreditInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof creditPartner>>,
+        TError,
+        {id: string;data: BodyType<PartnerCreditInput>},
+        TContext
+      > => {
+      return useMutation(getCreditPartnerMutationOptions(options));
     }
 
 export const getListPartnerTransactionsUrl = (params: ListPartnerTransactionsParams,) => {
