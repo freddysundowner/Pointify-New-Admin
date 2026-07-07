@@ -862,6 +862,16 @@ export const RequestPortalWithdrawalResponse = zod.object({
 
 
 /**
+ * @summary Global shop-category list, used as lead Business Type options
+ */
+export const ListPortalShopCategoriesResponseItem = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish()
+})
+export const ListPortalShopCategoriesResponse = zod.array(ListPortalShopCategoriesResponseItem)
+
+
+/**
  * @summary Lead pipeline for the authenticated partner
  */
 export const ListPortalLeadsQueryParams = zod.object({

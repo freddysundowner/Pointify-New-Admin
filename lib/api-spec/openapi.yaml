@@ -597,6 +597,25 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /portal/shop-categories:
+    get:
+      operationId: listPortalShopCategories
+      tags: [portal]
+      summary: Global shop-category list, used as lead Business Type options
+      responses:
+        "200":
+          description: Shop categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopCategory" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /portal/leads:
     get:
       operationId: listPortalLeads

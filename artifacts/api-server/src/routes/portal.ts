@@ -472,6 +472,29 @@ function eatDateStr(d: Date): string {
   return new Date(d.getTime() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+// GET /portal/shop-categories — the global shop-category list, reused as the
+// "Business Type" options when creating/editing a lead. Small global list, so
+// upstream `/shop/category` returns a bare array; return it as ShopCategory[].
+router.get("/portal/shop-categories", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/shop/category",
+      authHeader: upstreamAuth(session),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    res.status(200).json(normalizeList(result.data).data);
+  } catch (err) {
+    req.log.error({ err }, "Portal shop categories fetch failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
 // GET /portal/leads — the partner's leads, filterable by stage/source/search.
 router.get("/portal/leads", async (req, res) => {
   const session = requireSession(req, res);

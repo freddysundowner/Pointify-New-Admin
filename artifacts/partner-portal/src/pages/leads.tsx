@@ -7,6 +7,7 @@ import {
   useCreatePortalLead,
   useUpdatePortalLead,
   useDeletePortalLead,
+  useListPortalShopCategories,
   type Lead,
   type LeadInput,
 } from "@workspace/api-client-react";
@@ -219,6 +220,16 @@ export default function Leads() {
   const { data: stats } = useGetPortalLeadStats({
     query: { queryKey: getGetPortalLeadStatsQueryKey() },
   });
+
+  // Business Type options are the existing global shop categories.
+  const { data: shopCategories } = useListPortalShopCategories();
+  const businessTypes = useMemo(
+    () =>
+      ((shopCategories as Array<{ name?: string | null }> | undefined) ?? [])
+        .map((c) => (c.name ?? "").trim())
+        .filter((n) => n !== ""),
+    [shopCategories],
+  );
 
   const leads = (result?.data as Lead[]) || [];
   const totalPages = result?.totalPages || 1;
@@ -718,13 +729,36 @@ export default function Leads() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="businessType">Business Type</Label>
-                <Input
-                  id="businessType"
+                <Label>Business Type</Label>
+                <Select
                   value={draft.businessType ?? ""}
-                  onChange={(e) => set("businessType", e.target.value)}
-                  placeholder="e.g. Retail shop"
-                />
+                  onValueChange={(v) => set("businessType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const current = (draft.businessType ?? "").trim();
+                      const opts =
+                        current && !businessTypes.includes(current)
+                          ? [current, ...businessTypes]
+                          : businessTypes;
+                      if (opts.length === 0) {
+                        return (
+                          <SelectItem value="__none" disabled>
+                            No categories found
+                          </SelectItem>
+                        );
+                      }
+                      return opts.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="location">Location</Label>

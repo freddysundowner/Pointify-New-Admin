@@ -2499,6 +2499,83 @@ export const useRequestPortalWithdrawal = <TError = ErrorType<ErrorResponse>,
       return useMutation(getRequestPortalWithdrawalMutationOptions(options));
     }
 
+export const getListPortalShopCategoriesUrl = () => {
+
+
+
+
+  return `/api/portal/shop-categories`
+}
+
+/**
+ * @summary Global shop-category list, used as lead Business Type options
+ */
+export const listPortalShopCategories = async ( options?: RequestInit): Promise<ShopCategory[]> => {
+
+  return customFetch<ShopCategory[]>(getListPortalShopCategoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPortalShopCategoriesQueryKey = () => {
+    return [
+    `/api/portal/shop-categories`
+    ] as const;
+    }
+
+
+export const getListPortalShopCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listPortalShopCategories>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalShopCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPortalShopCategoriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortalShopCategories>>> = ({ signal }) => listPortalShopCategories({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPortalShopCategories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPortalShopCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listPortalShopCategories>>>
+export type ListPortalShopCategoriesQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Global shop-category list, used as lead Business Type options
+ */
+
+export function useListPortalShopCategories<TData = Awaited<ReturnType<typeof listPortalShopCategories>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalShopCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPortalShopCategoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getListPortalLeadsUrl = (params?: ListPortalLeadsParams,) => {
   const normalizedParams = new URLSearchParams();
 
