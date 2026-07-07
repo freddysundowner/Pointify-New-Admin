@@ -49,6 +49,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +77,8 @@ import {
   CalendarClock,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
+  Check,
   AlertTriangle,
   Trophy,
 } from "lucide-react";
@@ -247,6 +262,7 @@ export default function Leads() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<LeadInput>(EMPTY_DRAFT);
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [businessTypeOpen, setBusinessTypeOpen] = useState(false);
 
   const createMut = useCreatePortalLead();
   const updateMut = useUpdatePortalLead();
@@ -730,35 +746,71 @@ export default function Leads() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label>Business Type</Label>
-                <Select
-                  value={draft.businessType ?? ""}
-                  onValueChange={(v) => set("businessType", v)}
+                <Popover
+                  open={businessTypeOpen}
+                  onOpenChange={setBusinessTypeOpen}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select business type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const current = (draft.businessType ?? "").trim();
-                      const opts =
-                        current && !businessTypes.includes(current)
-                          ? [current, ...businessTypes]
-                          : businessTypes;
-                      if (opts.length === 0) {
-                        return (
-                          <SelectItem value="__none" disabled>
-                            No categories found
-                          </SelectItem>
-                        );
-                      }
-                      return opts.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ));
-                    })()}
-                  </SelectContent>
-                </Select>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={businessTypeOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      <span
+                        className={
+                          draft.businessType ? "" : "text-muted-foreground"
+                        }
+                      >
+                        {draft.businessType || "Select business type"}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                  >
+                    <Command>
+                      <CommandInput placeholder="Search business type..." />
+                      <CommandList>
+                        <CommandEmpty>No category found.</CommandEmpty>
+                        <CommandGroup>
+                          {(() => {
+                            const current = (draft.businessType ?? "").trim();
+                            const opts =
+                              current && !businessTypes.includes(current)
+                                ? [current, ...businessTypes]
+                                : businessTypes;
+                            return opts.map((t) => (
+                              <CommandItem
+                                key={t}
+                                value={t}
+                                onSelect={() => {
+                                  set(
+                                    "businessType",
+                                    t === draft.businessType ? "" : t,
+                                  );
+                                  setBusinessTypeOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${
+                                    draft.businessType === t
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }`}
+                                />
+                                {t}
+                              </CommandItem>
+                            ));
+                          })()}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="location">Location</Label>
