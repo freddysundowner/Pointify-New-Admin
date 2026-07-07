@@ -597,6 +597,144 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /portal/leads:
+    get:
+      operationId: listPortalLeads
+      tags: [portal]
+      summary: Lead pipeline for the authenticated partner
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: source, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Partner leads
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadListResult" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    post:
+      operationId: createPortalLead
+      tags: [portal]
+      summary: Create a lead for the authenticated partner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadInput" }
+      responses:
+        "201":
+          description: Created lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/leads/stats:
+    get:
+      operationId: getPortalLeadStats
+      tags: [portal]
+      summary: Pipeline counts and follow-up alerts for the authenticated partner
+      responses:
+        "200":
+          description: Lead pipeline statistics
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadStats" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/leads/{id}:
+    get:
+      operationId: getPortalLead
+      tags: [portal]
+      summary: Fetch one of the authenticated partner's leads
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    put:
+      operationId: updatePortalLead
+      tags: [portal]
+      summary: Update one of the authenticated partner's leads
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadInput" }
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      operationId: deletePortalLead
+      tags: [portal]
+      summary: Delete one of the authenticated partner's leads
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Deleted lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /shops:
     get:
       operationId: listShops
@@ -1549,6 +1687,64 @@ components:
       properties:
         status: { type: boolean }
         message: { type: string }
+
+    Lead:
+      type: object
+      additionalProperties: true
+      properties:
+        _id: { type: string }
+        businessName: { type: string }
+        contactPerson: { type: ["string", "null"] }
+        phonenumber: { type: ["string", "null"] }
+        businessType: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        source: { type: ["string", "null"] }
+        stage: { type: ["string", "null"] }
+        nextFollowUpDate: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        createAt: { type: ["string", "null"] }
+        updatedAt: { type: ["string", "null"] }
+
+    LeadInput:
+      type: object
+      required: [businessName]
+      properties:
+        businessName: { type: string }
+        contactPerson: { type: ["string", "null"] }
+        phonenumber: { type: ["string", "null"] }
+        businessType: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        source: { type: ["string", "null"] }
+        stage: { type: ["string", "null"] }
+        nextFollowUpDate: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+
+    LeadListResult:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Lead" }
+        count: { type: number }
+        totalPages: { type: number }
+        currentPage: { type: number }
+
+    LeadStageCount:
+      type: object
+      properties:
+        stage: { type: string }
+        count: { type: number }
+
+    LeadStats:
+      type: object
+      properties:
+        total: { type: number }
+        won: { type: number }
+        overdue: { type: number }
+        dueToday: { type: number }
+        byStage:
+          type: array
+          items: { $ref: "#/components/schemas/LeadStageCount" }
 
     ErrorResponse:
       type: object

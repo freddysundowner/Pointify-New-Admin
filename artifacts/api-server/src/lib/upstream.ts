@@ -36,6 +36,9 @@ export interface UpstreamRequest {
   query?: Record<string, unknown> | undefined;
   body?: unknown;
   authHeader?: string | undefined;
+  // Extra request headers (e.g. a proxy→upstream shared secret). Merged after
+  // the defaults so they can override Content-Type/Accept if ever needed.
+  headers?: Record<string, string> | undefined;
 }
 
 export async function upstreamFetch(
@@ -55,6 +58,7 @@ export async function upstreamFetch(
     Accept: "application/json",
   };
   if (opts.authHeader) headers["Authorization"] = opts.authHeader;
+  if (opts.headers) Object.assign(headers, opts.headers);
 
   const init: RequestInit = { method: opts.method, headers };
   const method = opts.method.toUpperCase();

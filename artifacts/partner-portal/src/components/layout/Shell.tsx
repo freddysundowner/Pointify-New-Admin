@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Store,
   Users,
+  Target,
   ArrowRightLeft,
   Banknote,
   UserCircle,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 const NAV_LINKS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/leads", label: "Leads", icon: Target },
   { href: "/users", label: "Referred Users", icon: Users },
   { href: "/shops", label: "Referred Shops", icon: Store },
   { href: "/transactions", label: "Transactions", icon: ArrowRightLeft },
@@ -24,6 +26,7 @@ const NAV_LINKS = [
 // Primary destinations shown in the mobile bottom tab bar (short labels).
 const BOTTOM_NAV = [
   { href: "/", label: "Home", icon: LayoutDashboard },
+  { href: "/leads", label: "Leads", icon: Target },
   { href: "/shops", label: "Shops", icon: Store },
   { href: "/users", label: "Users", icon: Users },
   { href: "/transactions", label: "Activity", icon: ArrowRightLeft },
@@ -120,7 +123,7 @@ export function Shell({ children }: { children: ReactNode }) {
           className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="grid grid-cols-5">
+          <div className="grid grid-cols-6">
             {BOTTOM_NAV.map((link) => {
               const Icon = link.icon;
               const isActive = location === link.href;

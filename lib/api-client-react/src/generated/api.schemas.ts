@@ -180,6 +180,72 @@ export interface PortalWithdrawResult {
   [key: string]: unknown;
  }
 
+export interface Lead {
+  _id?: string;
+  businessName?: string;
+  /** @nullable */
+  contactPerson?: string | null;
+  /** @nullable */
+  phonenumber?: string | null;
+  /** @nullable */
+  businessType?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  stage?: string | null;
+  /** @nullable */
+  nextFollowUpDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  createAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
+  [key: string]: unknown;
+ }
+
+export interface LeadInput {
+  businessName: string;
+  /** @nullable */
+  contactPerson?: string | null;
+  /** @nullable */
+  phonenumber?: string | null;
+  /** @nullable */
+  businessType?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  stage?: string | null;
+  /** @nullable */
+  nextFollowUpDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface LeadListResult {
+  data?: Lead[];
+  count?: number;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+export interface LeadStageCount {
+  stage?: string;
+  count?: number;
+}
+
+export interface LeadStats {
+  total?: number;
+  won?: number;
+  overdue?: number;
+  dueToday?: number;
+  byStage?: LeadStageCount[];
+}
+
 export interface ErrorResponse {
   error?: string;
 }
@@ -1243,6 +1309,14 @@ limit?: number;
 export type ListPortalTransactionsParams = {
 page?: number;
 limit?: number;
+};
+
+export type ListPortalLeadsParams = {
+page?: number;
+limit?: number;
+stage?: string;
+source?: string;
+search?: string;
 };
 
 export type ListShopsParams = {

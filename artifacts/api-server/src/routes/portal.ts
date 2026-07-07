@@ -36,6 +36,16 @@ function upstreamAuth(session: PortalSession): string | undefined {
   return session.ut ? `Bearer ${session.ut}` : undefined;
 }
 
+// Optional shared secret proving a `/leads` request came from THIS proxy (the
+// only place the affiliate id is derived from a verified session). When
+// LEADS_PROXY_SECRET is set here AND on the upstream, the upstream can reject any
+// direct caller and refuse to trust a forged `affiliate` — closing the
+// cross-partner (IDOR) gap. Omitted when unset, so it is a no-op until enabled.
+function leadsProxyHeaders(): Record<string, string> | undefined {
+  const secret = process.env.LEADS_PROXY_SECRET;
+  return secret ? { "x-proxy-secret": secret } : undefined;
+}
+
 function stripSecrets(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;
   const { password: _p, otp: _o, otp_expiry: _e, ...rest } = obj as Record<string, unknown>;
@@ -406,6 +416,231 @@ router.get("/portal/summary", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Portal summary failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// --- Lead-tracking CRM (partner-owned) --------------------------------------
+//
+// Leads live in the upstream MongoDB (a new `/leads` collection/route the POS
+// server owns). Every request here is scoped to the partner's own affiliate id
+// (session.aid) — injected server-side and never trusted from the client — so a
+// partner can only ever see or touch their own leads. The upstream additionally
+// scopes every query by that affiliate id as defence in depth.
+
+// The seven confirmed pipeline stages, in order. Used to shape the stats
+// response so every stage always appears (even at zero).
+const LEAD_STAGES = [
+  "New Lead",
+  "Contacted",
+  "Interested",
+  "Visit/Demo Scheduled",
+  "Negotiating",
+  "Won (Converted)",
+  "Lost",
+] as const;
+
+// Stages that count as an open/active lead (a follow-up still matters). Won/Lost
+// are terminal, so their follow-up dates never count as overdue.
+const CLOSED_STAGES = new Set<string>(["Won (Converted)", "Lost"]);
+
+// Only these fields may be written from the client; everything else (affiliate,
+// _id, timestamps) is set/owned by the proxy or upstream.
+const LEAD_FIELDS = [
+  "businessName",
+  "contactPerson",
+  "phonenumber",
+  "businessType",
+  "location",
+  "source",
+  "stage",
+  "nextFollowUpDate",
+  "notes",
+] as const;
+
+function pickLeadFields(body: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of LEAD_FIELDS) {
+    if (key in body) out[key] = body[key];
+  }
+  return out;
+}
+
+// A calendar date string (yyyy-mm-dd) in East Africa Time. Follow-up dates are
+// day-granular, and the whole platform operates in EAT, so bucket by EAT day.
+function eatDateStr(d: Date): string {
+  return new Date(d.getTime() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// GET /portal/leads — the partner's leads, filterable by stage/source/search.
+router.get("/portal/leads", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  const q = req.query as Record<string, unknown>;
+  const page = Math.max(1, parseInt(String(q["page"] ?? "1"), 10) || 1);
+  const limit = Math.max(1, parseInt(String(q["limit"] ?? "20"), 10) || 20);
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/leads",
+      query: {
+        affiliate: session.aid,
+        page,
+        limit,
+        stage: q["stage"],
+        source: q["source"],
+        search: q["search"],
+      },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const norm = normalizeList(result.data);
+    res.status(200).json({
+      data: norm.data,
+      count: norm.count,
+      totalPages: norm.totalPages,
+      currentPage: Math.min(norm.currentPage, Math.max(1, norm.totalPages)),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Portal leads fetch failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// GET /portal/leads/stats — pipeline counts per stage + follow-up alerts.
+// Composed server-side from the partner's full lead set. Declared BEFORE the
+// `/:id` routes so "stats" isn't captured as an id.
+router.get("/portal/leads/stats", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/leads",
+      query: { affiliate: session.aid, page: 1, limit: 100000 },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const leads = normalizeList(result.data).data as Array<Record<string, unknown>>;
+    const today = eatDateStr(new Date());
+
+    const byStage: Record<string, number> = {};
+    for (const stage of LEAD_STAGES) byStage[stage] = 0;
+    let overdue = 0;
+    let dueToday = 0;
+    for (const lead of leads) {
+      const stage = String(lead["stage"] ?? "New Lead");
+      byStage[stage] = (byStage[stage] ?? 0) + 1;
+      const raw = lead["nextFollowUpDate"];
+      if (raw && !CLOSED_STAGES.has(stage)) {
+        const when = eatDateStr(new Date(String(raw)));
+        if (when < today) overdue += 1;
+        else if (when === today) dueToday += 1;
+      }
+    }
+    const total = leads.length;
+    const won = byStage["Won (Converted)"] ?? 0;
+    res.status(200).json({
+      total,
+      won,
+      overdue,
+      dueToday,
+      byStage: LEAD_STAGES.map((stage) => ({ stage, count: byStage[stage] ?? 0 })),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Portal lead stats failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// POST /portal/leads — create a lead owned by this partner.
+router.post("/portal/leads", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  const safe = pickLeadFields((req.body ?? {}) as Record<string, unknown>);
+  if (!safe["businessName"] || String(safe["businessName"]).trim() === "") {
+    res.status(400).json({ error: "Business name is required" });
+    return;
+  }
+  try {
+    const result = await upstreamFetch({
+      method: "POST",
+      path: "/leads",
+      body: { ...safe, affiliate: session.aid },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, "Portal lead create failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// GET /portal/leads/:id — a single owned lead (404 if not this partner's).
+router.get("/portal/leads/:id", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: `/leads/${req.params.id}`,
+      query: { affiliate: session.aid },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, "Portal lead fetch failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// PUT /portal/leads/:id — update an owned lead. affiliate is scoped via query so
+// a partner can never reassign a lead to (or edit) someone else's.
+router.put("/portal/leads/:id", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  const safe = pickLeadFields((req.body ?? {}) as Record<string, unknown>);
+  try {
+    const result = await upstreamFetch({
+      method: "PUT",
+      path: `/leads/${req.params.id}`,
+      query: { affiliate: session.aid },
+      body: safe,
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, "Portal lead update failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// DELETE /portal/leads/:id — delete an owned lead.
+router.delete("/portal/leads/:id", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  try {
+    const result = await upstreamFetch({
+      method: "DELETE",
+      path: `/leads/${req.params.id}`,
+      query: { affiliate: session.aid },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, "Portal lead delete failed");
     res.status(502).json({ error: "Upstream request failed" });
   }
 });

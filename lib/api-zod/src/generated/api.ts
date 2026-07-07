@@ -861,6 +861,150 @@ export const RequestPortalWithdrawalResponse = zod.object({
 })
 
 
+/**
+ * @summary Lead pipeline for the authenticated partner
+ */
+export const ListPortalLeadsQueryParams = zod.object({
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional(),
+  "stage": zod.coerce.string().optional(),
+  "source": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
+})
+
+export const ListPortalLeadsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
+ * @summary Create a lead for the authenticated partner
+ */
+export const CreatePortalLeadBody = zod.object({
+  "businessName": zod.string(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
+ * @summary Pipeline counts and follow-up alerts for the authenticated partner
+ */
+export const GetPortalLeadStatsResponse = zod.object({
+  "total": zod.number().optional(),
+  "won": zod.number().optional(),
+  "overdue": zod.number().optional(),
+  "dueToday": zod.number().optional(),
+  "byStage": zod.array(zod.object({
+  "stage": zod.string().optional(),
+  "count": zod.number().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Fetch one of the authenticated partner's leads
+ */
+export const GetPortalLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetPortalLeadResponse = zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update one of the authenticated partner's leads
+ */
+export const UpdatePortalLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdatePortalLeadBody = zod.object({
+  "businessName": zod.string(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdatePortalLeadResponse = zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete one of the authenticated partner's leads
+ */
+export const DeletePortalLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeletePortalLeadResponse = zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})
+
+
 export const ListShopsQueryParams = zod.object({
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),

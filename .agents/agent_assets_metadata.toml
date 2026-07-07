@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "W6U6qDEUEHYJHwuZOD1ag"
+uri = "file://pointify-leads-backend/README.md"
+type = "text"
+title = "Leads backend — setup instructions (start here)"
+
+[[outputs]]
+id = "jTJR6KZ3ITsehPtB8qG9w"
+uri = "file://pointify-leads-backend.zip"
+type = "unspecified"
+title = "pointify-leads-backend.zip — all files to add to your POS server"

@@ -13,6 +13,7 @@ import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import Shops from "@/pages/shops";
 import Users from "@/pages/users";
+import Leads from "@/pages/leads";
 import Transactions from "@/pages/transactions";
 import Withdraw from "@/pages/withdraw";
 import Profile from "@/pages/profile";
@@ -85,6 +86,9 @@ function Router() {
       </Route>
       <Route path="/users">
         <ProtectedRoute component={Users} />
+      </Route>
+      <Route path="/leads">
+        <ProtectedRoute component={Leads} />
       </Route>
       <Route path="/transactions">
         <ProtectedRoute component={Transactions} />
