@@ -101,6 +101,8 @@ router.post("/portal/auth/register", async (req, res) => {
     active: _a,
     code: _code,
     _id: _id,
+    parent: _parent,
+    subCommission: _sc,
     ...safe
   } = body;
   try {
@@ -190,6 +192,8 @@ router.put("/portal/me", async (req, res) => {
     _id: _id,
     shops: _shops,
     admins: _admins,
+    parent: _parent,
+    subCommission: _sc,
     ...safe
   } = body;
   try {
@@ -664,6 +668,222 @@ router.delete("/portal/leads/:id", async (req, res) => {
     res.status(result.status).json(result.data);
   } catch (err) {
     req.log.error({ err }, "Portal lead delete failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// --- Sub-partners (one level deep) -------------------------------------------
+//
+// A master partner (no `parent`) can create sub-partners who earn a percentage
+// OF THE MASTER'S commission award. Upstream stores this as Affliate.parent +
+// Affliate.subCommission; creation reuses the existing affiliate register
+// endpoint (which emails a welcome message, generating a random password when
+// none is supplied) followed by an update that links the new account to the
+// caller. All ownership checks happen here against session.aid.
+
+function parentIdOf(p: unknown): string | undefined {
+  if (!p || typeof p !== "object") return undefined;
+  const parent = (p as Record<string, unknown>)["parent"];
+  if (typeof parent === "string" && parent) return parent;
+  if (parent && typeof parent === "object") {
+    const id = (parent as Record<string, unknown>)["_id"];
+    if (typeof id === "string" && id) return id;
+  }
+  return undefined;
+}
+
+// Shape a raw affiliate record into the SubPartner response: strip secrets,
+// collapse the heavy populated shops/admins arrays into counts, drop fields a
+// master has no business seeing on their sub (parent is implied).
+function toSubPartner(raw: unknown): Record<string, unknown> {
+  const p = stripSecrets(raw) as Record<string, unknown>;
+  const admins = Array.isArray(p["admins"]) ? (p["admins"] as unknown[]) : [];
+  const shops = Array.isArray(p["shops"]) ? (p["shops"] as unknown[]) : [];
+  const {
+    admins: _admins,
+    shops: _shops,
+    parent: _parent,
+    commission: _commission,
+    ...rest
+  } = p;
+  return { ...rest, userCount: admins.length, shopCount: shops.length };
+}
+
+function validSubCommission(v: unknown): number | undefined {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 1 && n <= 99 ? n : undefined;
+}
+
+// GET /portal/sub-partners — the caller's sub-partners. Upstream has no parent
+// filter, so fetch the (small) full list and filter here. Subs get [].
+router.get("/portal/sub-partners", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/affiliates/",
+      authHeader: upstreamAuth(session),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const all = normalizeList(result.data).data;
+    const mine = all.filter((p) => parentIdOf(p) === session.aid);
+    res.status(200).json(mine.map(toSubPartner));
+  } catch (err) {
+    req.log.error({ err }, "Portal sub-partners fetch failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// POST /portal/sub-partners — create a sub-partner under the caller.
+router.post("/portal/sub-partners", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  const body = (req.body ?? {}) as Record<string, unknown>;
+
+  const name = typeof body["name"] === "string" ? body["name"].trim() : "";
+  const email = typeof body["email"] === "string" ? body["email"].trim() : "";
+  const phonenumber =
+    typeof body["phonenumber"] === "string" ? body["phonenumber"].trim() : "";
+  const subCommission = validSubCommission(body["subCommission"]);
+  if (!name || !email || !phonenumber) {
+    res.status(400).json({ error: "Name, email and phone number are required" });
+    return;
+  }
+  if (subCommission === undefined) {
+    res.status(400).json({ error: "Share percentage must be between 1 and 99" });
+    return;
+  }
+
+  try {
+    // Only master partners may create sub-partners (one level deep).
+    const meRes = await upstreamFetch({
+      method: "GET",
+      path: `/affiliates/${session.aid}`,
+      authHeader: upstreamAuth(session),
+    });
+    if (meRes.status >= 400) {
+      res.status(502).json({ error: "Upstream request failed" });
+      return;
+    }
+    if (parentIdOf(meRes.data)) {
+      res.status(403).json({ error: "Sub-partners cannot create their own sub-partners" });
+      return;
+    }
+
+    // 1. Register the account upstream (hashes password, generates referral
+    //    code, emails welcome — with the generated password when none given).
+    const registerBody: Record<string, unknown> = { name, email, phonenumber };
+    if (typeof body["country"] === "string" && body["country"].trim()) {
+      registerBody["country"] = body["country"].trim();
+    }
+    if (typeof body["password"] === "string" && body["password"]) {
+      registerBody["password"] = body["password"];
+    }
+    const created = await upstreamFetch({
+      method: "POST",
+      path: "/affiliates/auth/register",
+      body: registerBody,
+    });
+    if (created.status >= 400) {
+      res.status(created.status).json(created.data);
+      return;
+    }
+    const createdBody = (created.data ?? {}) as Record<string, unknown>;
+    const userdata =
+      createdBody["userdata"] && typeof createdBody["userdata"] === "object"
+        ? (createdBody["userdata"] as Record<string, unknown>)
+        : undefined;
+    const newId = typeof userdata?.["_id"] === "string" ? (userdata["_id"] as string) : undefined;
+    if (!newId) {
+      req.log.error("Sub-partner create: upstream register returned no id");
+      res.status(502).json({ error: "Upstream request failed" });
+      return;
+    }
+
+    // 2. Link it to the caller. If this fails the account would be a stray
+    //    MASTER partner, so roll it back rather than leave it dangling.
+    const linked = await upstreamFetch({
+      method: "PUT",
+      path: `/affiliates/${newId}`,
+      body: { parent: session.aid, subCommission },
+      authHeader: upstreamAuth(session),
+    });
+    if (linked.status >= 400) {
+      req.log.error(
+        { status: linked.status },
+        "Sub-partner create: linking failed, rolling back registration",
+      );
+      try {
+        await upstreamFetch({
+          method: "DELETE",
+          path: `/affiliates/${newId}`,
+          authHeader: upstreamAuth(session),
+        });
+      } catch (rollbackErr) {
+        req.log.error({ err: rollbackErr }, "Sub-partner create: rollback delete failed");
+      }
+      res.status(502).json({ error: "Could not finish creating the sub-partner. Please try again." });
+      return;
+    }
+
+    res.status(201).json(toSubPartner(linked.data));
+  } catch (err) {
+    req.log.error({ err }, "Portal sub-partner create failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// PUT /portal/sub-partners/:id — change the share % or suspend/unsuspend.
+// Ownership is verified against the live upstream record before writing.
+router.put("/portal/sub-partners/:id", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  const body = (req.body ?? {}) as Record<string, unknown>;
+
+  const update: Record<string, unknown> = {};
+  if (body["subCommission"] !== undefined) {
+    const subCommission = validSubCommission(body["subCommission"]);
+    if (subCommission === undefined) {
+      res.status(400).json({ error: "Share percentage must be between 1 and 99" });
+      return;
+    }
+    update["subCommission"] = subCommission;
+  }
+  if (typeof body["blocked"] === "boolean") {
+    update["blocked"] = body["blocked"];
+  }
+  if (Object.keys(update).length === 0) {
+    res.status(400).json({ error: "Nothing to update" });
+    return;
+  }
+
+  try {
+    const current = await upstreamFetch({
+      method: "GET",
+      path: `/affiliates/${req.params.id}`,
+      authHeader: upstreamAuth(session),
+    });
+    if (current.status >= 400 || parentIdOf(current.data) !== session.aid) {
+      res.status(404).json({ error: "Sub-partner not found" });
+      return;
+    }
+    const result = await upstreamFetch({
+      method: "PUT",
+      path: `/affiliates/${req.params.id}`,
+      body: update,
+      authHeader: upstreamAuth(session),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    res.status(200).json(toSubPartner(result.data));
+  } catch (err) {
+    req.log.error({ err }, "Portal sub-partner update failed");
     res.status(502).json({ error: "Upstream request failed" });
   }
 });

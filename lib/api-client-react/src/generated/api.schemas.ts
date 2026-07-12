@@ -35,6 +35,10 @@ export interface Partner {
   code?: string | null;
   /** @nullable */
   createAt?: string | null;
+  /** Master partner id when this is a sub-partner (may come back populated as an object). */
+  parent?: string | GenericObject | null;
+  /** @nullable */
+  subCommission?: number | null;
   shopCount?: number;
   userCount?: number;
   shops?: GenericObject[];
@@ -179,6 +183,60 @@ export interface PortalWithdrawResult {
   message?: string;
   [key: string]: unknown;
  }
+
+export interface SubPartner {
+  _id: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phonenumber?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  code?: string | null;
+  /**
+     * Percentage of the master's commission award this sub-partner receives.
+     * @nullable
+     */
+  subCommission?: number | null;
+  /** @nullable */
+  wallet?: number | null;
+  /** @nullable */
+  blocked?: boolean | null;
+  /** @nullable */
+  active?: boolean | null;
+  /** @nullable */
+  createAt?: string | null;
+  userCount?: number;
+  shopCount?: number;
+  [key: string]: unknown;
+ }
+
+export interface SubPartnerCreateInput {
+  name: string;
+  email: string;
+  phonenumber: string;
+  country?: string;
+  /**
+     * Percentage of the caller's commission award the sub receives.
+     * @minimum 1
+     * @maximum 99
+     */
+  subCommission: number;
+  /** Optional — when omitted, upstream generates one and emails it to the sub-partner. */
+  password?: string;
+}
+
+export interface SubPartnerUpdateInput {
+  /**
+     * @minimum 1
+     * @maximum 99
+     */
+  subCommission?: number;
+  blocked?: boolean;
+}
 
 export interface Lead {
   _id?: string;

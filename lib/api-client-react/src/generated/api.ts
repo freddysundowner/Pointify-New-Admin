@@ -114,6 +114,9 @@ import type {
   SmsTopupInput,
   StatisticsResult,
   StockHistoryResult,
+  SubPartner,
+  SubPartnerCreateInput,
+  SubPartnerUpdateInput,
   Subscription,
   SubscriptionCreateInput,
   SubscriptionCreateResult,
@@ -3025,6 +3028,229 @@ export const useDeletePortalLead = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDeletePortalLeadMutationOptions(options));
+    }
+
+export const getListPortalSubPartnersUrl = () => {
+
+
+
+
+  return `/api/portal/sub-partners`
+}
+
+/**
+ * Returns the sub-partners whose parent is the authenticated partner. Sub-partners themselves always get an empty list.
+ * @summary Sub-partners created by the authenticated partner
+ */
+export const listPortalSubPartners = async ( options?: RequestInit): Promise<SubPartner[]> => {
+
+  return customFetch<SubPartner[]>(getListPortalSubPartnersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPortalSubPartnersQueryKey = () => {
+    return [
+    `/api/portal/sub-partners`
+    ] as const;
+    }
+
+
+export const getListPortalSubPartnersQueryOptions = <TData = Awaited<ReturnType<typeof listPortalSubPartners>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalSubPartners>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPortalSubPartnersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortalSubPartners>>> = ({ signal }) => listPortalSubPartners({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPortalSubPartners>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPortalSubPartnersQueryResult = NonNullable<Awaited<ReturnType<typeof listPortalSubPartners>>>
+export type ListPortalSubPartnersQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Sub-partners created by the authenticated partner
+ */
+
+export function useListPortalSubPartners<TData = Awaited<ReturnType<typeof listPortalSubPartners>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortalSubPartners>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPortalSubPartnersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreatePortalSubPartnerUrl = () => {
+
+
+
+
+  return `/api/portal/sub-partners`
+}
+
+/**
+ * Only master partners (no parent) may create sub-partners — one level deep. Registers the account upstream (which emails the new partner a welcome message, generating a random password when none is given), then links it to the caller with the given share percentage. subCommission is the percentage OF THE CALLER'S commission award the sub receives (1-99).
+ * @summary Create a sub-partner under the authenticated partner
+ */
+export const createPortalSubPartner = async (subPartnerCreateInput: SubPartnerCreateInput, options?: RequestInit): Promise<SubPartner> => {
+
+  return customFetch<SubPartner>(getCreatePortalSubPartnerUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subPartnerCreateInput,)
+  }
+);}
+
+
+
+
+export const getCreatePortalSubPartnerMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPortalSubPartner>>, TError,{data: BodyType<SubPartnerCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPortalSubPartner>>, TError,{data: BodyType<SubPartnerCreateInput>}, TContext> => {
+
+const mutationKey = ['createPortalSubPartner'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPortalSubPartner>>, {data: BodyType<SubPartnerCreateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPortalSubPartner(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePortalSubPartnerMutationResult = NonNullable<Awaited<ReturnType<typeof createPortalSubPartner>>>
+    export type CreatePortalSubPartnerMutationBody = BodyType<SubPartnerCreateInput>
+    export type CreatePortalSubPartnerMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Create a sub-partner under the authenticated partner
+ */
+export const useCreatePortalSubPartner = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPortalSubPartner>>, TError,{data: BodyType<SubPartnerCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPortalSubPartner>>,
+        TError,
+        {data: BodyType<SubPartnerCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreatePortalSubPartnerMutationOptions(options));
+    }
+
+export const getUpdatePortalSubPartnerUrl = (id: string,) => {
+
+
+
+
+  return `/api/portal/sub-partners/${id}`
+}
+
+/**
+ * Only the share percentage and suspension flag can be changed. The sub-partner must belong to the caller.
+ * @summary Update one of the authenticated partner's sub-partners
+ */
+export const updatePortalSubPartner = async (id: string,
+    subPartnerUpdateInput: SubPartnerUpdateInput, options?: RequestInit): Promise<SubPartner> => {
+
+  return customFetch<SubPartner>(getUpdatePortalSubPartnerUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subPartnerUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdatePortalSubPartnerMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortalSubPartner>>, TError,{id: string;data: BodyType<SubPartnerUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePortalSubPartner>>, TError,{id: string;data: BodyType<SubPartnerUpdateInput>}, TContext> => {
+
+const mutationKey = ['updatePortalSubPartner'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePortalSubPartner>>, {id: string;data: BodyType<SubPartnerUpdateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePortalSubPartner(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePortalSubPartnerMutationResult = NonNullable<Awaited<ReturnType<typeof updatePortalSubPartner>>>
+    export type UpdatePortalSubPartnerMutationBody = BodyType<SubPartnerUpdateInput>
+    export type UpdatePortalSubPartnerMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update one of the authenticated partner's sub-partners
+ */
+export const useUpdatePortalSubPartner = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePortalSubPartner>>, TError,{id: string;data: BodyType<SubPartnerUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePortalSubPartner>>,
+        TError,
+        {id: string;data: BodyType<SubPartnerUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePortalSubPartnerMutationOptions(options));
     }
 
 export const getListShopsUrl = (params?: ListShopsParams,) => {

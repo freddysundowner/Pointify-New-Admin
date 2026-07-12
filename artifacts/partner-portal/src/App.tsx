@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import Shops from "@/pages/shops";
 import Users from "@/pages/users";
 import Leads from "@/pages/leads";
+import SubPartners from "@/pages/sub-partners";
 import Transactions from "@/pages/transactions";
 import Withdraw from "@/pages/withdraw";
 import Profile from "@/pages/profile";
@@ -89,6 +90,9 @@ function Router() {
       </Route>
       <Route path="/leads">
         <ProtectedRoute component={Leads} />
+      </Route>
+      <Route path="/team">
+        <ProtectedRoute component={SubPartners} />
       </Route>
       <Route path="/transactions">
         <ProtectedRoute component={Transactions} />

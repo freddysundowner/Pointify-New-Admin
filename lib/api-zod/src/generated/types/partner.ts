@@ -31,6 +31,10 @@ export interface Partner {
   code?: string | null;
   /** @nullable */
   createAt?: string | null;
+  /** Master partner id when this is a sub-partner (may come back populated as an object). */
+  parent?: string | GenericObject | null;
+  /** @nullable */
+  subCommission?: number | null;
   shopCount?: number;
   userCount?: number;
   shops?: GenericObject[];

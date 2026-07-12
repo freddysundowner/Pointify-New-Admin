@@ -754,6 +754,102 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /portal/sub-partners:
+    get:
+      operationId: listPortalSubPartners
+      tags: [portal]
+      summary: Sub-partners created by the authenticated partner
+      description: >-
+        Returns the sub-partners whose parent is the authenticated partner.
+        Sub-partners themselves always get an empty list.
+      responses:
+        "200":
+          description: Sub-partners
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SubPartner" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    post:
+      operationId: createPortalSubPartner
+      tags: [portal]
+      summary: Create a sub-partner under the authenticated partner
+      description: >-
+        Only master partners (no parent) may create sub-partners — one level
+        deep. Registers the account upstream (which emails the new partner a
+        welcome message, generating a random password when none is given), then
+        links it to the caller with the given share percentage. subCommission
+        is the percentage OF THE CALLER'S commission award the sub receives
+        (1-99).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubPartnerCreateInput" }
+      responses:
+        "201":
+          description: Created sub-partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubPartner" }
+        "400":
+          description: Duplicate email or invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Caller is a sub-partner and cannot create sub-partners
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/sub-partners/{id}:
+    put:
+      operationId: updatePortalSubPartner
+      tags: [portal]
+      summary: Update one of the authenticated partner's sub-partners
+      description: >-
+        Only the share percentage and suspension flag can be changed. The
+        sub-partner must belong to the caller.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubPartnerUpdateInput" }
+      responses:
+        "200":
+          description: Updated sub-partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubPartner" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Sub-partner not found or not yours
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /shops:
     get:
       operationId: listShops
@@ -1553,6 +1649,13 @@ components:
         active: { type: ["boolean", "null"] }
         code: { type: ["string", "null"] }
         createAt: { type: ["string", "null"] }
+        parent:
+          description: Master partner id when this is a sub-partner (may come back populated as an object).
+          oneOf:
+            - { type: string }
+            - { $ref: "#/components/schemas/GenericObject" }
+            - { type: "null" }
+        subCommission: { type: ["number", "null"] }
         shopCount: { type: number }
         userCount: { type: number }
         shops:
@@ -1706,6 +1809,53 @@ components:
       properties:
         status: { type: boolean }
         message: { type: string }
+
+    SubPartner:
+      type: object
+      additionalProperties: true
+      required: [_id]
+      properties:
+        _id: { type: string }
+        name: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        phonenumber: { type: ["string", "null"] }
+        country: { type: ["string", "null"] }
+        code: { type: ["string", "null"] }
+        subCommission:
+          type: ["number", "null"]
+          description: Percentage of the master's commission award this sub-partner receives.
+        wallet: { type: ["number", "null"] }
+        blocked: { type: ["boolean", "null"] }
+        active: { type: ["boolean", "null"] }
+        createAt: { type: ["string", "null"] }
+        userCount: { type: number }
+        shopCount: { type: number }
+
+    SubPartnerCreateInput:
+      type: object
+      required: [name, email, phonenumber, subCommission]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phonenumber: { type: string }
+        country: { type: string }
+        subCommission:
+          type: number
+          minimum: 1
+          maximum: 99
+          description: Percentage of the caller's commission award the sub receives.
+        password:
+          type: string
+          description: Optional — when omitted, upstream generates one and emails it to the sub-partner.
+
+    SubPartnerUpdateInput:
+      type: object
+      properties:
+        subCommission:
+          type: number
+          minimum: 1
+          maximum: 99
+        blocked: { type: boolean }
 
     Lead:
       type: object

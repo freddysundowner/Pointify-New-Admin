@@ -477,6 +477,8 @@ export const ListPartnersResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -519,6 +521,8 @@ export const GetPartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -555,6 +559,8 @@ export const UpdatePartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -579,6 +585,8 @@ export const DeletePartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -610,6 +618,8 @@ export const CreditPartnerResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -699,6 +709,8 @@ export const GetPortalProfileResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -732,6 +744,8 @@ export const UpdatePortalProfileResponse = zod.object({
   "active": zod.boolean().nullish(),
   "code": zod.string().nullish(),
   "createAt": zod.string().nullish(),
+  "parent": zod.union([zod.string(),zod.record(zod.string(), zod.unknown()),zod.null()]).optional().describe('Master partner id when this is a sub-partner (may come back populated as an object).'),
+  "subCommission": zod.number().nullish(),
   "shopCount": zod.number().optional(),
   "userCount": zod.number().optional(),
   "shops": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
@@ -1012,6 +1026,80 @@ export const DeletePortalLeadResponse = zod.object({
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
   "updatedAt": zod.string().nullish()
+})
+
+
+/**
+ * Returns the sub-partners whose parent is the authenticated partner. Sub-partners themselves always get an empty list.
+ * @summary Sub-partners created by the authenticated partner
+ */
+export const ListPortalSubPartnersResponseItem = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "code": zod.string().nullish(),
+  "subCommission": zod.number().nullish().describe('Percentage of the master\'s commission award this sub-partner receives.'),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "createAt": zod.string().nullish(),
+  "userCount": zod.number().optional(),
+  "shopCount": zod.number().optional()
+})
+export const ListPortalSubPartnersResponse = zod.array(ListPortalSubPartnersResponseItem)
+
+
+/**
+ * Only master partners (no parent) may create sub-partners — one level deep. Registers the account upstream (which emails the new partner a welcome message, generating a random password when none is given), then links it to the caller with the given share percentage. subCommission is the percentage OF THE CALLER'S commission award the sub receives (1-99).
+ * @summary Create a sub-partner under the authenticated partner
+ */
+export const createPortalSubPartnerBodySubCommissionMax = 99;
+
+
+
+export const CreatePortalSubPartnerBody = zod.object({
+  "name": zod.string(),
+  "email": zod.string(),
+  "phonenumber": zod.string(),
+  "country": zod.string().optional(),
+  "subCommission": zod.number().min(1).max(createPortalSubPartnerBodySubCommissionMax).describe('Percentage of the caller\'s commission award the sub receives.'),
+  "password": zod.string().optional().describe('Optional — when omitted, upstream generates one and emails it to the sub-partner.')
+})
+
+
+/**
+ * Only the share percentage and suspension flag can be changed. The sub-partner must belong to the caller.
+ * @summary Update one of the authenticated partner's sub-partners
+ */
+export const UpdatePortalSubPartnerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updatePortalSubPartnerBodySubCommissionMax = 99;
+
+
+
+export const UpdatePortalSubPartnerBody = zod.object({
+  "subCommission": zod.number().min(1).max(updatePortalSubPartnerBodySubCommissionMax).optional(),
+  "blocked": zod.boolean().optional()
+})
+
+export const UpdatePortalSubPartnerResponse = zod.object({
+  "_id": zod.string(),
+  "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "code": zod.string().nullish(),
+  "subCommission": zod.number().nullish().describe('Percentage of the master\'s commission award this sub-partner receives.'),
+  "wallet": zod.number().nullish(),
+  "blocked": zod.boolean().nullish(),
+  "active": zod.boolean().nullish(),
+  "createAt": zod.string().nullish(),
+  "userCount": zod.number().optional(),
+  "shopCount": zod.number().optional()
 })
 
 

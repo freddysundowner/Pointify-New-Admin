@@ -8,16 +8,19 @@ import {
   ArrowRightLeft,
   Banknote,
   UserCircle,
+  Handshake,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { useGetPortalProfile } from "@workspace/api-client-react";
 
 const NAV_LINKS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Target },
   { href: "/users", label: "Referred Users", icon: Users },
   { href: "/shops", label: "Referred Shops", icon: Store },
+  { href: "/team", label: "My Partners", icon: Handshake, masterOnly: true },
   { href: "/transactions", label: "Transactions", icon: ArrowRightLeft },
   { href: "/withdraw", label: "Withdraw", icon: Banknote },
   { href: "/profile", label: "My Profile", icon: UserCircle },
@@ -29,6 +32,7 @@ const BOTTOM_NAV = [
   { href: "/leads", label: "Leads", icon: Target },
   { href: "/shops", label: "Shops", icon: Store },
   { href: "/users", label: "Users", icon: Users },
+  { href: "/team", label: "Partners", icon: Handshake, masterOnly: true },
   { href: "/transactions", label: "Activity", icon: ArrowRightLeft },
   { href: "/withdraw", label: "Withdraw", icon: Banknote },
 ];
@@ -36,6 +40,12 @@ const BOTTOM_NAV = [
 export function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { logout, userdata } = useAuth();
+  // Sub-partners (accounts with a parent) don't manage their own sub-partners,
+  // so hide the "My Partners" destination for them.
+  const { data: profile } = useGetPortalProfile();
+  const isSubPartner = Boolean(profile?.parent);
+  const navLinks = NAV_LINKS.filter((l) => !(l.masterOnly && isSubPartner));
+  const bottomNav = BOTTOM_NAV.filter((l) => !(l.masterOnly && isSubPartner));
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -48,7 +58,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="flex-1 overflow-auto py-4 px-3 space-y-1">
-          {NAV_LINKS.map((link) => {
+          {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location === link.href;
             return (
@@ -123,8 +133,8 @@ export function Shell({ children }: { children: ReactNode }) {
           className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="grid grid-cols-6">
-            {BOTTOM_NAV.map((link) => {
+          <div className={bottomNav.length === 7 ? "grid grid-cols-7" : "grid grid-cols-6"}>
+            {bottomNav.map((link) => {
               const Icon = link.icon;
               const isActive = location === link.href;
               return (

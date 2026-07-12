@@ -12,3 +12,9 @@ id = "jTJR6KZ3ITsehPtB8qG9w"
 uri = "file://pointify-leads-backend.zip"
 type = "unspecified"
 title = "pointify-leads-backend.zip — all files to add to your POS server"
+
+[[outputs]]
+id = "iW1a4xGSTTo9OOQihcPER"
+uri = "file://pointify-partners-backend.zip"
+type = "unspecified"
+title = "Pointify Partners Backend — Sub-Partners & Commission Fix"

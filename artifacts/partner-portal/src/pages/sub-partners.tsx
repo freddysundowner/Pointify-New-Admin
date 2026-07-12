@@ -1,0 +1,466 @@
+import { useState } from "react";
+import {
+  useListPortalSubPartners,
+  getListPortalSubPartnersQueryKey,
+  useCreatePortalSubPartner,
+  useUpdatePortalSubPartner,
+  type SubPartner,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Users,
+  Loader2,
+  Plus,
+  Pencil,
+  Phone,
+  Mail,
+  Percent,
+} from "lucide-react";
+
+function formatKes(n: unknown): string {
+  const num = Number(n);
+  return `KES ${Number.isFinite(num) ? num.toLocaleString("en-KE") : "0"}`;
+}
+
+function formatDate(raw: unknown): string {
+  if (!raw) return "—";
+  const d = new Date(String(raw));
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function StatusBadge({ partner }: { partner: SubPartner }) {
+  if (partner.blocked) {
+    return <Badge variant="destructive">Suspended</Badge>;
+  }
+  return (
+    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+      Active
+    </Badge>
+  );
+}
+
+type CreateDraft = {
+  name: string;
+  email: string;
+  phonenumber: string;
+  country: string;
+  subCommission: string;
+  password: string;
+};
+
+const EMPTY_DRAFT: CreateDraft = {
+  name: "",
+  email: "",
+  phonenumber: "",
+  country: "Kenya",
+  subCommission: "",
+  password: "",
+};
+
+export default function SubPartners() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: partners, isLoading, isError } = useListPortalSubPartners();
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [draft, setDraft] = useState<CreateDraft>(EMPTY_DRAFT);
+
+  const [editing, setEditing] = useState<SubPartner | null>(null);
+  const [editShare, setEditShare] = useState("");
+  const [editSuspended, setEditSuspended] = useState(false);
+
+  const createMutation = useCreatePortalSubPartner();
+  const updateMutation = useUpdatePortalSubPartner();
+
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: getListPortalSubPartnersQueryKey() });
+
+  const shareInvalid = (value: string) => {
+    const n = Number(value);
+    return !Number.isFinite(n) || n < 1 || n > 99;
+  };
+
+  const submitCreate = () => {
+    if (!draft.name.trim() || !draft.email.trim() || !draft.phonenumber.trim()) {
+      toast({ title: "Name, email and phone number are required", variant: "destructive" });
+      return;
+    }
+    if (shareInvalid(draft.subCommission)) {
+      toast({ title: "Share percentage must be between 1 and 99", variant: "destructive" });
+      return;
+    }
+    createMutation.mutate(
+      {
+        data: {
+          name: draft.name.trim(),
+          email: draft.email.trim(),
+          phonenumber: draft.phonenumber.trim(),
+          subCommission: Number(draft.subCommission),
+          ...(draft.country.trim() ? { country: draft.country.trim() } : {}),
+          ...(draft.password ? { password: draft.password } : {}),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Partner added",
+            description: draft.password
+              ? `${draft.name.trim()} can now log in to this portal.`
+              : `${draft.name.trim()} will receive their login details by email.`,
+          });
+          setCreateOpen(false);
+          setDraft(EMPTY_DRAFT);
+          refresh();
+        },
+        onError: (error: unknown) => {
+          const message =
+            (error as { body?: { error?: string; message?: string } })?.body?.error ??
+            (error as { body?: { error?: string; message?: string } })?.body?.message ??
+            "Could not add the partner. The email may already be registered.";
+          toast({ title: "Adding partner failed", description: message, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const openEdit = (partner: SubPartner) => {
+    setEditing(partner);
+    setEditShare(String(partner.subCommission ?? ""));
+    setEditSuspended(Boolean(partner.blocked));
+  };
+
+  const submitEdit = () => {
+    if (!editing) return;
+    if (shareInvalid(editShare)) {
+      toast({ title: "Share percentage must be between 1 and 99", variant: "destructive" });
+      return;
+    }
+    updateMutation.mutate(
+      {
+        id: editing._id,
+        data: { subCommission: Number(editShare), blocked: editSuspended },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Partner updated" });
+          setEditing(null);
+          refresh();
+        },
+        onError: () =>
+          toast({ title: "Update failed", description: "Please try again.", variant: "destructive" }),
+      },
+    );
+  };
+
+  const rows = partners ?? [];
+
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">My Partners</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Add partners under you. They share their own referral code, and when their
+            customers subscribe, they receive their share of your commission automatically.
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" />
+          Add partner
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <Card>
+          <CardContent className="space-y-3 py-6">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-5/6" />
+            <Skeleton className="h-5 w-2/3" />
+          </CardContent>
+        </Card>
+      ) : isError ? (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            Couldn't load your partners. Please try again.
+          </CardContent>
+        </Card>
+      ) : rows.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Users className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="font-medium">No partners yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add your first partner to grow your network. You set what percentage of
+                your commission they earn.
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" />
+              Add partner
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <Card className="hidden md:block">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Partner</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Referral code</TableHead>
+                    <TableHead className="text-right">Share of your commission</TableHead>
+                    <TableHead className="text-right">Referred users</TableHead>
+                    <TableHead className="text-right">Wallet</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((p) => (
+                    <TableRow key={p._id}>
+                      <TableCell className="font-medium">{p.name ?? "—"}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">{p.email ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground">{p.phonenumber ?? ""}</div>
+                      </TableCell>
+                      <TableCell>
+                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{p.code ?? "—"}</code>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {p.subCommission != null ? `${p.subCommission}%` : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">{p.userCount ?? 0}</TableCell>
+                      <TableCell className="text-right">{formatKes(p.wallet)}</TableCell>
+                      <TableCell>
+                        <StatusBadge partner={p} />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{formatDate(p.createAt)}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(p)} aria-label="Edit partner">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {rows.map((p) => (
+              <Card key={p._id}>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{p.name ?? "—"}</p>
+                      <p className="text-xs text-muted-foreground">Joined {formatDate(p.createAt)}</p>
+                    </div>
+                    <StatusBadge partner={p} />
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    {p.email && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5" />
+                        {p.email}
+                      </div>
+                    )}
+                    {p.phonenumber && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" />
+                        {p.phonenumber}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Percent className="h-3.5 w-3.5" />
+                      {p.subCommission != null ? `${p.subCommission}% of your commission` : "Share not set"}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t pt-3 text-sm">
+                    <div className="flex gap-4">
+                      <span>
+                        <span className="font-medium">{p.userCount ?? 0}</span>{" "}
+                        <span className="text-muted-foreground">users</span>
+                      </span>
+                      <span className="font-medium">{formatKes(p.wallet)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{p.code ?? "—"}</code>
+                      <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={(open) => !createMutation.isPending && setCreateOpen(open)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add a partner</DialogTitle>
+            <DialogDescription>
+              They get their own referral code and portal login. You choose what percentage
+              of your commission they earn on their referrals.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="sp-name">Full name</Label>
+              <Input
+                id="sp-name"
+                value={draft.name}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sp-email">Email</Label>
+              <Input
+                id="sp-email"
+                type="email"
+                value={draft.email}
+                onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="sp-phone">Phone number</Label>
+                <Input
+                  id="sp-phone"
+                  value={draft.phonenumber}
+                  onChange={(e) => setDraft({ ...draft, phonenumber: e.target.value })}
+                  placeholder="07..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sp-country">Country</Label>
+                <Input
+                  id="sp-country"
+                  value={draft.country}
+                  onChange={(e) => setDraft({ ...draft, country: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sp-share">Their share of your commission (%)</Label>
+              <Input
+                id="sp-share"
+                type="number"
+                min={1}
+                max={99}
+                value={draft.subCommission}
+                onChange={(e) => setDraft({ ...draft, subCommission: e.target.value })}
+                placeholder="e.g. 30"
+              />
+              <p className="text-xs text-muted-foreground">
+                Example: if your commission on a sale is KES 1,000 and their share is 30%,
+                they get KES 300 and you keep KES 700.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sp-password">Password (optional)</Label>
+              <Input
+                id="sp-password"
+                type="password"
+                value={draft.password}
+                onChange={(e) => setDraft({ ...draft, password: e.target.value })}
+                placeholder="Leave blank to email them one"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={createMutation.isPending}>
+              Cancel
+            </Button>
+            <Button onClick={submitCreate} disabled={createMutation.isPending}>
+              {createMutation.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Add partner
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={editing !== null} onOpenChange={(open) => !updateMutation.isPending && !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit {editing?.name ?? "partner"}</DialogTitle>
+            <DialogDescription>
+              Change their share of your commission or suspend their account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="sp-edit-share">Share of your commission (%)</Label>
+              <Input
+                id="sp-edit-share"
+                type="number"
+                min={1}
+                max={99}
+                value={editShare}
+                onChange={(e) => setEditShare(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <p className="text-sm font-medium">Suspended</p>
+                <p className="text-xs text-muted-foreground">
+                  A suspended partner cannot log in or withdraw.
+                </p>
+              </div>
+              <Switch checked={editSuspended} onCheckedChange={setEditSuspended} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={updateMutation.isPending}>
+              Cancel
+            </Button>
+            <Button onClick={submitEdit} disabled={updateMutation.isPending}>
+              {updateMutation.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
