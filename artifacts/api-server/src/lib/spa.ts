@@ -17,19 +17,42 @@ function resolveDist(envVar: string, fallbackRelative: string): string {
 
 // A router that serves a built SPA: static assets first, then an index.html
 // fallback for client-side routes (deep links).
+// Vite emits hashed filenames under /assets (e.g. index-B3xk9d2P.js), which are
+// safe to cache forever — a new build produces new names. Everything else
+// (index.html above all) must revalidate on every load so a fresh deploy is
+// picked up immediately instead of a stale shell pointing at deleted bundles.
 function spaRouter(distDir: string): Router {
   const router = express.Router();
-  router.use(express.static(distDir, { index: false, maxAge: "1h" }));
+  router.use(
+    express.static(distDir, {
+      index: false,
+      setHeaders(res, filePath) {
+        const isHashedAsset = filePath.includes(
+          `${path.sep}assets${path.sep}`,
+        );
+        res.setHeader(
+          "Cache-Control",
+          isHashedAsset
+            ? "public, max-age=31536000, immutable"
+            : "no-cache, must-revalidate",
+        );
+      },
+    }),
+  );
   router.use((req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
       next();
       return;
     }
-    res.sendFile(path.join(distDir, "index.html"), (err) => {
-      if (err) {
-        next(err);
-      }
-    });
+    res.sendFile(
+      path.join(distDir, "index.html"),
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
+      (err) => {
+        if (err) {
+          next(err);
+        }
+      },
+    );
   });
   return router;
 }

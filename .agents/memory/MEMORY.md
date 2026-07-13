@@ -22,6 +22,7 @@
 - [Sales future-dating](sales-future-dating.md) — "future-dated" sale = EAT calendar-day later than today (not raw instant); keep them inline+badged, never default-hidden.
 - [Leads upstream contract](leads-upstream-contract.md) — /leads needs `affiliate` (single or comma $in list); staging may lag the deliverable zip; admin gate = decoded-JWT admin id.
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
+- [Self-hosted deploy & cache provenance](self-hosted-deploy-cache.md) — user self-hosts on a VPS; check /api/healthz buildTime / X-Build-Time before blaming code; probe upstream with the proxy's exact query shapes.
 - [Sub-partners feature](sub-partners-feature.md) — parent+subCommission on Affliate; proxy is the only authz layer (strip parent/subCommission from self-serve writes); sub gets % OF master's award.
 - [Partner leads CRM proxy model](leads-crm-proxy-model.md) — leads live in user's own upstream Mongo (pointify-leads-backend/); scoped by affiliate=session.aid; optional LEADS_PROXY_SECRET (x-proxy-secret) locks upstream /leads to the proxy.
 - [User→partner assignment](user-partner-assignment.md) — user↔partner link is Admin.`affliate` (set only at signup); upstream updateAdmin DROPS it, so reassigning needs an upstream one-line change.

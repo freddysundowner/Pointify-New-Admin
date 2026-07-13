@@ -7,6 +7,7 @@
  */
 export interface HealthStatus {
   status: string;
+  buildTime?: string;
 }
 
 export interface GenericObject { [key: string]: unknown }

@@ -22,6 +22,12 @@ async function buildAll() {
     outdir: distDir,
     outExtension: { ".js": ".mjs" },
     logLevel: "info",
+    // Bake the build timestamp into the bundle so /api/healthz (and the
+    // X-Build-Time header) can prove which build is actually running in
+    // production — the first thing to check when a deploy "didn't take".
+    define: {
+      "process.env.BUILD_TIME": JSON.stringify(new Date().toISOString()),
+    },
     // Some packages may not be bundleable, so we externalize them, we can add more here as needed.
     // Some of the packages below may not be imported or installed, but we're adding them in case they are in the future.
     // Examples of unbundleable packages:

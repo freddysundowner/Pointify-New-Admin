@@ -7,6 +7,13 @@ import { mountSpa } from "./lib/spa";
 
 const app: Express = express();
 
+// API responses must never be cached — not by the browser, not by any reverse
+// proxy (nginx/CDN) sitting in front of a self-hosted deployment. A cached API
+// error (e.g. a 404 from an older build) would otherwise keep "coming back"
+// even after the code is updated. Disabling ETags also stops conditional 304
+// revalidation on API routes; static assets keep their own ETags.
+app.set("etag", false);
+
 app.use(
   pinoHttp({
     logger,
@@ -30,6 +37,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api", (_req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  res.set("X-Build-Time", process.env.BUILD_TIME ?? "dev");
+  next();
+});
 app.use("/api", router);
 
 // Serve the admin + partner SPAs from this same process (host-based). Registered

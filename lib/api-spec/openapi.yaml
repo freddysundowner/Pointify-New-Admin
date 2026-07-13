@@ -1737,6 +1737,8 @@ components:
       properties:
         status:
           type: string
+        buildTime:
+          type: string
       required:
         - status
 
