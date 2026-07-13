@@ -228,9 +228,11 @@ export default function Leads() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
 
-  // Team scope. Masters can widen the view to their whole team ("all") or one
-  // sub-partner (their id); anything other than "own" is a read-only view.
+  // Team scope. Masters can view their whole team ("all"), just themselves
+  // ("own"), or one sub-partner (their id). Sub-partner leads are always
+  // read-only for the master; their own leads stay editable in any view.
   const [scope, setScope] = useState<string>("own");
+  const [scopeTouched, setScopeTouched] = useState(false);
   const { data: profile } = useGetPortalProfile();
   const isMaster = Boolean(profile?._id) && !profile?.parent;
   const { data: subPartners } = useListPortalSubPartners({
@@ -241,8 +243,25 @@ export default function Leads() {
   });
   const subs = useMemo(() => subPartners ?? [], [subPartners]);
   const hasTeam = isMaster && subs.length > 0;
-  const readOnly = scope !== "own";
-  const showOwner = readOnly;
+
+  // Masters with a team land on the full team pipeline by default — otherwise
+  // sub-partner leads are invisible until they discover the scope selector.
+  useEffect(() => {
+    if (hasTeam && !scopeTouched) setScope("all");
+  }, [hasTeam, scopeTouched]);
+
+  const teamView = scope !== "own";
+  const showOwner = teamView;
+
+  // A master may edit/delete only their own leads, in any view.
+  function isOwnLead(lead: Lead): boolean {
+    const aff = (lead as Record<string, unknown>)["affiliate"];
+    const id =
+      aff && typeof aff === "object"
+        ? String((aff as Record<string, unknown>)["_id"] ?? "")
+        : String(aff ?? "");
+    return Boolean(profile?._id) && id === profile?._id;
+  }
 
   // Debounce the free-text search so we don't hit the API on every keystroke.
   useEffect(() => {
@@ -438,9 +457,11 @@ export default function Leads() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
           <p className="text-muted-foreground mt-1">
-            {readOnly
-              ? "Viewing your team's pipeline (read-only)."
-              : "Track prospective businesses through your sales pipeline."}
+            {scope === "all"
+              ? "Your team's pipeline — partner leads are view-only."
+              : teamView
+                ? "Viewing this partner's pipeline (read-only)."
+                : "Track prospective businesses through your sales pipeline."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -448,6 +469,7 @@ export default function Leads() {
             <Select
               value={scope}
               onValueChange={(v) => {
+                setScopeTouched(true);
                 setScope(v);
                 setPage(1);
               }}
@@ -466,12 +488,10 @@ export default function Leads() {
               </SelectContent>
             </Select>
           )}
-          {!readOnly && (
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Lead
-            </Button>
-          )}
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Lead
+          </Button>
         </div>
       </div>
 
@@ -580,11 +600,11 @@ export default function Leads() {
               <p className="text-muted-foreground">
                 {hasFilters
                   ? "Try adjusting your search or filters."
-                  : readOnly
+                  : teamView
                     ? "No leads in this view yet."
                     : "Add your first lead to start building your pipeline."}
               </p>
-              {!hasFilters && !readOnly && (
+              {!hasFilters && (
                 <Button onClick={openCreate} className="mt-4 gap-2">
                   <Plus className="h-4 w-4" />
                   Add Lead
@@ -646,7 +666,7 @@ export default function Leads() {
                       ) : (
                         <span />
                       )}
-                      {!readOnly && (
+                      {isOwnLead(lead) && (
                         <div className="flex items-center gap-1">
                           <Button
                             variant="ghost"
@@ -689,9 +709,7 @@ export default function Leads() {
                       <TableHead>Stage</TableHead>
                       <TableHead>Source</TableHead>
                       <TableHead>Next Follow-Up</TableHead>
-                      {!readOnly && (
-                        <TableHead className="text-right">Actions</TableHead>
-                      )}
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -746,8 +764,8 @@ export default function Leads() {
                         <TableCell className="text-sm">
                           <FollowUpLabel lead={lead} />
                         </TableCell>
-                        {!readOnly && (
-                          <TableCell className="text-right">
+                        <TableCell className="text-right">
+                          {isOwnLead(lead) ? (
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 variant="ghost"
@@ -774,8 +792,12 @@ export default function Leads() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                          </TableCell>
-                        )}
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              View only
+                            </span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
