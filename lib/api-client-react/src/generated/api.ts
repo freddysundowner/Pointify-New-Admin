@@ -3438,7 +3438,7 @@ export const getUpdatePortalSubPartnerUrl = (id: string,) => {
 }
 
 /**
- * Only the share percentage and suspension flag can be changed. The sub-partner must belong to the caller.
+ * The share percentage, suspension flag and login password can be changed. The sub-partner must belong to the caller. When a password is set, upstream emails the sub-partner a notice with the new password.
  * @summary Update one of the authenticated partner's sub-partners
  */
 export const updatePortalSubPartner = async (id: string,

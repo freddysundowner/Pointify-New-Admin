@@ -1228,7 +1228,7 @@ export const CreatePortalSubPartnerBody = zod.object({
 
 
 /**
- * Only the share percentage and suspension flag can be changed. The sub-partner must belong to the caller.
+ * The share percentage, suspension flag and login password can be changed. The sub-partner must belong to the caller. When a password is set, upstream emails the sub-partner a notice with the new password.
  * @summary Update one of the authenticated partner's sub-partners
  */
 export const UpdatePortalSubPartnerParams = zod.object({
@@ -1237,11 +1237,14 @@ export const UpdatePortalSubPartnerParams = zod.object({
 
 export const updatePortalSubPartnerBodySubCommissionMax = 99;
 
+export const updatePortalSubPartnerBodyPasswordMin = 6;
+
 
 
 export const UpdatePortalSubPartnerBody = zod.object({
   "subCommission": zod.number().min(1).max(updatePortalSubPartnerBodySubCommissionMax).optional(),
-  "blocked": zod.boolean().optional()
+  "blocked": zod.boolean().optional(),
+  "password": zod.string().min(updatePortalSubPartnerBodyPasswordMin).optional().describe('Optional — set a new login password for the sub-partner. Upstream hashes it and emails the sub-partner a \"password changed\" notice containing the new password.\n')
 })
 
 export const UpdatePortalSubPartnerResponse = zod.object({

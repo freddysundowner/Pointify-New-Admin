@@ -953,8 +953,12 @@ router.post("/portal/sub-partners", async (req, res) => {
   }
 });
 
-// PUT /portal/sub-partners/:id — change the share % or suspend/unsuspend.
-// Ownership is verified against the live upstream record before writing.
+// PUT /portal/sub-partners/:id — change the share %, suspend/unsuspend, or set
+// a new login password. Ownership is verified against the live upstream record
+// before writing. When a password is sent, upstream bcrypt-hashes it and emails
+// the sub-partner a "password changed" notice — but that email template reads
+// the recipient's name/email from the REQUEST BODY, so we must echo the current
+// name/email alongside the password or the notification goes nowhere.
 router.put("/portal/sub-partners/:id", async (req, res) => {
   const session = requireSession(req, res);
   if (!session) return;
@@ -972,7 +976,15 @@ router.put("/portal/sub-partners/:id", async (req, res) => {
   if (typeof body["blocked"] === "boolean") {
     update["blocked"] = body["blocked"];
   }
-  if (Object.keys(update).length === 0) {
+  let newPassword: string | undefined;
+  if (body["password"] !== undefined) {
+    if (typeof body["password"] !== "string" || body["password"].length < 6) {
+      res.status(400).json({ error: "Password must be at least 6 characters" });
+      return;
+    }
+    newPassword = body["password"];
+  }
+  if (Object.keys(update).length === 0 && newPassword === undefined) {
     res.status(400).json({ error: "Nothing to update" });
     return;
   }
@@ -986,6 +998,12 @@ router.put("/portal/sub-partners/:id", async (req, res) => {
     if (current.status >= 400 || parentIdOf(current.data) !== session.aid) {
       res.status(404).json({ error: "Sub-partner not found" });
       return;
+    }
+    if (newPassword !== undefined) {
+      const rec = (current.data ?? {}) as Record<string, unknown>;
+      update["password"] = newPassword;
+      if (typeof rec["name"] === "string") update["name"] = rec["name"];
+      if (typeof rec["email"] === "string") update["email"] = rec["email"];
     }
     const result = await upstreamFetch({
       method: "PUT",

@@ -13,4 +13,10 @@ export interface SubPartnerUpdateInput {
      */
   subCommission?: number;
   blocked?: boolean;
+  /**
+     * Optional — set a new login password for the sub-partner. Upstream hashes it and emails the sub-partner a "password changed" notice containing the new password.
+
+     * @minLength 6
+     */
+  password?: string;
 }

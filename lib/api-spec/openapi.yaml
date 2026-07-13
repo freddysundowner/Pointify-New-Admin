@@ -931,8 +931,9 @@ paths:
       tags: [portal]
       summary: Update one of the authenticated partner's sub-partners
       description: >-
-        Only the share percentage and suspension flag can be changed. The
-        sub-partner must belong to the caller.
+        The share percentage, suspension flag and login password can be
+        changed. The sub-partner must belong to the caller. When a password is
+        set, upstream emails the sub-partner a notice with the new password.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
@@ -1970,6 +1971,13 @@ components:
           minimum: 1
           maximum: 99
         blocked: { type: boolean }
+        password:
+          type: string
+          minLength: 6
+          description: >
+            Optional — set a new login password for the sub-partner. Upstream
+            hashes it and emails the sub-partner a "password changed" notice
+            containing the new password.
 
     Lead:
       type: object

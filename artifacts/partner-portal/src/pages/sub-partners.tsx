@@ -94,6 +94,7 @@ export default function SubPartners() {
   const [editing, setEditing] = useState<SubPartner | null>(null);
   const [editShare, setEditShare] = useState("");
   const [editSuspended, setEditSuspended] = useState(false);
+  const [editPassword, setEditPassword] = useState("");
 
   const createMutation = useCreatePortalSubPartner();
   const updateMutation = useUpdatePortalSubPartner();
@@ -153,6 +154,7 @@ export default function SubPartners() {
     setEditing(partner);
     setEditShare(String(partner.subCommission ?? ""));
     setEditSuspended(Boolean(partner.blocked));
+    setEditPassword("");
   };
 
   const submitEdit = () => {
@@ -161,15 +163,30 @@ export default function SubPartners() {
       toast({ title: "Share percentage must be between 1 and 99", variant: "destructive" });
       return;
     }
+    const password = editPassword.trim();
+    if (password && password.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
     updateMutation.mutate(
       {
         id: editing._id,
-        data: { subCommission: Number(editShare), blocked: editSuspended },
+        data: {
+          subCommission: Number(editShare),
+          blocked: editSuspended,
+          ...(password ? { password } : {}),
+        },
       },
       {
         onSuccess: () => {
-          toast({ title: "Partner updated" });
+          toast({
+            title: "Partner updated",
+            description: password
+              ? `${editing.name ?? "The partner"} was emailed their new password.`
+              : undefined,
+          });
           setEditing(null);
+          setEditPassword("");
           refresh();
         },
         onError: () =>
@@ -425,7 +442,8 @@ export default function SubPartners() {
           <DialogHeader>
             <DialogTitle>Edit {editing?.name ?? "partner"}</DialogTitle>
             <DialogDescription>
-              Change their share of your commission or suspend their account.
+              Change their share of your commission, set a new password, or
+              suspend their account.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -439,6 +457,20 @@ export default function SubPartners() {
                 value={editShare}
                 onChange={(e) => setEditShare(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sp-edit-password">New password (optional)</Label>
+              <Input
+                id="sp-edit-password"
+                type="password"
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                placeholder="Leave blank to keep current password"
+                autoComplete="new-password"
+              />
+              <p className="text-xs text-muted-foreground">
+                They'll receive an email with the new password.
+              </p>
             </div>
             <div className="flex items-center justify-between rounded-md border p-3">
               <div>
