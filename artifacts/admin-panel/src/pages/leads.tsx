@@ -24,6 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +48,8 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
+  Check,
   CalendarClock,
 } from "lucide-react";
 
@@ -109,6 +124,7 @@ export default function Leads() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   // Lead opened in the read-only detail sheet.
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -187,27 +203,91 @@ export default function Leads() {
             className="pl-9"
           />
         </div>
-        <Select
-          value={partnerFilter}
-          onValueChange={(v) => {
-            setPartnerFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-full lg:w-56">
-            <SelectValue placeholder="All partners" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All partners</SelectItem>
-            {partners.map((p) =>
-              p._id ? (
-                <SelectItem key={p._id} value={p._id}>
-                  {p.name ?? p.email ?? p._id}
-                </SelectItem>
-              ) : null,
-            )}
-          </SelectContent>
-        </Select>
+        {/* Searchable partner picker — the platform can have many partners,
+            so a type-to-filter combobox beats a long dropdown. */}
+        <Popover open={partnerPickerOpen} onOpenChange={setPartnerPickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              role="combobox"
+              aria-expanded={partnerPickerOpen}
+              className="w-full justify-between font-normal lg:w-56"
+            >
+              <span
+                className={
+                  partnerFilter !== "all" ? "truncate" : "text-muted-foreground"
+                }
+              >
+                {partnerFilter !== "all"
+                  ? (partnerNameById.get(partnerFilter) ?? partnerFilter)
+                  : "All partners"}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[--radix-popover-trigger-width] p-0"
+            align="start"
+          >
+            <Command>
+              <CommandInput placeholder="Search partner…" />
+              <CommandList>
+                <CommandEmpty>No partner found.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem
+                    value="__all"
+                    onSelect={() => {
+                      setPartnerFilter("all");
+                      setPage(1);
+                      setPartnerPickerOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={`mr-2 h-4 w-4 ${
+                        partnerFilter === "all" ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    All partners
+                  </CommandItem>
+                  {partners.map((p) =>
+                    p._id ? (
+                      <CommandItem
+                        key={p._id}
+                        value={`${p.name ?? ""} ${p.email ?? ""} ${p._id}`}
+                        onSelect={() => {
+                          setPartnerFilter(
+                            partnerFilter === p._id ? "all" : p._id!,
+                          );
+                          setPage(1);
+                          setPartnerPickerOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={`mr-2 h-4 w-4 ${
+                            partnerFilter === p._id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate">
+                            {p.name ?? p.email ?? p._id}
+                          </span>
+                          {p.name && p.email && (
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {p.email}
+                            </span>
+                          )}
+                        </span>
+                      </CommandItem>
+                    ) : null,
+                  )}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         <Select
           value={stageFilter}
           onValueChange={(v) => {
