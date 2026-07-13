@@ -18,3 +18,9 @@ id = "iW1a4xGSTTo9OOQihcPER"
 uri = "file://pointify-partners-backend.zip"
 type = "unspecified"
 title = "Pointify Partners Backend — Sub-Partners & Commission Fix"
+
+[[outputs]]
+id = "8Qn5T0f_t9VXwU7aT-9OI"
+uri = "file://exports/pointify-partner-poster.jpg"
+type = "image"
+title = "Pointify Partner Recruitment Poster"
