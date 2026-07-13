@@ -683,11 +683,52 @@ export const ListLeadsResponse = zod.object({
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
   "updatedAt": zod.string().nullish(),
-  "affiliate": zod.unknown().optional()
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),
   "currentPage": zod.number().optional()
+})
+
+
+/**
+ * Fetches a single lead across all partners. The proxy scopes the upstream read to the full set of partner ids, so any lead is visible but nothing outside the lead store is reachable. Read-only — admins never modify a partner's pipeline.
+ * @summary One lead with its activity timeline (platform admin view)
+ */
+export const GetLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetLeadResponse = zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
 })
 
 
@@ -947,7 +988,15 @@ export const ListPortalLeadsResponse = zod.object({
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
   "updatedAt": zod.string().nullish(),
-  "affiliate": zod.unknown().optional()
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),
@@ -992,7 +1041,8 @@ export const GetPortalLeadStatsResponse = zod.object({
 
 
 /**
- * @summary Fetch one of the authenticated partner's leads
+ * Returns the caller's own lead. If not found under the caller's own id and the caller is a MASTER partner, the proxy widens the read to the caller's sub-partners so a master can open a team member's lead (read-only — updates and notes remain own-leads-only).
+ * @summary Fetch one lead (own, or a team member's for masters)
  */
 export const GetPortalLeadParams = zod.object({
   "id": zod.coerce.string()
@@ -1011,7 +1061,15 @@ export const GetPortalLeadResponse = zod.object({
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
   "updatedAt": zod.string().nullish(),
-  "affiliate": zod.unknown().optional()
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
 })
 
 
@@ -1047,7 +1105,15 @@ export const UpdatePortalLeadResponse = zod.object({
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
   "updatedAt": zod.string().nullish(),
-  "affiliate": zod.unknown().optional()
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
 })
 
 
@@ -1071,7 +1137,52 @@ export const DeletePortalLeadResponse = zod.object({
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
   "updatedAt": zod.string().nullish(),
-  "affiliate": zod.unknown().optional()
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
+})
+
+
+/**
+ * Appends a free-text note to the lead's activity timeline. Own leads only — the proxy always scopes the write to the session partner's own affiliate id, so masters cannot write on a sub-partner's lead.
+ * @summary Add a note to one of the authenticated partner's leads
+ */
+export const AddPortalLeadActivityParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AddPortalLeadActivityBody = zod.object({
+  "note": zod.string().describe('Free-text note appended to the lead\'s activity timeline.')
+})
+
+export const AddPortalLeadActivityResponse = zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
 })
 
 

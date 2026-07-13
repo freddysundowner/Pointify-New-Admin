@@ -5,6 +5,7 @@
  * Pointify super-admin panel API (proxies the Pointify POS API)
  * OpenAPI spec version: 0.1.0
  */
+import type { LeadActivity } from './leadActivity';
 
 export interface Lead {
   _id?: string;
@@ -30,5 +31,6 @@ export interface Lead {
   /** @nullable */
   updatedAt?: string | null;
   affiliate?: unknown;
+  activities?: LeadActivity[];
   [key: string]: unknown;
  }

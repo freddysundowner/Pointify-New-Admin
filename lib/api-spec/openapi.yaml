@@ -430,6 +430,35 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [partners]
+      summary: One lead with its activity timeline (platform admin view)
+      description: >-
+        Fetches a single lead across all partners. The proxy scopes the upstream
+        read to the full set of partner ids, so any lead is visible but nothing
+        outside the lead store is reachable. Read-only — admins never modify a
+        partner's pipeline.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /portal/auth/register:
     post:
       operationId: portalRegister
@@ -725,7 +754,12 @@ paths:
     get:
       operationId: getPortalLead
       tags: [portal]
-      summary: Fetch one of the authenticated partner's leads
+      summary: Fetch one lead (own, or a team member's for masters)
+      description: >-
+        Returns the caller's own lead. If not found under the caller's own id
+        and the caller is a MASTER partner, the proxy widens the read to the
+        caller's sub-partners so a master can open a team member's lead
+        (read-only — updates and notes remain own-leads-only).
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -783,6 +817,44 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /portal/leads/{id}/activities:
+    post:
+      operationId: addPortalLeadActivity
+      tags: [portal]
+      summary: Add a note to one of the authenticated partner's leads
+      description: >-
+        Appends a free-text note to the lead's activity timeline. Own leads
+        only — the proxy always scopes the write to the session partner's own
+        affiliate id, so masters cannot write on a sub-partner's lead.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadActivityInput" }
+      responses:
+        "200":
+          description: Updated lead including the new activity entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "400":
+          description: Missing or empty note
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "401":
           description: Authentication required
           content:
@@ -1916,6 +1988,31 @@ components:
         # Owner of the lead. A bare id string, or a populated object
         # ({ _id, name, email, phonenumber }) in team/admin list views.
         affiliate: {}
+        # Activity timeline (oldest first). Absent on leads created before the
+        # upstream lead store gained timelines, so render defensively.
+        activities:
+          type: array
+          items: { $ref: "#/components/schemas/LeadActivity" }
+
+    LeadActivity:
+      type: object
+      additionalProperties: true
+      properties:
+        _id: { type: ["string", "null"] }
+        # created | stage_changed | follow_up_set | details_updated | note
+        action: { type: string }
+        from: { type: ["string", "null"] }
+        to: { type: ["string", "null"] }
+        note: { type: ["string", "null"] }
+        at: { type: ["string", "null"] }
+
+    LeadActivityInput:
+      type: object
+      required: [note]
+      properties:
+        note:
+          type: string
+          description: Free-text note appended to the lead's activity timeline.
 
     LeadInput:
       type: object

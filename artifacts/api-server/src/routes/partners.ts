@@ -372,6 +372,60 @@ router.get("/leads", async (req, res) => {
   }
 });
 
+// GET /leads/:id — one lead with its activity timeline (admin, read-only).
+// The upstream requires an `affiliate` scope on every read, so the proxy passes
+// the full comma-separated set of partner ids — any lead is reachable, nothing
+// outside the lead store is.
+router.get("/leads/:id", async (req, res) => {
+  if (!requireBearer(req, res)) return;
+  if (!adminIdFromAuth(authHeaderFrom(req))) {
+    res.status(401).json({ message: "Authentication required" });
+    return;
+  }
+  try {
+    const partners = await upstreamFetch({
+      method: "GET",
+      path: "/affiliates/",
+      authHeader: authHeaderFrom(req),
+    });
+    if (partners.status >= 400) {
+      res.status(partners.status).json(partners.data);
+      return;
+    }
+    const ids = normalizeList(partners.data)
+      .data.map((p) =>
+        p && typeof p === "object" ? String((p as Record<string, unknown>)["_id"] ?? "") : "",
+      )
+      .filter((id) => id !== "");
+    if (ids.length === 0) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+    const result = await upstreamFetch({
+      method: "GET",
+      path: `/leads/${req.params.id}`,
+      query: { affiliate: ids.join(",") },
+      authHeader: authHeaderFrom(req),
+      headers: leadsProxyHeaders(),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const lead = result.data;
+    if (lead && typeof lead === "object") {
+      const row = lead as Record<string, unknown>;
+      if (row["affiliate"] && typeof row["affiliate"] === "object") {
+        row["affiliate"] = stripSecrets(row["affiliate"]);
+      }
+    }
+    res.status(200).json(lead);
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch lead");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
+});
+
 router.delete("/partners/:id", async (req, res) => {
   if (!requireBearer(req, res)) return;
   try {

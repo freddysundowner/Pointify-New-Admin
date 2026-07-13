@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import LeadDetailDialog from "@/components/LeadDetailDialog";
 import { useRoute, Link } from "wouter";
 import {
   useGetPartner,
@@ -128,6 +129,8 @@ export default function PartnerDetail() {
   const [usersPage, setUsersPage] = useState(1);
   const [txPage, setTxPage] = useState(1);
   const [leadsPage, setLeadsPage] = useState(1);
+  // Lead opened in the read-only detail sheet (Leads tab).
+  const [leadDetailId, setLeadDetailId] = useState<string | null>(null);
 
   const { data: partner, isLoading: partnerLoading } = useGetPartner(partnerId, {
     query: { enabled: !!partnerId, queryKey: getGetPartnerQueryKey(partnerId) },
@@ -611,7 +614,11 @@ export default function PartnerDetail() {
                       </TableHeader>
                       <TableBody>
                         {leads.map((lead) => (
-                          <TableRow key={lead._id}>
+                          <TableRow
+                            key={lead._id}
+                            className="cursor-pointer"
+                            onClick={() => setLeadDetailId(lead._id ?? null)}
+                          >
                             <TableCell>
                               <div className="font-medium">
                                 {lead.businessName || "—"}
@@ -659,7 +666,8 @@ export default function PartnerDetail() {
                     {leads.map((lead) => (
                       <div
                         key={lead._id}
-                        className="rounded-lg border bg-card p-4 shadow-sm"
+                        className="cursor-pointer rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50"
+                        onClick={() => setLeadDetailId(lead._id ?? null)}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -696,6 +704,14 @@ export default function PartnerDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <LeadDetailDialog
+        leadId={leadDetailId}
+        onOpenChange={(open) => {
+          if (!open) setLeadDetailId(null);
+        }}
+        partnerName={partner?.name ?? undefined}
+      />
     </div>
   );
 }

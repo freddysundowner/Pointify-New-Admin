@@ -41,6 +41,18 @@ const leadSchema = new mongoose.Schema({
   notes: {
     type: String,
   },
+  // Activity timeline. Entries are appended by the controller — automatically
+  // for lifecycle events (created / stage_changed / follow_up_set /
+  // details_updated) and manually for partner notes (action: "note").
+  activities: [
+    {
+      action: { type: String, required: true },
+      from: { type: String },
+      to: { type: String },
+      note: { type: String },
+      at: { type: Date, default: Date.now },
+    },
+  ],
   sync: { type: Boolean, default: false },
   createAt: {
     type: Date,

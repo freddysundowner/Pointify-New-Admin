@@ -8,6 +8,7 @@ import {
   type Lead,
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
+import LeadDetailDialog from "@/components/LeadDetailDialog";
 import {
   Table,
   TableBody,
@@ -106,6 +107,8 @@ export default function Leads() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
+  // Lead opened in the read-only detail sheet.
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -255,7 +258,11 @@ export default function Leads() {
               {/* Mobile: card list */}
               <div className="space-y-3 md:hidden">
                 {leads.map((lead) => (
-                  <div key={lead._id} className="rounded-lg border p-4">
+                  <div
+                    key={lead._id}
+                    className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    onClick={() => setDetailId(lead._id ?? null)}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="truncate font-medium text-foreground">
@@ -317,7 +324,11 @@ export default function Leads() {
                   </TableHeader>
                   <TableBody>
                     {leads.map((lead) => (
-                      <TableRow key={lead._id}>
+                      <TableRow
+                        key={lead._id}
+                        className="cursor-pointer"
+                        onClick={() => setDetailId(lead._id ?? null)}
+                      >
                         <TableCell>
                           <div className="font-medium text-foreground">
                             {lead.businessName}
@@ -401,6 +412,22 @@ export default function Leads() {
           )}
         </CardContent>
       </Card>
+
+      <LeadDetailDialog
+        leadId={detailId}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null);
+        }}
+        partnerName={
+          detailId
+            ? partnerNameById.get(
+                leadPartnerName(
+                  leads.find((l) => l._id === detailId) ?? ({} as Lead),
+                ).id,
+              )
+            : undefined
+        }
+      />
     </div>
   );
 }

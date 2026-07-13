@@ -69,6 +69,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import LeadDetailSheet from "@/components/LeadDetailSheet";
 import {
   Target,
   Loader2,
@@ -308,6 +309,8 @@ export default function Leads() {
   const [draft, setDraft] = useState<LeadInput>(EMPTY_DRAFT);
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
   const [businessTypeOpen, setBusinessTypeOpen] = useState(false);
+  // Lead opened in the detail sheet (full info + activity timeline).
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const createMut = useCreatePortalLead();
   const updateMut = useUpdatePortalLead();
@@ -593,7 +596,11 @@ export default function Leads() {
               {/* Mobile: card list */}
               <div className="space-y-3 md:hidden">
                 {leads.map((lead) => (
-                  <div key={lead._id} className="rounded-lg border p-4">
+                  <div
+                    key={lead._id}
+                    className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    onClick={() => setDetailId(lead._id ?? null)}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="truncate font-medium text-foreground">
@@ -644,7 +651,10 @@ export default function Leads() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openEdit(lead)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEdit(lead);
+                            }}
                             className="h-8 gap-1 px-2 text-xs"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -653,7 +663,10 @@ export default function Leads() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setDeleteTarget(lead)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(lead);
+                            }}
                             className="h-8 gap-1 px-2 text-xs text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -683,7 +696,11 @@ export default function Leads() {
                   </TableHeader>
                   <TableBody>
                     {leads.map((lead) => (
-                      <TableRow key={lead._id}>
+                      <TableRow
+                        key={lead._id}
+                        className="cursor-pointer"
+                        onClick={() => setDetailId(lead._id ?? null)}
+                      >
                         <TableCell>
                           <div className="font-medium text-foreground">
                             {lead.businessName}
@@ -735,7 +752,10 @@ export default function Leads() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => openEdit(lead)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit(lead);
+                                }}
                                 className="h-8 w-8"
                                 aria-label="Edit lead"
                               >
@@ -744,7 +764,10 @@ export default function Leads() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setDeleteTarget(lead)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteTarget(lead);
+                                }}
                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                 aria-label="Delete lead"
                               >
@@ -790,6 +813,24 @@ export default function Leads() {
           )}
         </CardContent>
       </Card>
+
+      {/* Lead detail sheet: full info, quick stage change, activity timeline */}
+      <LeadDetailSheet
+        leadId={detailId}
+        onOpenChange={(open) => {
+          if (!open) setDetailId(null);
+        }}
+        myId={profile?._id}
+        ownerName={(lead) => leadOwnerName(lead, profile?._id, subs)}
+        onEdit={(lead) => {
+          setDetailId(null);
+          openEdit(lead);
+        }}
+        onDelete={(lead) => {
+          setDetailId(null);
+          setDeleteTarget(lead);
+        }}
+      />
 
       {/* Create / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

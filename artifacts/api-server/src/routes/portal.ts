@@ -662,21 +662,87 @@ router.post("/portal/leads", async (req, res) => {
   }
 });
 
-// GET /portal/leads/:id — a single owned lead (404 if not this partner's).
+// GET /portal/leads/:id — a single lead. Tries the caller's own leads first;
+// on a 404, a MASTER partner's read is widened to their sub-partners so they
+// can open a team member's lead (read-only — writes below stay own-only).
 router.get("/portal/leads/:id", async (req, res) => {
   const session = requireSession(req, res);
   if (!session) return;
   try {
-    const result = await upstreamFetch({
+    const own = await upstreamFetch({
       method: "GET",
       path: `/leads/${req.params.id}`,
       query: { affiliate: session.aid },
       authHeader: upstreamAuth(session),
       headers: leadsProxyHeaders(),
     });
-    res.status(result.status).json(result.data);
+    if (own.status !== 404) {
+      res.status(own.status).json(own.data);
+      return;
+    }
+
+    // Not the caller's own lead. If they are a master with sub-partners, retry
+    // scoped to the subs; otherwise the 404 stands.
+    const partners = await upstreamFetch({
+      method: "GET",
+      path: "/affiliates/",
+      authHeader: upstreamAuth(session),
+    });
+    if (partners.status >= 400) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+    const all = normalizeList(partners.data).data as Array<Record<string, unknown>>;
+    const me = all.find((p) => String(p["_id"] ?? "") === session.aid);
+    const subIds =
+      me && !parentIdOf(me)
+        ? all
+            .filter((p) => parentIdOf(p) === session.aid)
+            .map((p) => String(p["_id"] ?? ""))
+            .filter((id) => id !== "")
+        : [];
+    if (subIds.length === 0) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+    const team = await upstreamFetch({
+      method: "GET",
+      path: `/leads/${req.params.id}`,
+      query: { affiliate: subIds.join(",") },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(team.status).json(team.data);
   } catch (err) {
     req.log.error({ err }, "Portal lead fetch failed");
+    res.status(502).json({ error: "Upstream request failed" });
+  }
+});
+
+// POST /portal/leads/:id/activities — append a free-text note to an OWNED
+// lead's activity timeline. Scoped to session.aid, so a master can never write
+// notes onto a sub-partner's lead.
+router.post("/portal/leads/:id/activities", async (req, res) => {
+  const session = requireSession(req, res);
+  if (!session) return;
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const note = typeof body["note"] === "string" ? body["note"].trim() : "";
+  if (!note) {
+    res.status(400).json({ error: "Note is required" });
+    return;
+  }
+  try {
+    const result = await upstreamFetch({
+      method: "POST",
+      path: `/leads/${req.params.id}/activities`,
+      query: { affiliate: session.aid },
+      body: { note },
+      authHeader: upstreamAuth(session),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, "Portal lead note failed");
     res.status(502).json({ error: "Upstream request failed" });
   }
 });

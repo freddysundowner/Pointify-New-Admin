@@ -238,6 +238,21 @@ export interface SubPartnerUpdateInput {
   blocked?: boolean;
 }
 
+export interface LeadActivity {
+  /** @nullable */
+  _id?: string | null;
+  action?: string;
+  /** @nullable */
+  from?: string | null;
+  /** @nullable */
+  to?: string | null;
+  /** @nullable */
+  note?: string | null;
+  /** @nullable */
+  at?: string | null;
+  [key: string]: unknown;
+ }
+
 export interface Lead {
   _id?: string;
   businessName?: string;
@@ -262,8 +277,14 @@ export interface Lead {
   /** @nullable */
   updatedAt?: string | null;
   affiliate?: unknown;
+  activities?: LeadActivity[];
   [key: string]: unknown;
  }
+
+export interface LeadActivityInput {
+  /** Free-text note appended to the lead's activity timeline. */
+  note: string;
+}
 
 export interface LeadInput {
   businessName: string;

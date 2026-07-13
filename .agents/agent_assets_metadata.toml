@@ -11,7 +11,7 @@ title = "Leads backend — setup instructions (start here)"
 id = "jTJR6KZ3ITsehPtB8qG9w"
 uri = "file://pointify-leads-backend.zip"
 type = "unspecified"
-title = "Leads backend code (for your POS server)"
+title = "Updated lead server files (with activity timeline)"
 
 [[outputs]]
 id = "iW1a4xGSTTo9OOQihcPER"

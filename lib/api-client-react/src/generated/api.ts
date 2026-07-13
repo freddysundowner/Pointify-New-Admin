@@ -45,6 +45,7 @@ import type {
   GetSettingsParams,
   HealthStatus,
   Lead,
+  LeadActivityInput,
   LeadInput,
   LeadListResult,
   LeadStats,
@@ -1895,6 +1896,84 @@ export function useListLeads<TData = Awaited<ReturnType<typeof listLeads>>, TErr
 
 
 
+export const getGetLeadUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}`
+}
+
+/**
+ * Fetches a single lead across all partners. The proxy scopes the upstream read to the full set of partner ids, so any lead is visible but nothing outside the lead store is reachable. Read-only — admins never modify a partner's pipeline.
+ * @summary One lead with its activity timeline (platform admin view)
+ */
+export const getLead = async (id: string, options?: RequestInit): Promise<Lead> => {
+
+  return customFetch<Lead>(getGetLeadUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLeadQueryKey = (id: string,) => {
+    return [
+    `/api/leads/${id}`
+    ] as const;
+    }
+
+
+export const getGetLeadQueryOptions = <TData = Awaited<ReturnType<typeof getLead>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLead>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLeadQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLead>>> = ({ signal }) => getLead(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLead>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLeadQueryResult = NonNullable<Awaited<ReturnType<typeof getLead>>>
+export type GetLeadQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary One lead with its activity timeline (platform admin view)
+ */
+
+export function useGetLead<TData = Awaited<ReturnType<typeof getLead>>, TError = ErrorType<ErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLead>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLeadQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getPortalRegisterUrl = () => {
 
 
@@ -2916,7 +2995,8 @@ export const getGetPortalLeadUrl = (id: string,) => {
 }
 
 /**
- * @summary Fetch one of the authenticated partner's leads
+ * Returns the caller's own lead. If not found under the caller's own id and the caller is a MASTER partner, the proxy widens the read to the caller's sub-partners so a master can open a team member's lead (read-only — updates and notes remain own-leads-only).
+ * @summary Fetch one lead (own, or a team member's for masters)
  */
 export const getPortalLead = async (id: string, options?: RequestInit): Promise<Lead> => {
 
@@ -2963,7 +3043,7 @@ export type GetPortalLeadQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Fetch one of the authenticated partner's leads
+ * @summary Fetch one lead (own, or a team member's for masters)
  */
 
 export function useGetPortalLead<TData = Awaited<ReturnType<typeof getPortalLead>>, TError = ErrorType<ErrorResponse>>(
@@ -3124,6 +3204,79 @@ export const useDeletePortalLead = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDeletePortalLeadMutationOptions(options));
+    }
+
+export const getAddPortalLeadActivityUrl = (id: string,) => {
+
+
+
+
+  return `/api/portal/leads/${id}/activities`
+}
+
+/**
+ * Appends a free-text note to the lead's activity timeline. Own leads only — the proxy always scopes the write to the session partner's own affiliate id, so masters cannot write on a sub-partner's lead.
+ * @summary Add a note to one of the authenticated partner's leads
+ */
+export const addPortalLeadActivity = async (id: string,
+    leadActivityInput: LeadActivityInput, options?: RequestInit): Promise<Lead> => {
+
+  return customFetch<Lead>(getAddPortalLeadActivityUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      leadActivityInput,)
+  }
+);}
+
+
+
+
+export const getAddPortalLeadActivityMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPortalLeadActivity>>, TError,{id: string;data: BodyType<LeadActivityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addPortalLeadActivity>>, TError,{id: string;data: BodyType<LeadActivityInput>}, TContext> => {
+
+const mutationKey = ['addPortalLeadActivity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addPortalLeadActivity>>, {id: string;data: BodyType<LeadActivityInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addPortalLeadActivity(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddPortalLeadActivityMutationResult = NonNullable<Awaited<ReturnType<typeof addPortalLeadActivity>>>
+    export type AddPortalLeadActivityMutationBody = BodyType<LeadActivityInput>
+    export type AddPortalLeadActivityMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add a note to one of the authenticated partner's leads
+ */
+export const useAddPortalLeadActivity = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPortalLeadActivity>>, TError,{id: string;data: BodyType<LeadActivityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addPortalLeadActivity>>,
+        TError,
+        {id: string;data: BodyType<LeadActivityInput>},
+        TContext
+      > => {
+      return useMutation(getAddPortalLeadActivityMutationOptions(options));
     }
 
 export const getListPortalSubPartnersUrl = () => {

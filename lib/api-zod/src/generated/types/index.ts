@@ -38,6 +38,8 @@ export * from './getRevenueRangeParams';
 export * from './getSettingsParams';
 export * from './healthStatus';
 export * from './lead';
+export * from './leadActivity';
+export * from './leadActivityInput';
 export * from './leadInput';
 export * from './leadListResult';
 export * from './leadStageCount';

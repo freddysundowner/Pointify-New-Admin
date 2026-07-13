@@ -63,8 +63,13 @@ Restart your API server. The admin proxy will call:
   `affiliate` with `{ _id, name, email, phonenumber }` for display)
 - `POST   /leads`                (body includes `affiliate`)
 - `GET    /leads/:id?affiliate=<id>`
+  (`affiliate` may also be a comma-separated list — used when a master partner
+  opens a team member's lead and for the platform admin's read-only detail
+  view; the response populates `affiliate` with safe display fields)
 - `PUT    /leads/:id?affiliate=<id>`
 - `DELETE /leads/:id?affiliate=<id>`
+- `POST   /leads/:id/activities?affiliate=<id>` (body `{ note }` — adds a note
+  to the lead's activity timeline; owner only)
 
 The partner portal never talks to your server directly — it goes through the
 admin proxy, which supplies and verifies the `affiliate` id. Your endpoints
@@ -87,3 +92,24 @@ require that `affiliate` id and reject any request without it.
 
 Pipeline stages (in order):
 `New Lead → Contacted → Interested → Visit/Demo Scheduled → Negotiating → Won (Converted) / Lost`
+
+## Activity timeline
+
+Each lead also carries an `activities` array (embedded subdocuments) that the
+controller maintains automatically:
+
+| Field    | Notes                                                              |
+| -------- | ------------------------------------------------------------------ |
+| `action` | `created`, `stage_changed`, `follow_up_set`, `details_updated`, `note` |
+| `from`   | previous value (stage or follow-up date), where relevant           |
+| `to`     | new value, where relevant                                          |
+| `note`   | free text (for `note` entries)                                     |
+| `at`     | timestamp, set automatically                                       |
+
+- Creating a lead logs `created`.
+- Updating a lead logs `stage_changed` and/or `follow_up_set` when those fields
+  change, otherwise `details_updated` for other edits.
+- `POST /leads/:id/activities` appends a `note` entry.
+
+Leads created before this update simply have an empty timeline — nothing to
+migrate.

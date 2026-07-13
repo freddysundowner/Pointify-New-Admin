@@ -42,7 +42,11 @@ async function createLead(req, res) {
       return res.status(400).json({ message: "businessName is required" });
     }
     if (!fields.stage) fields.stage = "New Lead";
-    const lead = await Lead.create({ ...fields, affiliate });
+    const lead = await Lead.create({
+      ...fields,
+      affiliate,
+      activities: [{ action: "created", to: fields.stage }],
+    });
     res.status(201).json(lead);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -112,14 +116,29 @@ async function getLeads(req, res) {
   }
 }
 
-// Fetch one lead, scoped to the affiliate (404 if not theirs).
+// Fetch one lead, scoped to the affiliate (404 if not theirs). Like getLeads,
+// `affiliate` may be a comma-separated list — the trusted proxy uses that for a
+// master partner opening a team member's lead and for the platform admin.
 async function getLeadById(req, res) {
   try {
     const affiliate = getAffiliate(req);
     if (!affiliate) {
       return res.status(400).json({ message: "affiliate is required" });
     }
-    const lead = await Lead.findOne({ _id: req.params.id, affiliate });
+    const affiliateIds = String(affiliate)
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => id !== "");
+    if (affiliateIds.length === 0) {
+      return res.status(400).json({ message: "affiliate is required" });
+    }
+    const scope =
+      affiliateIds.length === 1
+        ? { affiliate: affiliateIds[0] }
+        : { affiliate: { $in: affiliateIds } };
+    const lead = await Lead.findOne({ _id: req.params.id, ...scope })
+      // Owner shown in team/admin detail views; safe fields only.
+      .populate("affiliate", "name email phonenumber");
     if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
     }
@@ -131,6 +150,9 @@ async function getLeadById(req, res) {
 
 // Update a lead, scoped to the affiliate. A partner can never reassign a lead to
 // a different affiliate because the match includes their own affiliate id.
+// Changes are recorded on the lead's activity timeline: stage moves and
+// follow-up date changes get their own entries; any other field edit is logged
+// as a single "details_updated" entry.
 async function updateLead(req, res) {
   try {
     const affiliate = getAffiliate(req);
@@ -138,10 +160,81 @@ async function updateLead(req, res) {
       return res.status(400).json({ message: "affiliate is required" });
     }
     const updates = pickWritable(req.body || {});
-    updates.updatedAt = Date.now();
+
+    const lead = await Lead.findOne({ _id: req.params.id, affiliate });
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    const activities = [];
+    if (
+      Object.prototype.hasOwnProperty.call(updates, "stage") &&
+      updates.stage !== lead.stage
+    ) {
+      activities.push({
+        action: "stage_changed",
+        from: lead.stage || "",
+        to: updates.stage || "",
+      });
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, "nextFollowUpDate")) {
+      const oldDate = lead.nextFollowUpDate
+        ? new Date(lead.nextFollowUpDate).toISOString()
+        : "";
+      const newDate = updates.nextFollowUpDate
+        ? new Date(updates.nextFollowUpDate).toISOString()
+        : "";
+      if (oldDate !== newDate) {
+        activities.push({ action: "follow_up_set", from: oldDate, to: newDate });
+      }
+    }
+    const detailFields = [
+      "businessName",
+      "contactPerson",
+      "phonenumber",
+      "businessType",
+      "location",
+      "source",
+      "notes",
+    ];
+    const detailChanged = detailFields.some(
+      (key) =>
+        Object.prototype.hasOwnProperty.call(updates, key) &&
+        String(updates[key] == null ? "" : updates[key]) !==
+          String(lead[key] == null ? "" : lead[key])
+    );
+    if (detailChanged) {
+      activities.push({ action: "details_updated" });
+    }
+
+    lead.set(updates);
+    lead.updatedAt = Date.now();
+    for (const activity of activities) lead.activities.push(activity);
+    await lead.save();
+    res.json(lead);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
+// Append a free-text note to a lead's activity timeline (own leads only — the
+// proxy always supplies the session partner's own affiliate id here).
+async function addLeadActivity(req, res) {
+  try {
+    const affiliate = getAffiliate(req);
+    if (!affiliate) {
+      return res.status(400).json({ message: "affiliate is required" });
+    }
+    const note = req.body && typeof req.body.note === "string" ? req.body.note.trim() : "";
+    if (!note) {
+      return res.status(400).json({ message: "note is required" });
+    }
     const lead = await Lead.findOneAndUpdate(
       { _id: req.params.id, affiliate },
-      updates,
+      {
+        $push: { activities: { action: "note", note } },
+        $set: { updatedAt: Date.now() },
+      },
       { new: true }
     );
     if (!lead) {
@@ -175,5 +268,6 @@ module.exports = {
   getLeads,
   getLeadById,
   updateLead,
+  addLeadActivity,
   deleteLead,
 };

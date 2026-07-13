@@ -5,6 +5,7 @@ const {
   getLeads,
   getLeadById,
   updateLead,
+  addLeadActivity,
   deleteLead,
 } = require("../controllers/leads");
 
@@ -25,6 +26,7 @@ router.post("/", createLead);
 router.get("/", getLeads);
 router.get("/:id", getLeadById);
 router.put("/:id", updateLead);
+router.post("/:id/activities", addLeadActivity);
 router.delete("/:id", deleteLead);
 
 module.exports = router;
