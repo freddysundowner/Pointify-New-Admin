@@ -49,8 +49,13 @@ async function createLead(req, res) {
   }
 }
 
-// List the affiliate's leads with optional stage/source/search filters and
-// pagination. Returns { data, count, totalPages, currentPage }.
+// List leads with optional stage/source/search filters and pagination.
+// Returns { data, count, totalPages, currentPage }.
+//
+// `affiliate` may be a single id OR a comma-separated list of ids. The trusted
+// admin proxy uses the list form for a master partner viewing their team's
+// pipeline, and for the platform admin viewing leads across partners. It is
+// still required on every request (defence in depth — no unscoped queries).
 async function getLeads(req, res) {
   try {
     const affiliate = getAffiliate(req);
@@ -62,7 +67,17 @@ async function getLeads(req, res) {
     const limitInt = parseInt(req.query.limit) || 20;
     const skip = (pageInt - 1) * limitInt;
 
-    const filter = { affiliate };
+    const affiliateIds = String(affiliate)
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => id !== "");
+    if (affiliateIds.length === 0) {
+      return res.status(400).json({ message: "affiliate is required" });
+    }
+    const filter =
+      affiliateIds.length === 1
+        ? { affiliate: affiliateIds[0] }
+        : { affiliate: { $in: affiliateIds } };
     if (stage) filter.stage = stage;
     if (source) filter.source = source;
     if (search && String(search).trim() !== "") {
@@ -77,7 +92,12 @@ async function getLeads(req, res) {
     }
 
     const [data, count] = await Promise.all([
-      Lead.find(filter).sort({ createAt: -1 }).skip(skip).limit(limitInt),
+      Lead.find(filter)
+        .sort({ createAt: -1 })
+        .skip(skip)
+        .limit(limitInt)
+        // Owner shown in team/admin views; only safe fields, never password/otp.
+        .populate("affiliate", "name email phonenumber"),
       Lead.countDocuments(filter),
     ]);
 

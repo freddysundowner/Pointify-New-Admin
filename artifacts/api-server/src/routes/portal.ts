@@ -499,7 +499,52 @@ router.get("/portal/shop-categories", async (req, res) => {
   }
 });
 
+// Resolves which affiliate ids a leads READ is scoped to, honouring the
+// optional `partner` query param:
+//   - absent          -> the caller's own leads
+//   - "all"           -> caller + every sub-partner (masters only)
+//   - <subPartnerId>  -> that sub-partner's leads (masters only, must be theirs)
+// Writes stay own-only — a master can view but never edit a sub's leads.
+// Returns the id list, or undefined after having written the error response.
+async function resolveLeadScope(
+  req: Request,
+  res: Response,
+  session: PortalSession,
+): Promise<string[] | undefined> {
+  const partner = String((req.query as Record<string, unknown>)["partner"] ?? "").trim();
+  if (!partner) return [session.aid];
+
+  // Only masters may widen the scope. One upstream list call gives us both the
+  // caller's own record (parent check) and their sub-partners.
+  const result = await upstreamFetch({
+    method: "GET",
+    path: "/affiliates/",
+    authHeader: upstreamAuth(session),
+  });
+  if (result.status >= 400) {
+    res.status(502).json({ error: "Upstream request failed" });
+    return undefined;
+  }
+  const all = normalizeList(result.data).data as Array<Record<string, unknown>>;
+  const me = all.find((p) => String(p["_id"] ?? "") === session.aid);
+  if (!me || parentIdOf(me)) {
+    res.status(403).json({ error: "Only master partners can view team leads" });
+    return undefined;
+  }
+  const subIds = all
+    .filter((p) => parentIdOf(p) === session.aid)
+    .map((p) => String(p["_id"] ?? ""))
+    .filter((id) => id !== "");
+
+  if (partner === "all") return [session.aid, ...subIds];
+  if (partner === session.aid) return [session.aid];
+  if (subIds.includes(partner)) return [partner];
+  res.status(404).json({ error: "Sub-partner not found" });
+  return undefined;
+}
+
 // GET /portal/leads — the partner's leads, filterable by stage/source/search.
+// Masters may widen the scope to their team via `partner` (see resolveLeadScope).
 router.get("/portal/leads", async (req, res) => {
   const session = requireSession(req, res);
   if (!session) return;
@@ -507,11 +552,13 @@ router.get("/portal/leads", async (req, res) => {
   const page = Math.max(1, parseInt(String(q["page"] ?? "1"), 10) || 1);
   const limit = Math.max(1, parseInt(String(q["limit"] ?? "20"), 10) || 20);
   try {
+    const scope = await resolveLeadScope(req, res, session);
+    if (!scope) return;
     const result = await upstreamFetch({
       method: "GET",
       path: "/leads",
       query: {
-        affiliate: session.aid,
+        affiliate: scope.join(","),
         page,
         limit,
         stage: q["stage"],
@@ -540,15 +587,18 @@ router.get("/portal/leads", async (req, res) => {
 
 // GET /portal/leads/stats — pipeline counts per stage + follow-up alerts.
 // Composed server-side from the partner's full lead set. Declared BEFORE the
-// `/:id` routes so "stats" isn't captured as an id.
+// `/:id` routes so "stats" isn't captured as an id. Accepts the same optional
+// `partner` scope as the list (masters only).
 router.get("/portal/leads/stats", async (req, res) => {
   const session = requireSession(req, res);
   if (!session) return;
   try {
+    const scope = await resolveLeadScope(req, res, session);
+    if (!scope) return;
     const result = await upstreamFetch({
       method: "GET",
       path: "/leads",
-      query: { affiliate: session.aid, page: 1, limit: 100000 },
+      query: { affiliate: scope.join(","), page: 1, limit: 100000 },
       authHeader: upstreamAuth(session),
       headers: leadsProxyHeaders(),
     });

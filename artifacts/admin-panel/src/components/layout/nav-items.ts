@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, Store, PackageSearch,
   UserSquare2, ReceiptText, ShoppingCart, Package,
   CreditCard, MessageSquare, Settings, BarChart3, Tags, Handshake,
-  Sparkles,
+  Sparkles, Target,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,6 +19,7 @@ export const navItems: NavItem[] = [
   { title: "Shops", href: "/shops", icon: Store },
   { title: "Shop Categories", href: "/categories", icon: Tags },
   { title: "Partners", href: "/partners", icon: Handshake },
+  { title: "Leads", href: "/leads", icon: Target },
   { title: "Products", href: "/products", icon: PackageSearch },
   { title: "Attendants", href: "/attendants", icon: UserSquare2 },
   { title: "Sales", href: "/sales", icon: ReceiptText },

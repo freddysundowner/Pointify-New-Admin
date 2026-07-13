@@ -57,6 +57,10 @@ left unset on your server, the gate is a no-op and nothing changes.
 Restart your API server. The admin proxy will call:
 
 - `GET    /leads?affiliate=<id>&page=&limit=&stage=&source=&search=`
+  (`affiliate` may also be a comma-separated list of ids — the proxy uses this
+  for a master partner viewing their team's pipeline and for the platform
+  admin's all-partners view; the list response populates each lead's
+  `affiliate` with `{ _id, name, email, phonenumber }` for display)
 - `POST   /leads`                (body includes `affiliate`)
 - `GET    /leads/:id?affiliate=<id>`
 - `PUT    /leads/:id?affiliate=<id>`

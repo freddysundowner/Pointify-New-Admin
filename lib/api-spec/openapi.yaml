@@ -401,6 +401,35 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/TransactionListResult" }
 
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [partners]
+      summary: Leads across all partners (platform admin view)
+      description: >-
+        Returns leads across every partner, optionally filtered to a single
+        partner via `partnerId`. Backed by the same upstream lead store the
+        partner portal uses; each lead's `affiliate` is populated with the
+        owning partner's name for display.
+      parameters:
+        - { name: partnerId, in: query, description: "Filter to one partner (affiliate) id", schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: source, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Leads
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadListResult" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /portal/auth/register:
     post:
       operationId: portalRegister
@@ -621,12 +650,18 @@ paths:
       operationId: listPortalLeads
       tags: [portal]
       summary: Lead pipeline for the authenticated partner
+      description: >-
+        By default returns only the caller's own leads. A MASTER partner may
+        also pass `partner=all` (their own leads plus every sub-partner's) or
+        `partner=<subPartnerId>` (one sub-partner's leads, read-only view).
+        Sub-partners always get a 403 when using `partner`.
       parameters:
         - { name: page, in: query, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
         - { name: stage, in: query, schema: { type: string } }
         - { name: source, in: query, schema: { type: string } }
         - { name: search, in: query, schema: { type: string } }
+        - { name: partner, in: query, schema: { type: string } }
       responses:
         "200":
           description: Partner leads
@@ -669,6 +704,11 @@ paths:
       operationId: getPortalLeadStats
       tags: [portal]
       summary: Pipeline counts and follow-up alerts for the authenticated partner
+      description: >-
+        Accepts the same optional `partner` scope as the leads list (masters
+        only): `all` for the whole team, or a sub-partner id.
+      parameters:
+        - { name: partner, in: query, schema: { type: string } }
       responses:
         "200":
           description: Lead pipeline statistics
@@ -1873,6 +1913,9 @@ components:
         notes: { type: ["string", "null"] }
         createAt: { type: ["string", "null"] }
         updatedAt: { type: ["string", "null"] }
+        # Owner of the lead. A bare id string, or a populated object
+        # ({ _id, name, email, phonenumber }) in team/admin list views.
+        affiliate: {}
 
     LeadInput:
       type: object

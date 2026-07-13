@@ -261,6 +261,117 @@ router.post("/partners/:id/credit", async (req, res) => {
   }
 });
 
+// Optional shared secret proving a `/leads` request came from THIS proxy —
+// same contract as the portal's leadsProxyHeaders (see routes/portal.ts).
+function leadsProxyHeaders(): Record<string, string> | undefined {
+  const secret = process.env.LEADS_PROXY_SECRET;
+  return secret ? { "x-proxy-secret": secret } : undefined;
+}
+
+// Cross-partner lead data needs a stronger gate than bearer *shape*: require a
+// token that structurally decodes to a JWT whose payload carries an admin id
+// (upstream login signs `{ email, _id }`). Same pattern as the bulk-SMS gate —
+// the strongest check possible from a stateless proxy that does not hold the
+// upstream JWT secret.
+function adminIdFromAuth(header: string | undefined): string | undefined {
+  if (!header) return undefined;
+  const match = /^Bearer\s+(\S+)$/.exec(header);
+  if (!match) return undefined;
+  const segments = match[1].split(".");
+  if (segments.length < 2) return undefined;
+  try {
+    const payload = JSON.parse(
+      Buffer.from(segments[1], "base64url").toString("utf8"),
+    ) as { _id?: unknown; id?: unknown };
+    const id = payload._id ?? payload.id;
+    return typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id)
+      ? id
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// GET /leads — platform-wide lead list for the admin panel, optionally scoped
+// to one partner via `partnerId`. The upstream requires an `affiliate` filter
+// on every request (never unscoped), so "all partners" is expressed as the
+// comma-separated list of every affiliate id fetched from `/affiliates/`.
+router.get("/leads", async (req, res) => {
+  if (!requireBearer(req, res)) return;
+  if (!adminIdFromAuth(authHeaderFrom(req))) {
+    res.status(401).json({ message: "Authentication required" });
+    return;
+  }
+  const q = req.query as Record<string, unknown>;
+  const page = Math.max(1, parseInt(String(q["page"] ?? "1"), 10) || 1);
+  const limit = Math.max(1, parseInt(String(q["limit"] ?? "20"), 10) || 20);
+  const partnerId = String(q["partnerId"] ?? "").trim();
+  try {
+    let affiliate = partnerId;
+    if (!affiliate) {
+      const partners = await upstreamFetch({
+        method: "GET",
+        path: "/affiliates/",
+        authHeader: authHeaderFrom(req),
+      });
+      if (partners.status >= 400) {
+        res.status(partners.status).json(partners.data);
+        return;
+      }
+      const ids = normalizeList(partners.data)
+        .data.map((p) =>
+          p && typeof p === "object" ? String((p as Record<string, unknown>)["_id"] ?? "") : "",
+        )
+        .filter((id) => id !== "");
+      if (ids.length === 0) {
+        res.status(200).json({ data: [], count: 0, totalPages: 1, currentPage: 1 });
+        return;
+      }
+      affiliate = ids.join(",");
+    }
+
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/leads",
+      query: {
+        affiliate,
+        page,
+        limit,
+        stage: q["stage"],
+        source: q["source"],
+        search: q["search"],
+      },
+      authHeader: authHeaderFrom(req),
+      headers: leadsProxyHeaders(),
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
+    }
+    const norm = normalizeList(result.data);
+    res.status(200).json({
+      data: norm.data.map((lead) => {
+        // Upstream populates `affiliate` with safe fields only, but strip
+        // secrets defensively in case the projection ever widens.
+        if (lead && typeof lead === "object") {
+          const row = lead as Record<string, unknown>;
+          if (row["affiliate"] && typeof row["affiliate"] === "object") {
+            row["affiliate"] = stripSecrets(row["affiliate"]);
+          }
+          return row;
+        }
+        return lead;
+      }),
+      count: norm.count,
+      totalPages: norm.totalPages,
+      currentPage: Math.min(norm.currentPage, Math.max(1, norm.totalPages)),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to list leads");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
+});
+
 router.delete("/partners/:id", async (req, res) => {
   if (!requireBearer(req, res)) return;
   try {

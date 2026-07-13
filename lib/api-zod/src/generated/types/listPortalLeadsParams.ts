@@ -12,4 +12,5 @@ limit?: number;
 stage?: string;
 source?: string;
 search?: string;
+partner?: string;
 };

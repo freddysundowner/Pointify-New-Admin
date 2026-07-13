@@ -29,5 +29,6 @@ export interface Lead {
   createAt?: string | null;
   /** @nullable */
   updatedAt?: string | null;
+  affiliate?: unknown;
   [key: string]: unknown;
  }

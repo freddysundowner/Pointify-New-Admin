@@ -39,6 +39,7 @@ import type {
   ErrorResponse,
   GenericObject,
   GetAiLogStatsParams,
+  GetPortalLeadStatsParams,
   GetProductHistorySummaryParams,
   GetRevenueRangeParams,
   GetSettingsParams,
@@ -52,6 +53,7 @@ import type {
   ListAiLogsParams,
   ListAttendantsParams,
   ListCommunicationsParams,
+  ListLeadsParams,
   ListPartnerTransactionsParams,
   ListPartnersParams,
   ListPortalLeadsParams,
@@ -1808,6 +1810,91 @@ export function useListPartnerTransactions<TData = Awaited<ReturnType<typeof lis
 
 
 
+export const getListLeadsUrl = (params?: ListLeadsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/leads?${stringifiedParams}` : `/api/leads`
+}
+
+/**
+ * Returns leads across every partner, optionally filtered to a single partner via `partnerId`. Backed by the same upstream lead store the partner portal uses; each lead's `affiliate` is populated with the owning partner's name for display.
+ * @summary Leads across all partners (platform admin view)
+ */
+export const listLeads = async (params?: ListLeadsParams, options?: RequestInit): Promise<LeadListResult> => {
+
+  return customFetch<LeadListResult>(getListLeadsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLeadsQueryKey = (params?: ListLeadsParams,) => {
+    return [
+    `/api/leads`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListLeadsQueryOptions = <TData = Awaited<ReturnType<typeof listLeads>>, TError = ErrorType<ErrorResponse>>(params?: ListLeadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLeads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLeadsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLeads>>> = ({ signal }) => listLeads(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLeads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLeadsQueryResult = NonNullable<Awaited<ReturnType<typeof listLeads>>>
+export type ListLeadsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Leads across all partners (platform admin view)
+ */
+
+export function useListLeads<TData = Awaited<ReturnType<typeof listLeads>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListLeadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLeads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLeadsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getPortalRegisterUrl = () => {
 
 
@@ -2595,6 +2682,7 @@ export const getListPortalLeadsUrl = (params?: ListPortalLeadsParams,) => {
 }
 
 /**
+ * By default returns only the caller's own leads. A MASTER partner may also pass `partner=all` (their own leads plus every sub-partner's) or `partner=<subPartnerId>` (one sub-partner's leads, read-only view). Sub-partners always get a 403 when using `partner`.
  * @summary Lead pipeline for the authenticated partner
  */
 export const listPortalLeads = async (params?: ListPortalLeadsParams, options?: RequestInit): Promise<LeadListResult> => {
@@ -2734,20 +2822,28 @@ export const useCreatePortalLead = <TError = ErrorType<ErrorResponse>,
       return useMutation(getCreatePortalLeadMutationOptions(options));
     }
 
-export const getGetPortalLeadStatsUrl = () => {
+export const getGetPortalLeadStatsUrl = (params?: GetPortalLeadStatsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/portal/leads/stats`
+  return stringifiedParams.length > 0 ? `/api/portal/leads/stats?${stringifiedParams}` : `/api/portal/leads/stats`
 }
 
 /**
+ * Accepts the same optional `partner` scope as the leads list (masters only): `all` for the whole team, or a sub-partner id.
  * @summary Pipeline counts and follow-up alerts for the authenticated partner
  */
-export const getPortalLeadStats = async ( options?: RequestInit): Promise<LeadStats> => {
+export const getPortalLeadStats = async (params?: GetPortalLeadStatsParams, options?: RequestInit): Promise<LeadStats> => {
 
-  return customFetch<LeadStats>(getGetPortalLeadStatsUrl(),
+  return customFetch<LeadStats>(getGetPortalLeadStatsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2760,23 +2856,23 @@ export const getPortalLeadStats = async ( options?: RequestInit): Promise<LeadSt
 
 
 
-export const getGetPortalLeadStatsQueryKey = () => {
+export const getGetPortalLeadStatsQueryKey = (params?: GetPortalLeadStatsParams,) => {
     return [
-    `/api/portal/leads/stats`
+    `/api/portal/leads/stats`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetPortalLeadStatsQueryOptions = <TData = Awaited<ReturnType<typeof getPortalLeadStats>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalLeadStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPortalLeadStatsQueryOptions = <TData = Awaited<ReturnType<typeof getPortalLeadStats>>, TError = ErrorType<ErrorResponse>>(params?: GetPortalLeadStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalLeadStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPortalLeadStatsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetPortalLeadStatsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortalLeadStats>>> = ({ signal }) => getPortalLeadStats({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortalLeadStats>>> = ({ signal }) => getPortalLeadStats(params, { signal, ...requestOptions });
 
 
 
@@ -2794,11 +2890,11 @@ export type GetPortalLeadStatsQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetPortalLeadStats<TData = Awaited<ReturnType<typeof getPortalLeadStats>>, TError = ErrorType<ErrorResponse>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalLeadStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetPortalLeadStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortalLeadStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetPortalLeadStatsQueryOptions(options)
+  const queryOptions = getGetPortalLeadStatsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

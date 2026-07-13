@@ -6,10 +6,12 @@ import {
   useListShops,
   useListAdmins,
   useListPartnerTransactions,
+  useListLeads,
   getGetPartnerQueryKey,
   getListShopsQueryKey,
   getListAdminsQueryKey,
   getListPartnerTransactionsQueryKey,
+  getListLeadsQueryKey,
 } from "@workspace/api-client-react";
 import {
   Table,
@@ -34,6 +36,7 @@ import {
   Store,
   Users as UsersIcon,
   Receipt,
+  Target,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -124,6 +127,7 @@ export default function PartnerDetail() {
   const [shopsPage, setShopsPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
   const [txPage, setTxPage] = useState(1);
+  const [leadsPage, setLeadsPage] = useState(1);
 
   const { data: partner, isLoading: partnerLoading } = useGetPartner(partnerId, {
     query: { enabled: !!partnerId, queryKey: getGetPartnerQueryKey(partnerId) },
@@ -171,9 +175,24 @@ export default function PartnerDetail() {
     },
   );
 
+  const leadsQuery = useListLeads(
+    { partnerId, page: leadsPage, limit: LIMIT },
+    {
+      query: {
+        enabled: !!partnerId,
+        queryKey: getListLeadsQueryKey({
+          partnerId,
+          page: leadsPage,
+          limit: LIMIT,
+        }),
+      },
+    },
+  );
+
   const shops = shopsQuery.data?.data ?? [];
   const users = usersQuery.data?.data ?? [];
   const transactions = txQuery.data?.data ?? [];
+  const leads = leadsQuery.data?.data ?? [];
 
   const name = partner?.name || "Partner";
 
@@ -248,6 +267,10 @@ export default function PartnerDetail() {
           <TabsTrigger value="transactions">
             <Receipt className="mr-2 h-4 w-4" />
             Transactions
+          </TabsTrigger>
+          <TabsTrigger value="leads">
+            <Target className="mr-2 h-4 w-4" />
+            Leads
           </TabsTrigger>
         </TabsList>
 
@@ -544,6 +567,128 @@ export default function PartnerDetail() {
                     isFetching={txQuery.isFetching}
                     onPrev={() => setTxPage((p) => Math.max(1, p - 1))}
                     onNext={() => setTxPage((p) => p + 1)}
+                  />
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Leads */}
+        <TabsContent value="leads">
+          <Card className="page-card">
+            <CardHeader>
+              <CardTitle>Leads</CardTitle>
+              <CardDescription>
+                Prospective businesses this partner is working in their sales
+                pipeline.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {leadsQuery.isLoading ? (
+                <div className="p-4">Loading leads…</div>
+              ) : leadsQuery.isError ? (
+                <div className="rounded-lg border border-destructive/40 p-8 text-center text-muted-foreground">
+                  Couldn't load leads.
+                </div>
+              ) : leads.length === 0 ? (
+                <div className="rounded-lg border p-8 text-center text-muted-foreground">
+                  No leads captured by this partner yet.
+                </div>
+              ) : (
+                <>
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Business</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Stage</TableHead>
+                          <TableHead>Source</TableHead>
+                          <TableHead>Next Follow-Up</TableHead>
+                          <TableHead>Added</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leads.map((lead) => (
+                          <TableRow key={lead._id}>
+                            <TableCell>
+                              <div className="font-medium">
+                                {lead.businessName || "—"}
+                              </div>
+                              {(lead.businessType || lead.location) && (
+                                <div className="text-xs text-muted-foreground">
+                                  {[lead.businessType, lead.location]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                {lead.contactPerson || "—"}
+                              </div>
+                              {lead.phonenumber && (
+                                <div className="text-xs text-muted-foreground">
+                                  {lead.phonenumber}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">
+                                {lead.stage || "New Lead"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {lead.source ? (
+                                <Badge variant="outline">{lead.source}</Badge>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell>{fmtDate(lead.nextFollowUpDate)}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {fmtDate(lead.createAt)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="space-y-3 md:hidden">
+                    {leads.map((lead) => (
+                      <div
+                        key={lead._id}
+                        className="rounded-lg border bg-card p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">
+                              {lead.businessName || "—"}
+                            </p>
+                            <p className="truncate text-sm text-muted-foreground">
+                              {lead.contactPerson || lead.phonenumber || "—"}
+                            </p>
+                          </div>
+                          <Badge variant="secondary" className="shrink-0">
+                            {lead.stage || "New Lead"}
+                          </Badge>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-x-4 text-sm text-muted-foreground">
+                          {lead.source && <span>{lead.source}</span>}
+                          <span>Added {fmtDate(lead.createAt)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Pager
+                    page={leadsQuery.data?.currentPage ?? leadsPage}
+                    totalPages={leadsQuery.data?.totalPages ?? 1}
+                    count={leadsQuery.data?.count ?? 0}
+                    label="leads"
+                    isFetching={leadsQuery.isFetching}
+                    onPrev={() => setLeadsPage((p) => Math.max(1, p - 1))}
+                    onNext={() => setLeadsPage((p) => p + 1)}
                   />
                 </>
               )}

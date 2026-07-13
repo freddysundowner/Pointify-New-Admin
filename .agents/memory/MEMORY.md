@@ -20,6 +20,7 @@
 - [Admin-panel mobile spacing](admin-mobile-spacing.md) — tighten on phones, restore on desktop via md:: cards p-4 md:p-6, page wrappers space-y-4 md:space-y-6.
 - [Admin-panel mobile filter sheet](admin-mobile-filters.md) — list-page filters collapse into a bottom Sheet on mobile via FilterBar (render children ONCE on a runtime useIsMobile branch, never hidden/md: duplicate).
 - [Sales future-dating](sales-future-dating.md) — "future-dated" sale = EAT calendar-day later than today (not raw instant); keep them inline+badged, never default-hidden.
+- [Leads upstream contract](leads-upstream-contract.md) — /leads needs `affiliate` (single or comma $in list); staging may lag the deliverable zip; admin gate = decoded-JWT admin id.
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
 - [Sub-partners feature](sub-partners-feature.md) — parent+subCommission on Affliate; proxy is the only authz layer (strip parent/subCommission from self-serve writes); sub gets % OF master's award.
 - [Partner leads CRM proxy model](leads-crm-proxy-model.md) — leads live in user's own upstream Mongo (pointify-leads-backend/); scoped by affiliate=session.aid; optional LEADS_PROXY_SECRET (x-proxy-secret) locks upstream /leads to the proxy.

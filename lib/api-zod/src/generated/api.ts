@@ -657,6 +657,41 @@ export const ListPartnerTransactionsResponse = zod.object({
 
 
 /**
+ * Returns leads across every partner, optionally filtered to a single partner via `partnerId`. Backed by the same upstream lead store the partner portal uses; each lead's `affiliate` is populated with the owning partner's name for display.
+ * @summary Leads across all partners (platform admin view)
+ */
+export const ListLeadsQueryParams = zod.object({
+  "partnerId": zod.coerce.string().optional().describe('Filter to one partner (affiliate) id'),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional(),
+  "stage": zod.coerce.string().optional(),
+  "source": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
+})
+
+export const ListLeadsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional()
+})).optional(),
+  "count": zod.number().optional(),
+  "totalPages": zod.number().optional(),
+  "currentPage": zod.number().optional()
+})
+
+
+/**
  * Public endpoint. Creates a partner via the upstream affiliate registration (hashes the password, generates a referral code, and emails a welcome message) and returns an auth token plus the partner profile. A duplicate email returns 400.
  * @summary Partner self-registration
  */
@@ -886,6 +921,7 @@ export const ListPortalShopCategoriesResponse = zod.array(ListPortalShopCategori
 
 
 /**
+ * By default returns only the caller's own leads. A MASTER partner may also pass `partner=all` (their own leads plus every sub-partner's) or `partner=<subPartnerId>` (one sub-partner's leads, read-only view). Sub-partners always get a 403 when using `partner`.
  * @summary Lead pipeline for the authenticated partner
  */
 export const ListPortalLeadsQueryParams = zod.object({
@@ -893,7 +929,8 @@ export const ListPortalLeadsQueryParams = zod.object({
   "limit": zod.coerce.number().optional(),
   "stage": zod.coerce.string().optional(),
   "source": zod.coerce.string().optional(),
-  "search": zod.coerce.string().optional()
+  "search": zod.coerce.string().optional(),
+  "partner": zod.coerce.string().optional()
 })
 
 export const ListPortalLeadsResponse = zod.object({
@@ -909,7 +946,8 @@ export const ListPortalLeadsResponse = zod.object({
   "nextFollowUpDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional()
 })).optional(),
   "count": zod.number().optional(),
   "totalPages": zod.number().optional(),
@@ -934,8 +972,13 @@ export const CreatePortalLeadBody = zod.object({
 
 
 /**
+ * Accepts the same optional `partner` scope as the leads list (masters only): `all` for the whole team, or a sub-partner id.
  * @summary Pipeline counts and follow-up alerts for the authenticated partner
  */
+export const GetPortalLeadStatsQueryParams = zod.object({
+  "partner": zod.coerce.string().optional()
+})
+
 export const GetPortalLeadStatsResponse = zod.object({
   "total": zod.number().optional(),
   "won": zod.number().optional(),
@@ -967,7 +1010,8 @@ export const GetPortalLeadResponse = zod.object({
   "nextFollowUpDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional()
 })
 
 
@@ -1002,7 +1046,8 @@ export const UpdatePortalLeadResponse = zod.object({
   "nextFollowUpDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional()
 })
 
 
@@ -1025,7 +1070,8 @@ export const DeletePortalLeadResponse = zod.object({
   "nextFollowUpDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
   "createAt": zod.string().nullish(),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional()
 })
 
 

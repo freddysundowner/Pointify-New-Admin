@@ -261,6 +261,7 @@ export interface Lead {
   createAt?: string | null;
   /** @nullable */
   updatedAt?: string | null;
+  affiliate?: unknown;
   [key: string]: unknown;
  }
 
@@ -1354,6 +1355,18 @@ page?: number;
 limit?: number;
 };
 
+export type ListLeadsParams = {
+/**
+ * Filter to one partner (affiliate) id
+ */
+partnerId?: string;
+page?: number;
+limit?: number;
+stage?: string;
+source?: string;
+search?: string;
+};
+
 export type ListPortalShopsParams = {
 page?: number;
 limit?: number;
@@ -1375,6 +1388,11 @@ limit?: number;
 stage?: string;
 source?: string;
 search?: string;
+partner?: string;
+};
+
+export type GetPortalLeadStatsParams = {
+partner?: string;
 };
 
 export type ListShopsParams = {

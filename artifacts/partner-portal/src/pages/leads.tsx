@@ -8,8 +8,12 @@ import {
   useUpdatePortalLead,
   useDeletePortalLead,
   useListPortalShopCategories,
+  useGetPortalProfile,
+  useListPortalSubPartners,
+  getListPortalSubPartnersQueryKey,
   type Lead,
   type LeadInput,
+  type SubPartner,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -164,6 +168,25 @@ function StageBadge({ stage }: { stage: string }) {
   );
 }
 
+// Display name for the partner who owns a lead, used in team-scope views.
+// `affiliate` is either a populated object ({ _id, name, … }) or a bare id.
+function leadOwnerName(
+  lead: Lead,
+  myId: string | undefined,
+  subs: SubPartner[],
+): string {
+  const aff = (lead as Record<string, unknown>)["affiliate"];
+  if (aff && typeof aff === "object") {
+    const obj = aff as Record<string, unknown>;
+    if (String(obj["_id"] ?? "") === myId) return "Me";
+    return String(obj["name"] ?? "") || "—";
+  }
+  const id = String(aff ?? "");
+  if (id && id === myId) return "Me";
+  const sub = subs.find((s) => s._id === id);
+  return sub?.name ?? "—";
+}
+
 function FollowUpLabel({ lead }: { lead: Lead }) {
   const state = followUpState(lead.nextFollowUpDate, lead.stage ?? "New Lead");
   if (!lead.nextFollowUpDate) {
@@ -204,6 +227,22 @@ export default function Leads() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
 
+  // Team scope. Masters can widen the view to their whole team ("all") or one
+  // sub-partner (their id); anything other than "own" is a read-only view.
+  const [scope, setScope] = useState<string>("own");
+  const { data: profile } = useGetPortalProfile();
+  const isMaster = Boolean(profile?._id) && !profile?.parent;
+  const { data: subPartners } = useListPortalSubPartners({
+    query: {
+      enabled: isMaster,
+      queryKey: getListPortalSubPartnersQueryKey(),
+    },
+  });
+  const subs = useMemo(() => subPartners ?? [], [subPartners]);
+  const hasTeam = isMaster && subs.length > 0;
+  const readOnly = scope !== "own";
+  const showOwner = readOnly;
+
   // Debounce the free-text search so we don't hit the API on every keystroke.
   useEffect(() => {
     const t = setTimeout(() => {
@@ -213,6 +252,11 @@ export default function Leads() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  const scopeParam = useMemo(
+    () => (scope !== "own" ? { partner: scope } : {}),
+    [scope],
+  );
+
   const listParams = useMemo(
     () => ({
       page,
@@ -220,8 +264,9 @@ export default function Leads() {
       ...(search ? { search } : {}),
       ...(stageFilter !== "all" ? { stage: stageFilter } : {}),
       ...(sourceFilter !== "all" ? { source: sourceFilter } : {}),
+      ...scopeParam,
     }),
-    [page, search, stageFilter, sourceFilter],
+    [page, search, stageFilter, sourceFilter, scopeParam],
   );
 
   const {
@@ -232,8 +277,8 @@ export default function Leads() {
     query: { queryKey: getListPortalLeadsQueryKey(listParams) },
   });
 
-  const { data: stats } = useGetPortalLeadStats({
-    query: { queryKey: getGetPortalLeadStatsQueryKey() },
+  const { data: stats } = useGetPortalLeadStats(scopeParam, {
+    query: { queryKey: getGetPortalLeadStatsQueryKey(scopeParam) },
   });
 
   // Business Type options are the existing global shop categories.
@@ -390,13 +435,41 @@ export default function Leads() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
           <p className="text-muted-foreground mt-1">
-            Track prospective businesses through your sales pipeline.
+            {readOnly
+              ? "Viewing your team's pipeline (read-only)."
+              : "Track prospective businesses through your sales pipeline."}
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Lead
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {hasTeam && (
+            <Select
+              value={scope}
+              onValueChange={(v) => {
+                setScope(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-52">
+                <SelectValue placeholder="My leads" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="own">My leads</SelectItem>
+                <SelectItem value="all">All my partners</SelectItem>
+                {subs.map((s) => (
+                  <SelectItem key={s._id} value={s._id ?? ""}>
+                    {s.name ?? s.email ?? "Partner"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {!readOnly && (
+            <Button onClick={openCreate} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Lead
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Pipeline summary */}
@@ -504,9 +577,11 @@ export default function Leads() {
               <p className="text-muted-foreground">
                 {hasFilters
                   ? "Try adjusting your search or filters."
-                  : "Add your first lead to start building your pipeline."}
+                  : readOnly
+                    ? "No leads in this view yet."
+                    : "Add your first lead to start building your pipeline."}
               </p>
-              {!hasFilters && (
+              {!hasFilters && !readOnly && (
                 <Button onClick={openCreate} className="mt-4 gap-2">
                   <Plus className="h-4 w-4" />
                   Add Lead
@@ -533,6 +608,13 @@ export default function Leads() {
                       <StageBadge stage={lead.stage ?? "New Lead"} />
                     </div>
                     <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                      {showOwner && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-foreground">
+                            {leadOwnerName(lead, profile?._id, subs)}
+                          </span>
+                        </div>
+                      )}
                       {lead.phonenumber && (
                         <div className="flex items-center gap-1.5">
                           <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -557,25 +639,27 @@ export default function Leads() {
                       ) : (
                         <span />
                       )}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(lead)}
-                          className="h-8 gap-1 px-2 text-xs"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteTarget(lead)}
-                          className="h-8 gap-1 px-2 text-xs text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEdit(lead)}
+                            className="h-8 gap-1 px-2 text-xs"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget(lead)}
+                            className="h-8 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -587,11 +671,14 @@ export default function Leads() {
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Business</TableHead>
+                      {showOwner && <TableHead>Partner</TableHead>}
                       <TableHead>Contact</TableHead>
                       <TableHead>Stage</TableHead>
                       <TableHead>Source</TableHead>
                       <TableHead>Next Follow-Up</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      {!readOnly && (
+                        <TableHead className="text-right">Actions</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -609,6 +696,11 @@ export default function Leads() {
                             </div>
                           )}
                         </TableCell>
+                        {showOwner && (
+                          <TableCell className="text-sm">
+                            {leadOwnerName(lead, profile?._id, subs)}
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex flex-col space-y-1 text-xs text-muted-foreground">
                             {lead.contactPerson && (
@@ -637,28 +729,30 @@ export default function Leads() {
                         <TableCell className="text-sm">
                           <FollowUpLabel lead={lead} />
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(lead)}
-                              className="h-8 w-8"
-                              aria-label="Edit lead"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteTarget(lead)}
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              aria-label="Delete lead"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {!readOnly && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(lead)}
+                                className="h-8 w-8"
+                                aria-label="Edit lead"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteTarget(lead)}
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                aria-label="Delete lead"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
