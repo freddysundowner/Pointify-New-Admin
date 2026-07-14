@@ -1,11 +1,5 @@
-import {
-  Smartphone,
-  TrendingUp,
-  Users,
-  Wallet,
-  BarChart3,
-  ArrowRight,
-} from "lucide-react";
+import { CheckCircle2, Phone, Smartphone } from "lucide-react";
+import qrUrl from "./qr.svg";
 
 export function Poster() {
   return (
@@ -46,11 +40,11 @@ export function Poster() {
         />
         <div
           className="absolute rounded-full border border-white/10"
-          style={{ width: 340, height: 340, right: 60, top: 340 }}
+          style={{ width: 340, height: 340, right: 60, top: 300 }}
         />
 
         {/* Content */}
-        <div className="relative flex h-full flex-col px-20 py-16">
+        <div className="relative flex h-full flex-col px-20 py-14">
           {/* Brand */}
           <div className="flex items-center gap-5">
             <div
@@ -70,65 +64,41 @@ export function Poster() {
           </div>
 
           {/* Headline */}
-          <div className="mt-16">
-            <div
-              className="inline-block rounded-full bg-white/15 px-6 py-2 text-xl font-semibold tracking-wide text-violet-100"
-              style={{ backdropFilter: "blur(4px)" }}
-            >
-              EARN WITH EVERY SHOP YOU SIGN UP
-            </div>
+          <div className="mt-14">
             <h1
-              className="mt-6 font-extrabold leading-[1.05] tracking-tight"
-              style={{ fontSize: 88 }}
+              className="font-extrabold leading-[1.05] tracking-tight"
+              style={{ fontSize: 92 }}
             >
-              Become a<br />
-              Pointify Partner.
+              Turn Your
               <br />
-              <span className="text-violet-300">Get Paid to Grow.</span>
+              Contacts Into
+              <br />
+              <span className="text-violet-300">Income.</span>
             </h1>
-            <p className="mt-8 max-w-2xl text-3xl leading-snug text-violet-100">
-              Introduce shops to Kenya&apos;s smart point-of-sale system and
-              earn commission on every subscription — month after month.
+            <p className="mt-8 max-w-3xl text-3xl leading-snug text-violet-100">
+              Do you know shop owners or businesses around you that struggle to
+              track stock, sales, profits, or expenses?
+            </p>
+            <p className="mt-6 max-w-3xl text-3xl font-semibold leading-snug">
+              Introduce them to Pointify POS and earn commissions when they
+              subscribe.
             </p>
           </div>
 
           {/* Benefits */}
-          <div className="mt-14 grid grid-cols-2 gap-x-10 gap-y-8">
+          <div className="mt-12 grid grid-cols-2 gap-x-10 gap-y-7">
             {[
-              {
-                icon: Wallet,
-                title: "Commission on every sale",
-                text: "Earn when your shops subscribe & renew",
-              },
-              {
-                icon: TrendingUp,
-                title: "Recurring income",
-                text: "Renewals keep paying you, every cycle",
-              },
-              {
-                icon: Users,
-                title: "Build your own team",
-                text: "Recruit sub-partners and earn from their sales",
-              },
-              {
-                icon: BarChart3,
-                title: "Track everything",
-                text: "Leads, signups & earnings in your dashboard",
-              },
-            ].map(({ icon: Icon, title, text }) => (
-              <div key={title} className="flex items-start gap-5">
-                <div
-                  className="flex shrink-0 items-center justify-center rounded-xl bg-white/15"
-                  style={{ width: 64, height: 64 }}
-                >
-                  <Icon style={{ width: 34, height: 34 }} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">{title}</div>
-                  <div className="mt-1 text-xl leading-snug text-violet-200">
-                    {text}
-                  </div>
-                </div>
+              "Free to Join",
+              "No Capital Needed",
+              "Work From Anywhere",
+              "Paid via M-Pesa",
+            ].map((title) => (
+              <div key={title} className="flex items-center gap-4">
+                <CheckCircle2
+                  className="shrink-0 text-violet-300"
+                  style={{ width: 44, height: 44 }}
+                />
+                <div className="text-3xl font-bold">{title}</div>
               </div>
             ))}
           </div>
@@ -136,27 +106,49 @@ export function Poster() {
           {/* CTA */}
           <div className="mt-auto">
             <div
-              className="flex items-center justify-between rounded-3xl bg-white px-12 py-9"
+              className="flex items-center justify-between gap-8 rounded-3xl bg-white px-10 py-8"
               style={{ color: "#2e1065" }}
             >
               <div>
-                <div className="text-3xl font-extrabold">
-                  Start earning today
-                </div>
-                <div className="mt-1 text-2xl font-semibold" style={{ color: "#7c3aed" }}>
+                <div className="text-4xl font-extrabold">Join Today</div>
+                <div
+                  className="mt-2 text-3xl font-bold"
+                  style={{ color: "#7c3aed" }}
+                >
                   partner.pointifypos.com
                 </div>
+                <div className="mt-4 flex items-center gap-3 text-2xl font-semibold">
+                  <span
+                    className="flex items-center justify-center rounded-full"
+                    style={{ width: 40, height: 40, background: "#7c3aed" }}
+                  >
+                    <Phone
+                      className="text-white"
+                      style={{ width: 22, height: 22 }}
+                    />
+                  </span>
+                  0720 044 055
+                </div>
               </div>
-              <div
-                className="flex items-center gap-3 rounded-2xl px-8 py-5 text-2xl font-bold text-white"
-                style={{ background: "#7c3aed" }}
-              >
-                Join Free <ArrowRight style={{ width: 28, height: 28 }} />
+              <div className="flex flex-col items-center gap-2">
+                <div
+                  className="rounded-2xl border-4 bg-white p-3"
+                  style={{ borderColor: "#7c3aed" }}
+                >
+                  <img
+                    src={qrUrl}
+                    alt="QR code for partner.pointifypos.com"
+                    style={{ width: 190, height: 190 }}
+                  />
+                </div>
+                <div className="text-lg font-bold" style={{ color: "#7c3aed" }}>
+                  Scan to join
+                </div>
               </div>
             </div>
-            <div className="mt-6 flex items-center justify-center gap-3 text-xl text-violet-200">
+            <div className="mt-5 flex items-center justify-center gap-3 text-xl text-violet-200">
               <Smartphone style={{ width: 24, height: 24 }} />
-              No fees to join · Payouts via M-Pesa · Works anywhere in Kenya
+              Scan the QR code or visit partner.pointifypos.com
             </div>
           </div>
         </div>
