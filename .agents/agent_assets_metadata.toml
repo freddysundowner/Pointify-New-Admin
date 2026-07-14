@@ -29,4 +29,10 @@ title = "Partner Poster — Slanted Phone (1080×1350)"
 id = "P5z1EPtrc9-jz5W0w47Yv"
 uri = "file://exports/pointify-partner-poster-whatsapp-status.jpg"
 type = "image"
-title = "Partner Poster — WhatsApp Status (1080×1920), clean version"
+title = "Partner Poster — WhatsApp Status (1080×1920)"
+
+[[outputs]]
+id = "qXCQvQPW7PLt8B-6UZWzU"
+uri = "file://exports/pointify-partner-poster-whatsapp-status-hq.jpg"
+type = "image"
+title = "Partner Poster — WhatsApp Status HIGH QUALITY (1620×2880)"

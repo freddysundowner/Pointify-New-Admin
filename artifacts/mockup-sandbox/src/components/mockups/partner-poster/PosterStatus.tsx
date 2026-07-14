@@ -2,11 +2,15 @@ import { CheckCircle2, Phone, Smartphone } from "lucide-react";
 import qrUrl from "./qr.svg";
 
 export function PosterStatus() {
+  const scale = Number(
+    new URLSearchParams(window.location.search).get("scale") ?? "1",
+  );
   return (
     <div className="flex items-start justify-center bg-neutral-200">
       <div
         className="relative overflow-hidden text-white"
         style={{
+          zoom: scale,
           width: 1080,
           height: 1920,
           background:
@@ -110,21 +114,36 @@ export function PosterStatus() {
               style={{ color: "#2e1065" }}
             >
               <div>
-                <div className="text-5xl font-extrabold">Join Today</div>
                 <div
-                  className="mt-3 text-3xl font-bold"
+                  className="inline-block rounded-2xl px-8 py-4 text-5xl font-extrabold uppercase tracking-wide text-white"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)",
+                    boxShadow: "0 12px 30px rgba(124,58,237,0.45)",
+                  }}
+                >
+                  Join Today!
+                </div>
+                <div
+                  className="mt-5 text-3xl font-bold"
                   style={{ color: "#7c3aed" }}
                 >
                   partner.pointifypos.com
                 </div>
-                <div className="mt-6 flex items-center gap-4 text-3xl font-semibold">
+                <div
+                  className="mt-7 text-2xl font-bold uppercase tracking-wider"
+                  style={{ color: "#6d28d9" }}
+                >
+                  Or Call Us Today
+                </div>
+                <div className="mt-3 flex items-center gap-4 text-4xl font-extrabold">
                   <span
                     className="flex items-center justify-center rounded-full"
-                    style={{ width: 52, height: 52, background: "#7c3aed" }}
+                    style={{ width: 58, height: 58, background: "#7c3aed" }}
                   >
                     <Phone
                       className="text-white"
-                      style={{ width: 28, height: 28 }}
+                      style={{ width: 30, height: 30 }}
                     />
                   </span>
                   0720 044 055
