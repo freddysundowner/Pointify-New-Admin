@@ -88,8 +88,8 @@ export function PosterStatus2() {
               className="max-w-4xl text-[42px] leading-snug"
               style={{ color: "#3b3452" }}
             >
-              Know a shop owner who still struggles with stock management,
-              tracking profits, or recording sales?
+              Do you know a shop owner who still struggles with stock
+              management, tracking profits, or recording sales?
             </p>
             <p
               className="mt-10 max-w-4xl text-[42px] font-bold leading-snug"
@@ -135,45 +135,71 @@ export function PosterStatus2() {
           {/* CTA */}
           <div className="mt-auto">
             <div
-              className="flex items-center justify-between gap-8 rounded-3xl px-12 py-10 text-white"
-              style={{
-                background:
-                  "linear-gradient(120deg, #2e1065 0%, #5b21b6 55%, #7c3aed 100%)",
-                boxShadow: "0 24px 60px rgba(46,16,101,0.35)",
-              }}
+              className="relative overflow-hidden rounded-[36px]"
+              style={{ boxShadow: "0 30px 70px rgba(46,16,101,0.4)" }}
             >
-              <div>
+              {/* Amber header strip */}
+              <div
+                className="flex items-center justify-center py-6"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)",
+                }}
+              >
                 <div
-                  className="inline-block rounded-full px-9 py-4 text-4xl font-extrabold uppercase tracking-wide"
-                  style={{ background: "#f59e0b", color: "#2e1065" }}
+                  className="text-6xl font-extrabold uppercase tracking-wide"
+                  style={{ color: "#2e1065" }}
                 >
-                  Join Today
-                </div>
-                <div className="mt-6 text-3xl font-bold text-violet-200">
-                  partner.pointifypos.com
-                </div>
-                <div className="mt-6 flex items-center gap-4 text-4xl font-extrabold">
-                  <span
-                    className="flex items-center justify-center rounded-full bg-white"
-                    style={{ width: 56, height: 56 }}
-                  >
-                    <Phone
-                      style={{ width: 30, height: 30, color: "#7c3aed" }}
-                    />
-                  </span>
-                  0720 044 055
+                  Join Today!
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-3">
-                <div className="rounded-2xl bg-white p-4">
-                  <img
-                    src={qrUrl}
-                    alt="QR code for partner.pointifypos.com"
-                    style={{ width: 220, height: 220 }}
-                  />
+              {/* Purple body */}
+              <div
+                className="flex items-center justify-between gap-8 px-12 py-10 text-white"
+                style={{
+                  background:
+                    "linear-gradient(120deg, #2e1065 0%, #5b21b6 55%, #7c3aed 100%)",
+                }}
+              >
+                <div>
+                  <div
+                    className="text-4xl font-extrabold"
+                    style={{ color: "#fbbf24" }}
+                  >
+                    partner.pointifypos.com
+                  </div>
+                  <div className="mt-8 text-2xl font-bold uppercase tracking-wider text-violet-200">
+                    Or Call Us Today
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-5xl font-extrabold">
+                    <span
+                      className="flex items-center justify-center rounded-full"
+                      style={{ width: 64, height: 64, background: "#f59e0b" }}
+                    >
+                      <Phone
+                        style={{ width: 34, height: 34, color: "#2e1065" }}
+                      />
+                    </span>
+                    0720 044 055
+                  </div>
                 </div>
-                <div className="text-xl font-bold text-violet-200">
-                  Scan to join
+                <div className="flex flex-col items-center gap-3">
+                  <div
+                    className="rounded-2xl bg-white p-4"
+                    style={{ border: "5px solid #f59e0b" }}
+                  >
+                    <img
+                      src={qrUrl}
+                      alt="QR code for partner.pointifypos.com"
+                      style={{ width: 210, height: 210 }}
+                    />
+                  </div>
+                  <div
+                    className="text-2xl font-extrabold"
+                    style={{ color: "#fbbf24" }}
+                  >
+                    Scan to Join
+                  </div>
                 </div>
               </div>
             </div>
