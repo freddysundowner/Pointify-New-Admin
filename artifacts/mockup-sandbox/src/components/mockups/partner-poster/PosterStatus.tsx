@@ -122,7 +122,7 @@ export function PosterStatus() {
                     boxShadow: "0 12px 30px rgba(124,58,237,0.45)",
                   }}
                 >
-                  Join Today!
+                  Join Now!
                 </div>
                 <div
                   className="mt-5 text-3xl font-bold"
