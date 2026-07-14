@@ -23,10 +23,10 @@ title = "Pointify Partners Backend — Sub-Partners & Commission Fix"
 id = "8Qn5T0f_t9VXwU7aT-9OI"
 uri = "file://exports/pointify-partner-poster.jpg"
 type = "image"
-title = "Partner Poster — with App Screenshot (1080×1350)"
+title = "Partner Poster — Slanted Phone (1080×1350)"
 
 [[outputs]]
 id = "P5z1EPtrc9-jz5W0w47Yv"
 uri = "file://exports/pointify-partner-poster-whatsapp-status.jpg"
 type = "image"
-title = "Partner Poster — WhatsApp Status (1080×1920)"
+title = "Partner Poster — WhatsApp Status, Slanted Phone (1080×1920)"

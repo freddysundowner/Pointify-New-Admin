@@ -124,6 +124,8 @@ export function Poster() {
                   width: 185,
                   borderRadius: 24,
                   boxShadow: "0 24px 48px rgba(0,0,0,0.45)",
+                  transform: "rotate(9deg)",
+                  marginRight: 24,
                 }}
               />
             </div>
