@@ -1,6 +1,5 @@
 import { CheckCircle2, Phone, Smartphone } from "lucide-react";
 import qrUrl from "./qr.svg";
-import appShot from "./app-screenshot.png";
 
 export function Poster() {
   return (
@@ -86,49 +85,22 @@ export function Poster() {
             </p>
           </div>
 
-          {/* Benefits + app preview */}
-          <div className="mt-8 flex items-center gap-8">
-            <div className="flex-1 space-y-6">
-              {[
-                "Free to Join",
-                "No Capital Needed",
-                "Work From Anywhere",
-                "Paid via M-Pesa",
-              ].map((title) => (
-                <div key={title} className="flex items-center gap-4">
-                  <CheckCircle2
-                    className="shrink-0 text-violet-300"
-                    style={{ width: 44, height: 44 }}
-                  />
-                  <div className="text-3xl font-bold">{title}</div>
-                </div>
-              ))}
-            </div>
-            <div className="relative shrink-0">
-              <div
-                className="absolute rounded-full"
-                style={{
-                  width: 300,
-                  height: 300,
-                  left: -30,
-                  top: 40,
-                  background:
-                    "radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 70%)",
-                }}
-              />
-              <img
-                src={appShot}
-                alt="Pointify POS app"
-                className="relative"
-                style={{
-                  width: 185,
-                  borderRadius: 24,
-                  boxShadow: "0 24px 48px rgba(0,0,0,0.45)",
-                  transform: "rotate(9deg)",
-                  marginRight: 24,
-                }}
-              />
-            </div>
+          {/* Benefits */}
+          <div className="mt-10 grid grid-cols-2 gap-x-10 gap-y-7">
+            {[
+              "Free to Join",
+              "No Capital Needed",
+              "Work From Anywhere",
+              "Paid via M-Pesa",
+            ].map((title) => (
+              <div key={title} className="flex items-center gap-4">
+                <CheckCircle2
+                  className="shrink-0 text-violet-300"
+                  style={{ width: 44, height: 44 }}
+                />
+                <div className="text-3xl font-bold">{title}</div>
+              </div>
+            ))}
           </div>
 
           {/* CTA */}
