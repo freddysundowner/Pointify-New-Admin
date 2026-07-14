@@ -36,3 +36,15 @@ id = "qXCQvQPW7PLt8B-6UZWzU"
 uri = "file://exports/pointify-partner-poster-whatsapp-status-hq.jpg"
 type = "image"
 title = "Partner Poster — JOIN NOW! High Quality (1620×2880)"
+
+[[outputs]]
+id = "06KZ6tkfaIuxhmpsekcJY"
+uri = "file://exports/pointify-partner-poster-extra-income-hq.jpg"
+type = "image"
+title = "Extra Income Poster — High Quality (1620×2880)"
+
+[[outputs]]
+id = "6xMHrU_q48m69er2z2KuA"
+uri = "file://exports/pointify-partner-poster-extra-income.jpg"
+type = "image"
+title = "Extra Income Poster — WhatsApp Status (1080×1920)"
