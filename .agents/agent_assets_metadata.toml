@@ -24,3 +24,9 @@ id = "8Qn5T0f_t9VXwU7aT-9OI"
 uri = "file://exports/pointify-partner-poster.jpg"
 type = "image"
 title = "Pointify Partner Recruitment Poster (with QR code)"
+
+[[outputs]]
+id = "P5z1EPtrc9-jz5W0w47Yv"
+uri = "file://exports/pointify-partner-poster-whatsapp-status.jpg"
+type = "image"
+title = "Partner Poster — WhatsApp Status Size (1080×1920)"
