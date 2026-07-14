@@ -1,5 +1,6 @@
 import { CheckCircle2, Phone, Smartphone } from "lucide-react";
 import qrUrl from "./qr.svg";
+import appShot from "./app-screenshot.png";
 
 export function Poster() {
   return (
@@ -64,10 +65,10 @@ export function Poster() {
           </div>
 
           {/* Headline */}
-          <div className="mt-14">
+          <div className="mt-8">
             <h1
               className="font-extrabold leading-[1.05] tracking-tight"
-              style={{ fontSize: 92 }}
+              style={{ fontSize: 80 }}
             >
               Turn Your
               <br />
@@ -75,38 +76,63 @@ export function Poster() {
               <br />
               <span className="text-violet-300">Income.</span>
             </h1>
-            <p className="mt-8 max-w-3xl text-3xl leading-snug text-violet-100">
+            <p className="mt-6 max-w-3xl text-3xl leading-snug text-violet-100">
               Do you know shop owners or businesses around you that struggle to
               track stock, sales, profits, or expenses?
             </p>
-            <p className="mt-6 max-w-3xl text-3xl font-semibold leading-snug">
+            <p className="mt-5 max-w-3xl text-3xl font-semibold leading-snug">
               Introduce them to Pointify POS and earn commissions when they
               subscribe.
             </p>
           </div>
 
-          {/* Benefits */}
-          <div className="mt-12 grid grid-cols-2 gap-x-10 gap-y-7">
-            {[
-              "Free to Join",
-              "No Capital Needed",
-              "Work From Anywhere",
-              "Paid via M-Pesa",
-            ].map((title) => (
-              <div key={title} className="flex items-center gap-4">
-                <CheckCircle2
-                  className="shrink-0 text-violet-300"
-                  style={{ width: 44, height: 44 }}
-                />
-                <div className="text-3xl font-bold">{title}</div>
-              </div>
-            ))}
+          {/* Benefits + app preview */}
+          <div className="mt-8 flex items-center gap-8">
+            <div className="flex-1 space-y-6">
+              {[
+                "Free to Join",
+                "No Capital Needed",
+                "Work From Anywhere",
+                "Paid via M-Pesa",
+              ].map((title) => (
+                <div key={title} className="flex items-center gap-4">
+                  <CheckCircle2
+                    className="shrink-0 text-violet-300"
+                    style={{ width: 44, height: 44 }}
+                  />
+                  <div className="text-3xl font-bold">{title}</div>
+                </div>
+              ))}
+            </div>
+            <div className="relative shrink-0">
+              <div
+                className="absolute rounded-full"
+                style={{
+                  width: 300,
+                  height: 300,
+                  left: -30,
+                  top: 40,
+                  background:
+                    "radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 70%)",
+                }}
+              />
+              <img
+                src={appShot}
+                alt="Pointify POS app"
+                className="relative"
+                style={{
+                  width: 185,
+                  borderRadius: 24,
+                  boxShadow: "0 24px 48px rgba(0,0,0,0.45)",
+                }}
+              />
+            </div>
           </div>
 
           {/* CTA */}
           <div className="mt-auto">
             <div
-              className="flex items-center justify-between gap-8 rounded-3xl bg-white px-10 py-8"
+              className="flex items-center justify-between gap-8 rounded-3xl bg-white px-10 py-6"
               style={{ color: "#2e1065" }}
             >
               <div>
@@ -138,7 +164,7 @@ export function Poster() {
                   <img
                     src={qrUrl}
                     alt="QR code for partner.pointifypos.com"
-                    style={{ width: 190, height: 190 }}
+                    style={{ width: 170, height: 170 }}
                   />
                 </div>
                 <div className="text-lg font-bold" style={{ color: "#7c3aed" }}>

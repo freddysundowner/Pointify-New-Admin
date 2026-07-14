@@ -1,5 +1,6 @@
 import { CheckCircle2, Phone, Smartphone } from "lucide-react";
 import qrUrl from "./qr.svg";
+import appShot from "./app-screenshot.png";
 
 export function PosterStatus() {
   return (
@@ -64,10 +65,10 @@ export function PosterStatus() {
           </div>
 
           {/* Headline */}
-          <div className="mt-20">
+          <div className="mt-12">
             <h1
               className="font-extrabold leading-[1.05] tracking-tight"
-              style={{ fontSize: 104 }}
+              style={{ fontSize: 96 }}
             >
               Turn Your
               <br />
@@ -85,22 +86,47 @@ export function PosterStatus() {
             </p>
           </div>
 
-          {/* Benefits */}
-          <div className="mt-16 space-y-9">
-            {[
-              "Free to Join",
-              "No Capital Needed",
-              "Work From Anywhere",
-              "Paid via M-Pesa",
-            ].map((title) => (
-              <div key={title} className="flex items-center gap-6">
-                <CheckCircle2
-                  className="shrink-0 text-violet-300"
-                  style={{ width: 56, height: 56 }}
-                />
-                <div className="text-4xl font-bold">{title}</div>
-              </div>
-            ))}
+          {/* Benefits + app preview */}
+          <div className="mt-10 flex items-center gap-8">
+            <div className="flex-1 space-y-9">
+              {[
+                "Free to Join",
+                "No Capital Needed",
+                "Work From Anywhere",
+                "Paid via M-Pesa",
+              ].map((title) => (
+                <div key={title} className="flex items-center gap-6">
+                  <CheckCircle2
+                    className="shrink-0 text-violet-300"
+                    style={{ width: 56, height: 56 }}
+                  />
+                  <div className="text-4xl font-bold">{title}</div>
+                </div>
+              ))}
+            </div>
+            <div className="relative shrink-0">
+              <div
+                className="absolute rounded-full"
+                style={{
+                  width: 360,
+                  height: 360,
+                  left: -40,
+                  top: 60,
+                  background:
+                    "radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 70%)",
+                }}
+              />
+              <img
+                src={appShot}
+                alt="Pointify POS app"
+                className="relative"
+                style={{
+                  width: 260,
+                  borderRadius: 32,
+                  boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                }}
+              />
+            </div>
           </div>
 
           {/* CTA */}
