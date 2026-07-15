@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toJpeg } from "html-to-image";
+import { InvitePoster } from "@/components/InvitePoster";
 import {
   useListPortalSubPartners,
   getListPortalSubPartnersQueryKey,
@@ -43,6 +45,8 @@ import {
   Link2,
   Copy,
   Check,
+  ImageDown,
+  Download,
 } from "lucide-react";
 
 function formatKes(n: unknown): string {
@@ -99,6 +103,38 @@ export default function SubPartners() {
     isMaster && profile?.code
       ? `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/register?ref=${encodeURIComponent(profile.code)}`
       : "";
+
+  const [posterOpen, setPosterOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const posterRef = useRef<HTMLDivElement | null>(null);
+
+  const downloadPoster = async () => {
+    const node = posterRef.current;
+    if (!node) return;
+    setDownloading(true);
+    try {
+      // Make sure webfonts are loaded so the export doesn't fall back to system fonts.
+      await document.fonts?.ready;
+      // pixelRatio 1.5 -> 1620x2880 output for a crisp share on WhatsApp.
+      const dataUrl = await toJpeg(node, {
+        quality: 0.92,
+        pixelRatio: 1.5,
+        backgroundColor: "#faf8f5",
+      });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = "pointify-partner-poster.jpg";
+      a.click();
+    } catch {
+      toast({
+        title: "Download failed",
+        description: "Could not generate the poster. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const copyInviteLink = async () => {
     if (!inviteLink) return;
@@ -257,22 +293,80 @@ export default function SubPartners() {
                   {inviteLink}
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={copyInviteLink}>
-                {copied ? (
-                  <>
-                    <Check className="mr-1.5 h-4 w-4 text-green-600" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="mr-1.5 h-4 w-4" />
-                    Copy link
-                  </>
-                )}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" size="sm" onClick={copyInviteLink}>
+                  {copied ? (
+                    <>
+                      <Check className="mr-1.5 h-4 w-4 text-green-600" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-1.5 h-4 w-4" />
+                      Copy link
+                    </>
+                  )}
+                </Button>
+                <Button size="sm" onClick={() => setPosterOpen(true)}>
+                  <ImageDown className="mr-1.5 h-4 w-4" />
+                  Get my poster
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Poster preview + download dialog */}
+      <Dialog open={posterOpen} onOpenChange={setPosterOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Your recruitment poster</DialogTitle>
+            <DialogDescription>
+              The QR code on this poster opens your personal invite link, so
+              everyone who scans it and registers joins your team automatically.
+            </DialogDescription>
+          </DialogHeader>
+          {inviteLink && (
+            <div className="flex justify-center">
+              <div
+                className="overflow-hidden rounded-lg border shadow-sm"
+                style={{ width: 270, height: 480 }}
+              >
+                <div
+                  style={{
+                    transform: "scale(0.25)",
+                    transformOrigin: "top left",
+                    width: 1080,
+                    height: 1920,
+                  }}
+                >
+                  <InvitePoster inviteLink={inviteLink} />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={downloadPoster} disabled={downloading}>
+              {downloading ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-4 w-4" />
+              )}
+              Download poster
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Offscreen full-size poster used for the JPEG export */}
+      {posterOpen && inviteLink && (
+        <div
+          aria-hidden
+          style={{ position: "fixed", left: -20000, top: 0, pointerEvents: "none" }}
+        >
+          <InvitePoster ref={posterRef} inviteLink={inviteLink} />
+        </div>
       )}
 
       {isLoading ? (
