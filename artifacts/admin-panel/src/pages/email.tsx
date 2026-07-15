@@ -84,32 +84,32 @@ const TEMPLATES: EmailTemplate[] = [
   {
     id: "grow-sales",
     name: "Grow your sales",
-    subject: "Your shop could be selling more — here's how",
-    html: `<p>Hi {name},</p><p><b>Every sale you don't track is money you can't see.</b></p><p>With Pointify POS you always know what's selling, what's running low, and how much you made today — right from your phone.</p><ul><li>Record sales in seconds</li><li>Track stock automatically</li><li>See your profit at a glance</li></ul><p>Log in today and take control of your shop.</p><p>— The Pointify Team</p>`,
+    subject: "Your shop could be selling more \u2014 here\u2019s how",
+    html: `<p>Hi {name},</p><p style="font-size:20px; font-weight:bold; color:#111827; margin:0 0 16px 0;">Every sale you don&#8217;t track is money you can&#8217;t see. &#128064;</p><p>Shops using Pointify POS know exactly <b>what&#8217;s selling</b>, <b>what&#8217;s running low</b>, and <b>how much they made today</b> &mdash; right from their phone.</p><ul><li>&#9889; Record sales in seconds</li><li>&#128230; Track stock automatically</li><li>&#128176; See your profit at a glance</li></ul><p style="text-align:center; margin:28px 0;"><a href="https://pointifypos.com/download" style="background-color:#2563eb; color:#ffffff; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px; display:inline-block;">Open Pointify Now</a></p><p style="border-top:1px solid #e5e7eb; margin:24px 0 16px 0;"></p><p style="color:#6b7280;">Asante sana,<br/><b style="color:#2563eb;">The Pointify Team</b></p>`,
   },
   {
     id: "trial-upgrade",
     name: "Trial → Paid upgrade",
-    subject: "Don't lose your shop data — upgrade today",
-    html: `<p>Hello {name},</p><p><b>Your business deserves more than a trial.</b></p><p>You've seen what Pointify POS can do. Upgrade now and keep your sales history, stock records, and reports growing with your business — without interruption.</p><p>Upgrading takes less than 2 minutes with M-Pesa.</p><p>Karibu tena,<br/>The Pointify Team</p>`,
+    subject: "Don\u2019t lose your shop data \u2014 upgrade today",
+    html: `<p>Hello {name},</p><p style="font-size:20px; font-weight:bold; color:#111827; margin:0 0 16px 0;">Your business deserves more than a trial. &#128640;</p><p>You&#8217;ve seen what Pointify POS can do. Upgrade now and keep your <b>sales history</b>, <b>stock records</b>, and <b>reports</b> growing with your business &mdash; without interruption.</p><p style="background-color:#eff6ff; border-radius:8px; padding:14px 18px; color:#1e40af;"><b>Upgrading takes less than 2 minutes with M-Pesa.</b> No paperwork, no waiting.</p><p style="text-align:center; margin:28px 0;"><a href="https://pointifypos.com" style="background-color:#2563eb; color:#ffffff; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px; display:inline-block;">Upgrade with M-Pesa</a></p><p style="border-top:1px solid #e5e7eb; margin:24px 0 16px 0;"></p><p style="color:#6b7280;">Karibu tena,<br/><b style="color:#2563eb;">The Pointify Team</b></p>`,
   },
   {
     id: "win-back",
     name: "Win back expired users",
-    subject: "We kept your shop data safe — come back anytime",
-    html: `<p>Hi {name},</p><p><b>Your shop hasn't stopped. Neither should your records.</b></p><p>Your Pointify account is paused, but all your data is still safe. Renew today and pick up exactly where you left off — same products, same reports, zero setup.</p><p>Renew in minutes with M-Pesa and get back to business.</p><p>— The Pointify Team</p>`,
+    subject: "We kept your shop data safe \u2014 come back anytime",
+    html: `<p>Hi {name},</p><p style="font-size:20px; font-weight:bold; color:#111827; margin:0 0 16px 0;">Your shop hasn&#8217;t stopped. Neither should your records. &#127978;</p><p>Your Pointify account is paused, but <b>all your data is still safe</b> &mdash; same products, same reports, zero setup when you return.</p><p>Renew in minutes with M-Pesa and pick up exactly where you left off.</p><p style="text-align:center; margin:28px 0;"><a href="https://pointifypos.com" style="background-color:#2563eb; color:#ffffff; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px; display:inline-block;">Renew &amp; Get Back to Business</a></p><p style="border-top:1px solid #e5e7eb; margin:24px 0 16px 0;"></p><p style="color:#6b7280;">Asante sana,<br/><b style="color:#2563eb;">The Pointify Team</b></p>`,
   },
   {
     id: "new-feature",
     name: "New feature announcement",
     subject: "New in Pointify: made for shops like yours",
-    html: `<p>Hello {name},</p><p><b>We just made running your shop even easier.</b></p><p>We're always improving Pointify POS based on what shop owners like you ask for. Log in to see the latest updates — built to save you time and help you sell more.</p><p>Have an idea for us? Just reply to this email.</p><p>Asante,<br/>The Pointify Team</p>`,
+    html: `<p>Hello {name},</p><p style="font-size:20px; font-weight:bold; color:#111827; margin:0 0 16px 0;">We just made running your shop even easier. &#10024;</p><p>We&#8217;re always improving Pointify POS based on what shop owners like you ask for. Log in to see the latest updates &mdash; built to <b>save you time</b> and <b>help you sell more</b>.</p><p style="text-align:center; margin:28px 0;"><a href="https://pointifypos.com/download" style="background-color:#2563eb; color:#ffffff; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px; display:inline-block;">See What&#8217;s New</a></p><p style="color:#6b7280; font-size:13px;">Have an idea for us? Just reply to this email &mdash; we read every message.</p><p style="border-top:1px solid #e5e7eb; margin:24px 0 16px 0;"></p><p style="color:#6b7280;">Asante sana,<br/><b style="color:#2563eb;">The Pointify Team</b></p>`,
   },
   {
     id: "partner-referral",
     name: "Partner push",
     subject: "Earn with every shop you bring to Pointify",
-    html: `<p>Hi {name},</p><p><b>Your network is your net worth — literally.</b></p><p>Every shop you refer to Pointify POS earns you commission on their subscription. The more shops you sign up, the more you earn — month after month.</p><ul><li>Share your personal link: {link}</li><li>Help the shop get started</li><li>Watch your wallet grow</li></ul><p>Your referral code is <b>{code}</b> — share the link above and every signup counts toward your commission.</p><p>— The Pointify Team</p>`,
+    html: `<p>Hi {name},</p><p style="font-size:20px; font-weight:bold; color:#111827; margin:0 0 16px 0;">Your network is your net worth &mdash; literally. &#128184;</p><p>Every shop you refer to Pointify POS earns you <b>commission on their subscription</b>. The more shops you sign up, the more you earn &mdash; month after month.</p><p style="background-color:#eff6ff; border-radius:8px; padding:14px 18px; text-align:center;">Your referral code<br/><b style="font-size:22px; color:#1e40af; letter-spacing:2px;">{code}</b></p><ul><li>&#128279; Share your personal link: {link}</li><li>&#129309; Help the shop get started</li><li>&#128200; Watch your wallet grow</li></ul><p style="text-align:center; margin:28px 0;"><a href="{link}" style="background-color:#2563eb; color:#ffffff; padding:14px 32px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px; display:inline-block;">Share Your Link</a></p><p style="border-top:1px solid #e5e7eb; margin:24px 0 16px 0;"></p><p style="color:#6b7280;">Asante sana,<br/><b style="color:#2563eb;">The Pointify Team</b></p>`,
   },
 ];
 

@@ -241,18 +241,88 @@ function sanitizeHtml(html: string): string {
     .replace(/(href|src)\s*=\s*(["']?)\s*(?:javascript|vbscript|data):[^"'\s>]*\2/gi, "");
 }
 
-/** Wrap rich-text body in the same base styling used for plain-text emails. */
-function wrapHtmlBody(inner: string): string {
-  return `<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1f2937;">${inner}</div>`;
+/**
+ * Branded email shell: centered 600px table layout with a Pointify header and
+ * a colored footer. Table-based with inline styles only, for maximum email
+ * client compatibility (Gmail, Outlook, Yahoo strip <style> blocks).
+ */
+function emailShell(inner: string): string {
+  const year = new Date().getFullYear();
+  return `<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background-color:#f1f5f9;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="background-color:#2563eb; border-radius:12px 12px 0 0; padding:22px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-family:Arial,Helvetica,sans-serif; font-size:22px; font-weight:bold; color:#ffffff; letter-spacing:0.5px;">
+                    Pointify&nbsp;<span style="color:#bfdbfe;">POS</span>
+                  </td>
+                  <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#bfdbfe;">
+                    Smart selling, simple business
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#ffffff; padding:32px; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.7; color:#1f2937;">
+              ${inner}
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#1e3a8a; border-radius:0 0 12px 12px; padding:24px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; font-weight:bold; color:#ffffff; padding-bottom:6px;">
+                    Pointify POS
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-family:Arial,Helvetica,sans-serif; font-size:12px; line-height:1.6; color:#bfdbfe; padding-bottom:12px;">
+                    The point of sale that fits in your pocket &mdash; sales, stock and reports for your shop, anywhere.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-family:Arial,Helvetica,sans-serif; font-size:12px; padding-bottom:14px;">
+                    <a href="https://pointifypos.com" style="color:#93c5fd; text-decoration:none; font-weight:bold;">pointifypos.com</a>
+                    <span style="color:#3b5bb5;">&nbsp;&bull;&nbsp;</span>
+                    <a href="https://pointifypos.com/download" style="color:#93c5fd; text-decoration:none; font-weight:bold;">Get the app</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border-top:1px solid #3b5bb5; padding-top:12px; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#93a8dd;">
+                    &copy; ${year} Pointify POS. All rights reserved.<br/>
+                    You are receiving this email because you have a Pointify POS account.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
-/** Very small text→HTML conversion: escape, then preserve line breaks. */
+/** Wrap rich-text body in the branded shell. */
+function wrapHtmlBody(inner: string): string {
+  return emailShell(inner);
+}
+
+/** Very small text→HTML conversion: escape, preserve line breaks, then wrap in the shell. */
 function textToHtml(text: string): string {
   const escaped = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  return `<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1f2937; white-space: pre-wrap;">${escaped}</div>`;
+  return emailShell(`<div style="white-space: pre-wrap;">${escaped}</div>`);
 }
 
 const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
