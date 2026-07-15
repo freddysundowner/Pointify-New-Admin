@@ -1840,6 +1840,38 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResult" }
 
+  /whats-new:
+    get:
+      operationId: getWhatsNew
+      tags: [settings]
+      summary: Public "What's New" content (shown on the public updates page)
+      responses:
+        "200":
+          description: What's New content
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WhatsNewContent" }
+    put:
+      operationId: saveWhatsNew
+      tags: [settings]
+      summary: Replace the "What's New" entries (operator only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WhatsNewInput" }
+      responses:
+        "200":
+          description: Saved content
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WhatsNewContent" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResult" }
+
 components:
   schemas:
     HealthStatus:
@@ -3190,3 +3222,28 @@ components:
       additionalProperties: true
       properties:
         name: { type: string }
+
+    WhatsNewEntry:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        body: { type: string }
+        date: { type: string, description: "Display date, e.g. 2026-07-15" }
+
+    WhatsNewContent:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/WhatsNewEntry" }
+        updatedAt: { type: string }
+
+    WhatsNewInput:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/WhatsNewEntry" }

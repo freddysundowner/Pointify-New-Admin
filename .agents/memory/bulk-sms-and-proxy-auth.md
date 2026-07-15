@@ -21,3 +21,8 @@ description: Upstream bulk-SMS auth gap + how the proxy gates it and derives the
 - The derived id is injected as `user`; any **client-supplied `user` is stripped** (anti-spoof for the communication audit log). Upstream login token payload is `{ email, _id }` (other flows sign `{ id }`) — decode the JWT middle segment (base64url) and read `_id ?? id`. So `BulkSmsInput` in the spec is just `{ userType, message }`; do not add `user` to the spec.
 
 **Why:** client-supplied sender id is spoofable; upstream attributes `user` only from the request body (not the token), so the proxy must inject it from the (decoded) token.
+
+## Stronger gate for persisted public content (What's New, etc.)
+- For writes whose effect is **persistent + publicly visible** (e.g. editing the /whats-new page), decode-only is not enough: also **cross-check the token's `{_id, email}` against the upstream admin directory** (`GET /admin/?name=<email>`, match `_id` AND `email` case-insensitively; cache success ~5 min). Forged tokens then need both a real admin's id AND email.
+- **Why:** decode-only lets anyone deface a public page; the directory cross-check is the strongest gate achievable without the upstream JWT secret.
+- **How to apply:** reuse this pattern for any future proxy endpoint that stores content locally rather than forwarding to upstream.

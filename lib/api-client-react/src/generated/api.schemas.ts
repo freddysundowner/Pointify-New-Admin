@@ -1370,6 +1370,22 @@ export interface SettingsInput {
   [key: string]: unknown;
  }
 
+export interface WhatsNewEntry {
+  title: string;
+  body?: string;
+  /** Display date, e.g. 2026-07-15 */
+  date?: string;
+}
+
+export interface WhatsNewContent {
+  entries: WhatsNewEntry[];
+  updatedAt?: string;
+}
+
+export interface WhatsNewInput {
+  entries: WhatsNewEntry[];
+}
+
 export type GetRevenueRangeParams = {
 /**
  * Start date (inclusive), YYYY-MM-DD (UTC day boundary, matching upstream summary buckets)

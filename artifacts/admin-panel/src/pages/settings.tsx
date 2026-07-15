@@ -5,7 +5,11 @@ import {
   useGetSettings,
   useSaveSettings,
   getGetSettingsQueryKey,
+  useGetWhatsNew,
+  useSaveWhatsNew,
+  getGetWhatsNewQueryKey,
   type SettingsInput,
+  type WhatsNewEntry,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +41,195 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Plus, X } from "lucide-react";
+import { Pencil, Plus, X, Trash2, ExternalLink, Sparkles } from "lucide-react";
+
+function WhatsNewSection() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useGetWhatsNew();
+  const saveMutation = useSaveWhatsNew();
+
+  const [editing, setEditing] = useState(false);
+  const [draftEntries, setDraftEntries] = useState<WhatsNewEntry[]>([]);
+
+  const entries = data?.entries ?? [];
+
+  const startEditing = () => {
+    setDraftEntries(entries.map((e) => ({ ...e })));
+    setEditing(true);
+  };
+
+  const updateEntry = (i: number, patch: Partial<WhatsNewEntry>) => {
+    setDraftEntries((prev) =>
+      prev.map((e, idx) => (idx === i ? { ...e, ...patch } : e)),
+    );
+  };
+
+  const save = () => {
+    const cleaned = draftEntries
+      .map((e) => ({
+        title: e.title.trim(),
+        body: e.body?.trim() || undefined,
+        date: e.date?.trim() || undefined,
+      }))
+      .filter((e) => e.title.length > 0);
+    saveMutation.mutate(
+      { data: { entries: cleaned } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetWhatsNewQueryKey() });
+          toast({ title: "What's New updated" });
+          setEditing(false);
+        },
+        onError: (err: unknown) => {
+          const msg =
+            (err as { data?: { message?: string } } | undefined)?.data
+              ?.message ?? "Please try again.";
+          toast({
+            title: "Save failed",
+            description: msg,
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Card className="page-card">
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            See What&apos;s New
+          </CardTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            What people see when they click &ldquo;See What&apos;s New&rdquo; in
+            your emails. Public page:{" "}
+            <a
+              href="/whats-new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary underline underline-offset-2"
+            >
+              /whats-new <ExternalLink className="h-3 w-3" />
+            </a>
+          </p>
+        </div>
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditing(false)}
+              disabled={saveMutation.isPending}
+            >
+              <X className="mr-1 h-3.5 w-3.5" />
+              Cancel
+            </Button>
+            <Button size="sm" onClick={save} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={startEditing}
+            disabled={isLoading}
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            Edit
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ) : editing ? (
+          <>
+            {draftEntries.map((entry, i) => (
+              <div
+                key={i}
+                className="space-y-2 rounded-lg border p-4"
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      placeholder="Update title (e.g. New sales report)"
+                      value={entry.title}
+                      onChange={(e) => updateEntry(i, { title: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Date shown to readers (e.g. July 2026) — optional"
+                      value={entry.date ?? ""}
+                      onChange={(e) => updateEntry(i, { date: e.target.value })}
+                    />
+                    <Textarea
+                      rows={3}
+                      placeholder="Describe the update in a friendly way — optional"
+                      value={entry.body ?? ""}
+                      onChange={(e) => updateEntry(i, { body: e.target.value })}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive"
+                    onClick={() =>
+                      setDraftEntries((prev) => prev.filter((_, idx) => idx !== i))
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setDraftEntries((prev) => [
+                  { title: "", body: "", date: "" },
+                  ...prev,
+                ])
+              }
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add update
+            </Button>
+          </>
+        ) : entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">
+            No updates published yet. Click Edit to add your first one — it will
+            appear on the public What&apos;s New page.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {entries.map((entry, i) => (
+              <div key={i} className="rounded-lg border p-4">
+                {entry.date ? (
+                  <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    {entry.date}
+                  </div>
+                ) : null}
+                <div className="font-medium">{entry.title}</div>
+                {entry.body ? (
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                    {entry.body}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function humanize(key: string): string {
   const spaced = key
@@ -757,6 +949,8 @@ export default function Settings() {
           })}
         </Tabs>
       )}
+
+      <WhatsNewSection />
 
       <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
         <DialogContent>

@@ -18,6 +18,7 @@ import smsRouter from "./sms";
 import emailRouter from "./email";
 import aiLogsRouter from "./ai-logs";
 import settingsRouter from "./settings";
+import whatsNewRouter from "./whats-new";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(smsRouter);
 router.use(emailRouter);
 router.use(aiLogsRouter);
 router.use(settingsRouter);
+router.use(whatsNewRouter);
 
 export default router;

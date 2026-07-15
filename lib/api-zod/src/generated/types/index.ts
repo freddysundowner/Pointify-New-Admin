@@ -165,5 +165,8 @@ export * from './topShopStat';
 export * from './transaction';
 export * from './transactionListResult';
 export * from './trendPoint';
+export * from './whatsNewContent';
+export * from './whatsNewEntry';
+export * from './whatsNewInput';
 export * from './withdrawInput';
 export * from './withdrawResult';

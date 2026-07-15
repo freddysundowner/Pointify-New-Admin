@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { mountSpa } from "./lib/spa";
+import { renderWhatsNewPage } from "./routes/whats-new";
 
 const app: Express = express();
 
@@ -45,6 +46,14 @@ app.use("/api", (_req, res, next) => {
   next();
 });
 app.use("/api", router);
+
+// Public "What's New" page — the destination of the "See What's New" button in
+// marketing emails. Registered before the SPA fallback so it is reachable on
+// every host without authentication.
+app.get("/whats-new", (_req, res) => {
+  res.set("Cache-Control", "no-cache, must-revalidate");
+  res.status(200).type("html").send(renderWhatsNewPage());
+});
 
 // Serve the admin + partner SPAs from this same process (host-based). Registered
 // after /api so API requests are never shadowed by the static/SPA fallback.

@@ -135,6 +135,8 @@ import type {
   TestSendResult,
   TestSmsInput,
   TransactionListResult,
+  WhatsNewContent,
+  WhatsNewInput,
   WithdrawInput,
   WithdrawResult
 } from './api.schemas';
@@ -7327,5 +7329,153 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSaveSettingsMutationOptions(options));
+    }
+
+export const getGetWhatsNewUrl = () => {
+
+
+
+
+  return `/api/whats-new`
+}
+
+/**
+ * @summary Public "What's New" content (shown on the public updates page)
+ */
+export const getWhatsNew = async ( options?: RequestInit): Promise<WhatsNewContent> => {
+
+  return customFetch<WhatsNewContent>(getGetWhatsNewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWhatsNewQueryKey = () => {
+    return [
+    `/api/whats-new`
+    ] as const;
+    }
+
+
+export const getGetWhatsNewQueryOptions = <TData = Awaited<ReturnType<typeof getWhatsNew>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWhatsNew>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWhatsNewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWhatsNew>>> = ({ signal }) => getWhatsNew({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWhatsNew>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWhatsNewQueryResult = NonNullable<Awaited<ReturnType<typeof getWhatsNew>>>
+export type GetWhatsNewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public "What's New" content (shown on the public updates page)
+ */
+
+export function useGetWhatsNew<TData = Awaited<ReturnType<typeof getWhatsNew>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWhatsNew>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWhatsNewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSaveWhatsNewUrl = () => {
+
+
+
+
+  return `/api/whats-new`
+}
+
+/**
+ * @summary Replace the "What's New" entries (operator only)
+ */
+export const saveWhatsNew = async (whatsNewInput: WhatsNewInput, options?: RequestInit): Promise<WhatsNewContent> => {
+
+  return customFetch<WhatsNewContent>(getSaveWhatsNewUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      whatsNewInput,)
+  }
+);}
+
+
+
+
+export const getSaveWhatsNewMutationOptions = <TError = ErrorType<MessageResult>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveWhatsNew>>, TError,{data: BodyType<WhatsNewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveWhatsNew>>, TError,{data: BodyType<WhatsNewInput>}, TContext> => {
+
+const mutationKey = ['saveWhatsNew'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveWhatsNew>>, {data: BodyType<WhatsNewInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveWhatsNew(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveWhatsNewMutationResult = NonNullable<Awaited<ReturnType<typeof saveWhatsNew>>>
+    export type SaveWhatsNewMutationBody = BodyType<WhatsNewInput>
+    export type SaveWhatsNewMutationError = ErrorType<MessageResult>
+
+    /**
+ * @summary Replace the "What's New" entries (operator only)
+ */
+export const useSaveWhatsNew = <TError = ErrorType<MessageResult>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveWhatsNew>>, TError,{data: BodyType<WhatsNewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveWhatsNew>>,
+        TError,
+        {data: BodyType<WhatsNewInput>},
+        TContext
+      > => {
+      return useMutation(getSaveWhatsNewMutationOptions(options));
     }
 

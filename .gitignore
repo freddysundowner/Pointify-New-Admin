@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# operator-authored local content (whats-new etc.)
+artifacts/api-server/data/

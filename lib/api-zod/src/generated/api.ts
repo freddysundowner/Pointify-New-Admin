@@ -2454,3 +2454,37 @@ export const SaveSettingsResponse = zod.object({
 })
 
 
+/**
+ * @summary Public "What's New" content (shown on the public updates page)
+ */
+export const GetWhatsNewResponse = zod.object({
+  "entries": zod.array(zod.object({
+  "title": zod.string(),
+  "body": zod.string().optional(),
+  "date": zod.string().optional().describe('Display date, e.g. 2026-07-15')
+})),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Replace the "What's New" entries (operator only)
+ */
+export const SaveWhatsNewBody = zod.object({
+  "entries": zod.array(zod.object({
+  "title": zod.string(),
+  "body": zod.string().optional(),
+  "date": zod.string().optional().describe('Display date, e.g. 2026-07-15')
+}))
+})
+
+export const SaveWhatsNewResponse = zod.object({
+  "entries": zod.array(zod.object({
+  "title": zod.string(),
+  "body": zod.string().optional(),
+  "date": zod.string().optional().describe('Display date, e.g. 2026-07-15')
+})),
+  "updatedAt": zod.string().optional()
+})
+
+
