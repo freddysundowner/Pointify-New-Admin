@@ -86,14 +86,59 @@ async function brevoConfig(authHeader: string | undefined): Promise<BrevoConfig 
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function collectEmails(rows: unknown[], into: Set<string>): void {
+/** Base URL for a partner's shareable referral link ({link} placeholder). */
+const REFERRAL_LINK_BASE = "https://pointifypos.com/download";
+
+export interface Recipient {
+  email: string;
+  /** Display name used for the {name} placeholder. */
+  name?: string;
+  /** Partner referral code used for the {code} and {link} placeholders. */
+  code?: string;
+}
+
+function stringField(row: Record<string, unknown>, key: string): string | undefined {
+  const v = row[key];
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
+function collectRecipients(rows: unknown[], into: Map<string, Recipient>): void {
   for (const row of rows) {
     if (!row || typeof row !== "object") continue;
-    const email = (row as Record<string, unknown>)["email"];
-    if (typeof email !== "string") continue;
-    const trimmed = email.trim().toLowerCase();
-    if (EMAIL_RE.test(trimmed)) into.add(trimmed);
+    const rec = row as Record<string, unknown>;
+    const email = stringField(rec, "email")?.toLowerCase();
+    if (!email || !EMAIL_RE.test(email)) continue;
+    if (into.has(email)) continue;
+    into.set(email, {
+      email,
+      // Partners have `name`; admins/users have `username` (fall back to `name`).
+      name: stringField(rec, "name") ?? stringField(rec, "username"),
+      code: stringField(rec, "code"),
+    });
   }
+}
+
+/**
+ * Replace personalization placeholders in operator-authored content.
+ * Supported: {name} (falls back to a friendly generic), {code} (partner
+ * referral code), {link} (partner's shareable download link with their code).
+ */
+export function personalize(
+  text: string,
+  r: { name?: string; code?: string },
+  opts: { html?: boolean } = {},
+): string {
+  const esc = (v: string) =>
+    opts.html
+      ? v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+      : v;
+  const link = r.code
+    ? `${REFERRAL_LINK_BASE}?ref=${encodeURIComponent(r.code)}`
+    : REFERRAL_LINK_BASE;
+  return text
+    .replace(/\{\s*name\s*\}/gi, esc(r.name ?? "there"))
+    .replace(/\{\s*code\s*\}/gi, esc(r.code ?? ""))
+    .replace(/\{\s*link\s*\}/gi, link);
 }
 
 /**
@@ -105,11 +150,11 @@ function collectEmails(rows: unknown[], into: Set<string>): void {
  *   subscriptionType + subscriptionStatus, which classifies users the same way
  *   the platform's own subscription statistics do.
  */
-async function resolveAudienceEmails(
+async function resolveAudienceRecipients(
   audience: Audience,
   authHeader: string | undefined,
-): Promise<string[]> {
-  const emails = new Set<string>();
+): Promise<Recipient[]> {
+  const recipients = new Map<string, Recipient>();
   const PAGE_LIMIT = 500;
   const MAX_PAGES = 200; // hard stop: 100k users
 
@@ -126,11 +171,11 @@ async function resolveAudienceEmails(
         throw new Error(`Upstream partner list failed with status ${result.status}`);
       }
       const norm = normalizeList(result.data);
-      collectEmails(norm.data, emails);
+      collectRecipients(norm.data, recipients);
       if (norm.data.length < PAGE_LIMIT) break;
       if (norm.totalPages && page >= norm.totalPages) break;
     }
-    return [...emails];
+    return [...recipients.values()];
   }
 
   if (audience === "all") {
@@ -145,11 +190,11 @@ async function resolveAudienceEmails(
         throw new Error(`Upstream admin list failed with status ${result.status}`);
       }
       const norm = normalizeList(result.data);
-      collectEmails(norm.data, emails);
+      collectRecipients(norm.data, recipients);
       if (norm.data.length < PAGE_LIMIT) break;
       if (norm.totalPages && page >= norm.totalPages) break;
     }
-    return [...emails];
+    return [...recipients.values()];
   }
 
   const [type, status] = audience.split("_") as [string, string];
@@ -174,13 +219,13 @@ async function resolveAudienceEmails(
     const rows = Array.isArray(body["admins"])
       ? (body["admins"] as unknown[])
       : normalizeList(result.data).data;
-    collectEmails(rows, emails);
+    collectRecipients(rows, recipients);
     const totalPages =
       typeof body["totalPages"] === "number" ? body["totalPages"] : undefined;
     if (rows.length < PAGE_LIMIT) break;
     if (totalPages && page >= totalPages) break;
   }
-  return [...emails];
+  return [...recipients.values()];
 }
 
 /**
@@ -263,7 +308,7 @@ async function sendOneEmail(
  */
 async function sendInBackground(
   cfg: BrevoConfig,
-  recipients: string[],
+  recipients: Recipient[],
   subject: string,
   message: string,
   audience: Audience,
@@ -271,13 +316,22 @@ async function sendInBackground(
 ): Promise<void> {
   let sent = 0;
   let failed = 0;
-  for (const to of recipients) {
-    const result = await sendOneEmail(cfg, to, subject, message, html);
+  for (const r of recipients) {
+    const result = await sendOneEmail(
+      cfg,
+      r.email,
+      personalize(subject, r),
+      personalize(message, r),
+      html ? personalize(html, r, { html: true }) : undefined,
+    );
     if (result.ok) {
       sent++;
     } else {
       failed++;
-      logger.warn({ to, detail: result.detail }, "Bulk email: send failed for recipient");
+      logger.warn(
+        { to: r.email, detail: result.detail },
+        "Bulk email: send failed for recipient",
+      );
     }
   }
   logger.info(
@@ -336,7 +390,15 @@ router.post("/email/test", async (req, res) => {
 
   // Test sends are deliberate, single-recipient, and typed in by the operator,
   // so they are allowed in every environment (no production-only gate).
-  const result = await sendOneEmail(cfg, to, subject, message, html);
+  // Placeholders are filled with sample values so the operator can preview them.
+  const sample = { name: "Jane Wanjiku", code: "1234567" };
+  const result = await sendOneEmail(
+    cfg,
+    to,
+    personalize(subject, sample),
+    personalize(message, sample),
+    html ? personalize(html, sample, { html: true }) : undefined,
+  );
   req.log.info({ to, ok: result.ok, sender }, "Test email send attempted");
   if (result.ok) {
     res.status(200).json({ success: true, message: `Test email sent to ${to}` });
@@ -388,9 +450,9 @@ router.post("/email/bulk", async (req, res) => {
     return;
   }
 
-  let recipients: string[];
+  let recipients: Recipient[];
   try {
-    recipients = await resolveAudienceEmails(userType, authHeaderFrom(req));
+    recipients = await resolveAudienceRecipients(userType, authHeaderFrom(req));
   } catch (err) {
     req.log.error({ err, userType }, "Bulk email: audience resolution failed");
     res.status(502).json({ message: "Failed to resolve the audience from the POS API" });

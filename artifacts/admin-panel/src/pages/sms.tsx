@@ -228,6 +228,13 @@ export default function SMS() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              For the Partners audience you can personalize with{" "}
+              <code className="rounded bg-muted px-1">{"{name}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{code}"}</code> (referral
+              code) and <code className="rounded bg-muted px-1">{"{link}"}</code>{" "}
+              (their shareable download link). Test SMS use sample values.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 border-t pt-4 md:flex-row md:items-end md:justify-between">

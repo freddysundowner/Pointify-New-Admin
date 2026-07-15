@@ -85,31 +85,31 @@ const TEMPLATES: EmailTemplate[] = [
     id: "grow-sales",
     name: "Grow your sales",
     subject: "Your shop could be selling more — here's how",
-    html: `<p>Hi there,</p><p><b>Every sale you don't track is money you can't see.</b></p><p>With Pointify POS you always know what's selling, what's running low, and how much you made today — right from your phone.</p><ul><li>Record sales in seconds</li><li>Track stock automatically</li><li>See your profit at a glance</li></ul><p>Log in today and take control of your shop.</p><p>— The Pointify Team</p>`,
+    html: `<p>Hi {name},</p><p><b>Every sale you don't track is money you can't see.</b></p><p>With Pointify POS you always know what's selling, what's running low, and how much you made today — right from your phone.</p><ul><li>Record sales in seconds</li><li>Track stock automatically</li><li>See your profit at a glance</li></ul><p>Log in today and take control of your shop.</p><p>— The Pointify Team</p>`,
   },
   {
     id: "trial-upgrade",
     name: "Trial → Paid upgrade",
     subject: "Don't lose your shop data — upgrade today",
-    html: `<p>Hello,</p><p><b>Your business deserves more than a trial.</b></p><p>You've seen what Pointify POS can do. Upgrade now and keep your sales history, stock records, and reports growing with your business — without interruption.</p><p>Upgrading takes less than 2 minutes with M-Pesa.</p><p>Karibu tena,<br/>The Pointify Team</p>`,
+    html: `<p>Hello {name},</p><p><b>Your business deserves more than a trial.</b></p><p>You've seen what Pointify POS can do. Upgrade now and keep your sales history, stock records, and reports growing with your business — without interruption.</p><p>Upgrading takes less than 2 minutes with M-Pesa.</p><p>Karibu tena,<br/>The Pointify Team</p>`,
   },
   {
     id: "win-back",
     name: "Win back expired users",
     subject: "We kept your shop data safe — come back anytime",
-    html: `<p>Hi,</p><p><b>Your shop hasn't stopped. Neither should your records.</b></p><p>Your Pointify account is paused, but all your data is still safe. Renew today and pick up exactly where you left off — same products, same reports, zero setup.</p><p>Renew in minutes with M-Pesa and get back to business.</p><p>— The Pointify Team</p>`,
+    html: `<p>Hi {name},</p><p><b>Your shop hasn't stopped. Neither should your records.</b></p><p>Your Pointify account is paused, but all your data is still safe. Renew today and pick up exactly where you left off — same products, same reports, zero setup.</p><p>Renew in minutes with M-Pesa and get back to business.</p><p>— The Pointify Team</p>`,
   },
   {
     id: "new-feature",
     name: "New feature announcement",
     subject: "New in Pointify: made for shops like yours",
-    html: `<p>Hello,</p><p><b>We just made running your shop even easier.</b></p><p>We're always improving Pointify POS based on what shop owners like you ask for. Log in to see the latest updates — built to save you time and help you sell more.</p><p>Have an idea for us? Just reply to this email.</p><p>Asante,<br/>The Pointify Team</p>`,
+    html: `<p>Hello {name},</p><p><b>We just made running your shop even easier.</b></p><p>We're always improving Pointify POS based on what shop owners like you ask for. Log in to see the latest updates — built to save you time and help you sell more.</p><p>Have an idea for us? Just reply to this email.</p><p>Asante,<br/>The Pointify Team</p>`,
   },
   {
     id: "partner-referral",
     name: "Partner push",
     subject: "Earn with every shop you bring to Pointify",
-    html: `<p>Hi partner,</p><p><b>Your network is your net worth — literally.</b></p><p>Every shop you refer to Pointify POS earns you commission on their subscription. The more shops you sign up, the more you earn — month after month.</p><ul><li>Share your referral code</li><li>Help the shop get started</li><li>Watch your wallet grow</li></ul><p>Log in to your partner portal to grab your referral link.</p><p>— The Pointify Team</p>`,
+    html: `<p>Hi {name},</p><p><b>Your network is your net worth — literally.</b></p><p>Every shop you refer to Pointify POS earns you commission on their subscription. The more shops you sign up, the more you earn — month after month.</p><ul><li>Share your personal link: {link}</li><li>Help the shop get started</li><li>Watch your wallet grow</li></ul><p>Your referral code is <b>{code}</b> — share the link above and every signup counts toward your commission.</p><p>— The Pointify Team</p>`,
   },
 ];
 
@@ -342,6 +342,16 @@ export default function Email() {
                 setPlainText(nextText);
               }}
             />
+            <p className="text-xs text-muted-foreground">
+              Personalize with{" "}
+              <code className="rounded bg-muted px-1">{"{name}"}</code> (recipient's
+              name),{" "}
+              <code className="rounded bg-muted px-1">{"{code}"}</code> (partner
+              referral code) and{" "}
+              <code className="rounded bg-muted px-1">{"{link}"}</code> (the
+              partner's shareable download link). Code and link fill in for the
+              Partners audience; test emails use sample values.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 border-t pt-4 md:flex-row md:items-end md:justify-between">

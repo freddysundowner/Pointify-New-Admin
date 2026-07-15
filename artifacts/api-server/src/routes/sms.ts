@@ -3,6 +3,7 @@ import { proxy, proxyList, upstreamFetch, authHeaderFrom, normalizeList } from "
 import { logger } from "../lib/logger";
 import { normalizeKenyanMsisdn } from "../lib/phone";
 import { checkSendRateLimit } from "../lib/sendRateLimit";
+import { personalize } from "./email";
 
 const router: IRouter = Router();
 
@@ -51,8 +52,16 @@ function smsSendingEnabled(): boolean {
  * Resolve all partner phone numbers by querying the affiliate list page by
  * page, incrementing the page number until every partner has been fetched.
  */
-async function resolvePartnerPhones(authHeader: string | undefined): Promise<string[]> {
-  const phones = new Set<string>();
+interface PartnerSmsRecipient {
+  phone: string;
+  name?: string;
+  code?: string;
+}
+
+async function resolvePartnerPhones(
+  authHeader: string | undefined,
+): Promise<PartnerSmsRecipient[]> {
+  const recipients = new Map<string, PartnerSmsRecipient>();
   const PAGE_LIMIT = 200;
   const MAX_PAGES = 200;
   for (let page = 1; page <= MAX_PAGES; page++) {
@@ -74,12 +83,15 @@ async function resolvePartnerPhones(authHeader: string | undefined): Promise<str
       const raw = typeof rec["phonenumber"] === "string" ? rec["phonenumber"] : rec["phone"];
       if (typeof raw !== "string") continue;
       const normalized = normalizeKenyanMsisdn(raw.trim());
-      if (normalized) phones.add(normalized);
+      if (!normalized || recipients.has(normalized)) continue;
+      const name = typeof rec["name"] === "string" && rec["name"].trim() ? rec["name"].trim() : undefined;
+      const code = typeof rec["code"] === "string" && rec["code"].trim() ? rec["code"].trim() : undefined;
+      recipients.set(normalized, { phone: normalized, name, code });
     }
     if (norm.data.length < PAGE_LIMIT) break;
     if (norm.totalPages && page >= norm.totalPages) break;
   }
-  return [...phones];
+  return [...recipients.values()];
 }
 
 router.post("/sms/bulk", async (req, res) => {
@@ -115,7 +127,7 @@ router.post("/sms/bulk", async (req, res) => {
       return;
     }
 
-    let phones: string[];
+    let phones: PartnerSmsRecipient[];
     try {
       phones = await resolvePartnerPhones(authHeaderFrom(req));
     } catch (err) {
@@ -171,12 +183,12 @@ router.post("/sms/bulk", async (req, res) => {
     void (async () => {
       let sent = 0;
       let failed = 0;
-      for (const phone of phones) {
-        const result = await sendOneSms(cfg, phone, message);
+      for (const r of phones) {
+        const result = await sendOneSms(cfg, r.phone, personalize(message, r));
         if (result.ok) sent++;
         else {
           failed++;
-          logger.warn({ phone, detail: result.detail }, "Bulk partner SMS: send failed");
+          logger.warn({ phone: r.phone, detail: result.detail }, "Bulk partner SMS: send failed");
         }
       }
       logger.info({ total: phones.length, sent, failed }, "Bulk partner SMS run finished");
@@ -295,7 +307,12 @@ router.post("/sms/test", async (req, res) => {
   }
 
   // Test sends are deliberate, single-recipient, and typed in by the operator.
-  const result = await sendOneSms(cfg, phone, message);
+  // Placeholders are filled with sample values so the operator can preview them.
+  const result = await sendOneSms(
+    cfg,
+    phone,
+    personalize(message, { name: "Jane Wanjiku", code: "1234567" }),
+  );
   req.log.info({ phone, ok: result.ok, user }, "Test SMS send attempted");
   if (result.ok) {
     res.status(200).json({ success: true, message: `Test SMS sent to ${phone}` });
