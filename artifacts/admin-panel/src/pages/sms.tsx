@@ -109,11 +109,14 @@ export default function SMS() {
             description: `Check the phone ${trimmedTestPhone}.`,
           });
         },
-        onError: () => {
+        onError: (error) => {
+          const detail =
+            (error as { data?: { message?: string } })?.data?.message ?? "";
           toast({
             title: "Test SMS failed",
-            description:
-              "The SMS could not be sent. Check the phone number (e.g. 07XXXXXXXX) and try again.",
+            description: detail
+              ? detail
+              : "The SMS could not be sent. Check the phone number (e.g. 07XXXXXXXX) and try again.",
             variant: "destructive",
           });
         },

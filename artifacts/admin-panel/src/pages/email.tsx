@@ -179,10 +179,14 @@ export default function Email() {
             description: `Check the inbox of ${trimmedTestEmail}.`,
           });
         },
-        onError: () => {
+        onError: (error) => {
+          const detail =
+            (error as { data?: { message?: string } })?.data?.message ?? "";
           toast({
             title: "Test email failed",
-            description: "The provider rejected the send. Check the address and Brevo settings.",
+            description: detail
+              ? detail
+              : "The provider rejected the send. Check the address and Brevo settings.",
             variant: "destructive",
           });
         },
