@@ -2,14 +2,240 @@ import { forwardRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { CheckCircle2, Phone, Smartphone } from "lucide-react";
 
-/**
- * Personalized recruitment poster (1080x1920, WhatsApp status size) rendered
- * with the partner's own invite link in the QR code. Exported to JPEG via
- * html-to-image from the sub-partners page, so it must render at its full
- * fixed size — callers scale it down visually with CSS transform.
- */
-export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
-  function InvitePoster({ inviteLink }, ref) {
+export type PosterDesign = "purple" | "light";
+
+export interface PosterTexts {
+  headline: string;
+  accent: string;
+  body1: string;
+  body2: string;
+  benefits: string[];
+  cta: string;
+  phone: string;
+}
+
+export const DEFAULT_TEXTS: Record<PosterDesign, PosterTexts> = {
+  purple: {
+    headline: "Turn Your\nContacts Into",
+    accent: "Income.",
+    body1:
+      "Do you know shop owners or businesses around you that struggle to track stock, sales, profits, or expenses?",
+    body2:
+      "Introduce them to Pointify POS and earn commissions when they subscribe.",
+    benefits: [
+      "Free to Join",
+      "No Capital Needed",
+      "Work From Anywhere",
+      "Paid via M-Pesa",
+    ],
+    cta: "Join Now!",
+    phone: "0720 044 055",
+  },
+  light: {
+    headline: "Looking for",
+    accent: "Extra Income?",
+    body1:
+      "Do you know a shop owner who still struggles with stock management, tracking profits, or recording sales?",
+    body2:
+      "Introduce them to Pointify POS and get rewarded for every successful referral.",
+    benefits: [
+      "Free Registration",
+      "No Capital Needed",
+      "Work From Anywhere",
+      "Paid via M-Pesa",
+    ],
+    cta: "Join Today!",
+    phone: "0720 044 055",
+  },
+};
+
+interface InvitePosterProps {
+  inviteLink: string;
+  design: PosterDesign;
+  texts: PosterTexts;
+}
+
+function HeadlineLines({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim().length > 0);
+  return (
+    <>
+      {lines.map((line, i) => (
+        <span key={i}>
+          {line}
+          <br />
+        </span>
+      ))}
+    </>
+  );
+}
+
+function CtaCard({
+  inviteLink,
+  texts,
+}: {
+  inviteLink: string;
+  texts: PosterTexts;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-8 rounded-3xl bg-white px-12 py-10"
+      style={{
+        color: "#2e1065",
+        boxShadow: "0 24px 60px rgba(46,16,101,0.2)",
+        border: "2px solid #ede9fe",
+      }}
+    >
+      <div>
+        <div
+          className="inline-block rounded-2xl px-8 py-4 text-5xl font-extrabold uppercase tracking-wide text-white"
+          style={{
+            background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)",
+            boxShadow: "0 12px 30px rgba(124,58,237,0.45)",
+          }}
+        >
+          {texts.cta}
+        </div>
+        <div className="mt-5 text-3xl font-bold" style={{ color: "#7c3aed" }}>
+          partner.pointifypos.com
+        </div>
+        <div
+          className="mt-7 text-2xl font-bold uppercase tracking-wider"
+          style={{ color: "#6d28d9" }}
+        >
+          Or Call Us Today
+        </div>
+        <div className="mt-3 flex items-center gap-4 text-4xl font-extrabold">
+          <span
+            className="flex items-center justify-center rounded-full"
+            style={{ width: 58, height: 58, background: "#7c3aed" }}
+          >
+            <Phone className="text-white" style={{ width: 30, height: 30 }} />
+          </span>
+          {texts.phone}
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="rounded-2xl border-4 bg-white p-4"
+          style={{ borderColor: "#7c3aed" }}
+        >
+          <QRCodeSVG
+            value={inviteLink}
+            size={230}
+            level="M"
+            bgColor="#ffffff"
+            fgColor="#2e1065"
+          />
+        </div>
+        <div className="text-xl font-bold" style={{ color: "#7c3aed" }}>
+          Scan to join
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const InvitePoster = forwardRef<HTMLDivElement, InvitePosterProps>(
+  function InvitePoster({ inviteLink, design, texts }, ref) {
+    if (design === "purple") {
+      return (
+        <div
+          ref={ref}
+          className="relative overflow-hidden text-white"
+          style={{
+            width: 1080,
+            height: 1920,
+            background:
+              "linear-gradient(160deg, #2e1065 0%, #4c1d95 35%, #6d28d9 70%, #7c3aed 100%)",
+            fontFamily:
+              "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+          }}
+        >
+          <div
+            className="absolute rounded-full"
+            style={{
+              width: 720,
+              height: 720,
+              right: -260,
+              top: -260,
+              background:
+                "radial-gradient(circle, rgba(196,181,253,0.25) 0%, rgba(196,181,253,0) 70%)",
+            }}
+          />
+          <div
+            className="absolute rounded-full"
+            style={{
+              width: 600,
+              height: 600,
+              left: -220,
+              bottom: -200,
+              background:
+                "radial-gradient(circle, rgba(167,139,250,0.2) 0%, rgba(167,139,250,0) 70%)",
+            }}
+          />
+          <div
+            className="absolute rounded-full border border-white/10"
+            style={{ width: 380, height: 380, right: 50, top: 460 }}
+          />
+
+          <div className="relative flex h-full flex-col px-20 py-20">
+            <div className="flex items-center gap-5">
+              <div
+                className="flex items-center justify-center rounded-2xl bg-white font-extrabold"
+                style={{ width: 84, height: 84, color: "#7c3aed", fontSize: 52 }}
+              >
+                P
+              </div>
+              <div>
+                <div className="text-5xl font-extrabold tracking-tight">
+                  Pointify POS
+                </div>
+                <div className="mt-1 text-2xl font-medium text-violet-200">
+                  Partner Program
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-20">
+              <h1
+                className="font-extrabold leading-[1.05] tracking-tight"
+                style={{ fontSize: 104 }}
+              >
+                <HeadlineLines text={texts.headline} />
+                <span className="text-violet-300">{texts.accent}</span>
+              </h1>
+              <p className="mt-10 max-w-3xl text-4xl leading-snug text-violet-100">
+                {texts.body1}
+              </p>
+              <p className="mt-8 max-w-3xl text-4xl font-semibold leading-snug">
+                {texts.body2}
+              </p>
+            </div>
+
+            <div className="mt-16 space-y-9">
+              {texts.benefits.map((title, i) => (
+                <div key={i} className="flex items-center gap-6">
+                  <CheckCircle2
+                    className="shrink-0 text-violet-300"
+                    style={{ width: 56, height: 56 }}
+                  />
+                  <div className="text-4xl font-bold">{title}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-auto">
+              <CtaCard inviteLink={inviteLink} texts={texts} />
+              <div className="mt-7 flex items-center justify-center gap-3 text-2xl text-violet-200">
+                <Smartphone style={{ width: 28, height: 28 }} />
+                Scan the QR code or visit partner.pointifypos.com
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         ref={ref}
@@ -19,10 +245,10 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
           height: 1920,
           background: "#faf8f5",
           color: "#1e1b2e",
-          fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+          fontFamily:
+            "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
         }}
       >
-        {/* Top angled band */}
         <div
           className="absolute left-0 top-0 w-full"
           style={{
@@ -32,7 +258,6 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
             clipPath: "polygon(0 0, 100% 0, 100% 78%, 0 100%)",
           }}
         />
-        {/* Amber accent stripe */}
         <div
           className="absolute left-0 w-full"
           style={{
@@ -42,7 +267,6 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
             clipPath: "polygon(0 60%, 100% 0, 100% 40%, 0 100%)",
           }}
         />
-        {/* Bottom decorative circle */}
         <div
           className="absolute rounded-full"
           style={{
@@ -55,9 +279,7 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
           }}
         />
 
-        {/* Content */}
         <div className="relative flex h-full flex-col px-20 pb-16 pt-16">
-          {/* Brand on purple band */}
           <div className="flex items-center gap-5 text-white">
             <div
               className="flex items-center justify-center rounded-2xl bg-white font-extrabold"
@@ -75,35 +297,29 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
             </div>
           </div>
 
-          {/* Headline on band */}
           <h1
             className="mt-14 font-extrabold uppercase leading-[1.08] tracking-tight text-white"
             style={{ fontSize: 88 }}
           >
-            Looking for
-            <br />
-            <span style={{ color: "#fbbf24" }}>Extra Income?</span>
+            <HeadlineLines text={texts.headline} />
+            <span style={{ color: "#fbbf24" }}>{texts.accent}</span>
           </h1>
 
-          {/* Body */}
           <div className="mt-28">
             <p
               className="max-w-4xl text-[42px] leading-snug"
               style={{ color: "#3b3452" }}
             >
-              Do you know a shop owner who still struggles with stock
-              management, tracking profits, or recording sales?
+              {texts.body1}
             </p>
             <p
               className="mt-10 max-w-4xl text-[42px] font-bold leading-snug"
               style={{ color: "#2e1065" }}
             >
-              Introduce them to Pointify POS and get rewarded for every
-              successful referral.
+              {texts.body2}
             </p>
           </div>
 
-          {/* Benefits card */}
           <div
             className="mt-16 rounded-3xl px-14 py-12"
             style={{
@@ -113,18 +329,16 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
             }}
           >
             <div className="space-y-10">
-              {[
-                "Free Registration",
-                "No Capital Needed",
-                "Work From Anywhere",
-                "Paid via M-Pesa",
-              ].map((title) => (
-                <div key={title} className="flex items-center gap-6">
+              {texts.benefits.map((title, i) => (
+                <div key={i} className="flex items-center gap-6">
                   <CheckCircle2
                     className="shrink-0"
                     style={{ width: 58, height: 58, color: "#16a34a" }}
                   />
-                  <div className="text-4xl font-bold" style={{ color: "#1e1b2e" }}>
+                  <div
+                    className="text-4xl font-bold"
+                    style={{ color: "#1e1b2e" }}
+                  >
                     {title}
                   </div>
                 </div>
@@ -132,63 +346,8 @@ export const InvitePoster = forwardRef<HTMLDivElement, { inviteLink: string }>(
             </div>
           </div>
 
-          {/* CTA */}
           <div className="mt-auto">
-            <div
-              className="flex items-center justify-between gap-8 rounded-3xl bg-white px-12 py-10"
-              style={{
-                color: "#2e1065",
-                boxShadow: "0 24px 60px rgba(46,16,101,0.2)",
-                border: "2px solid #ede9fe",
-              }}
-            >
-              <div>
-                <div
-                  className="inline-block rounded-2xl px-8 py-4 text-5xl font-extrabold uppercase tracking-wide text-white"
-                  style={{
-                    background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)",
-                    boxShadow: "0 12px 30px rgba(124,58,237,0.45)",
-                  }}
-                >
-                  Join Today!
-                </div>
-                <div className="mt-5 text-3xl font-bold" style={{ color: "#7c3aed" }}>
-                  partner.pointifypos.com
-                </div>
-                <div
-                  className="mt-7 text-2xl font-bold uppercase tracking-wider"
-                  style={{ color: "#6d28d9" }}
-                >
-                  Or Call Us Today
-                </div>
-                <div className="mt-3 flex items-center gap-4 text-4xl font-extrabold">
-                  <span
-                    className="flex items-center justify-center rounded-full"
-                    style={{ width: 58, height: 58, background: "#7c3aed" }}
-                  >
-                    <Phone className="text-white" style={{ width: 30, height: 30 }} />
-                  </span>
-                  0720 044 055
-                </div>
-              </div>
-              <div className="flex flex-col items-center gap-3">
-                <div
-                  className="rounded-2xl border-4 bg-white p-4"
-                  style={{ borderColor: "#7c3aed" }}
-                >
-                  <QRCodeSVG
-                    value={inviteLink}
-                    size={230}
-                    level="M"
-                    bgColor="#ffffff"
-                    fgColor="#2e1065"
-                  />
-                </div>
-                <div className="text-xl font-bold" style={{ color: "#7c3aed" }}>
-                  Scan to join
-                </div>
-              </div>
-            </div>
+            <CtaCard inviteLink={inviteLink} texts={texts} />
             <div
               className="mt-6 flex items-center justify-center gap-3 text-2xl"
               style={{ color: "#6b6480" }}
