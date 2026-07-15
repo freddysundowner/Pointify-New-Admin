@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Share2, Copy, Check, MessageCircle } from "lucide-react";
+import { Share2, Copy, Check, MessageCircle, ImageDown } from "lucide-react";
+import { USER_DEFAULT_TEXTS } from "@/components/InvitePoster";
+import { PosterDialog } from "@/components/PosterDialog";
 
 const DOWNLOAD_BASE = "https://pointifypos.com/download";
 
@@ -19,6 +21,7 @@ function buildMessage(code: string, link: string) {
 export function ShareReferralCard({ code }: { code?: string }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [posterOpen, setPosterOpen] = useState(false);
 
   if (!code) {
     return (
@@ -97,7 +100,20 @@ export function ShareReferralCard({ code }: { code?: string }) {
             <Share2 className="h-4 w-4" />
             Share
           </Button>
+          <Button variant="outline" onClick={() => setPosterOpen(true)} className="flex-1">
+            <ImageDown className="h-4 w-4" />
+            Get my poster
+          </Button>
         </div>
+        <PosterDialog
+          open={posterOpen}
+          onOpenChange={setPosterOpen}
+          link={link}
+          defaults={USER_DEFAULT_TEXTS}
+          title="Your download poster"
+          description="The QR code opens your personal download link, so every shop owner who scans it and signs up counts toward your commissions. Pick a design and edit the text to make it yours."
+          fileName="pointify-download-poster.jpg"
+        />
       </CardContent>
     </Card>
   );

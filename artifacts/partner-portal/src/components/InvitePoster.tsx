@@ -66,6 +66,52 @@ export const DEFAULT_TEXTS: Record<PosterDesign, PosterTexts> = {
   },
 };
 
+/** Poster copy aimed at shop owners (used with the app download link). */
+export const USER_DEFAULT_TEXTS: Record<PosterDesign, PosterTexts> = {
+  purple: {
+    ...SHARED_TEXTS,
+    brandSubtitle: "Point of Sale",
+    headline: "Run Your Shop\nThe",
+    accent: "Smart Way.",
+    body1:
+      "Still tracking stock, sales, and profits on paper or by memory? There is an easier way.",
+    body2:
+      "Download Pointify POS and manage your whole business from your phone.",
+    benefits: [
+      "Track Stock & Sales",
+      "See Profits Daily",
+      "Manage Attendants",
+      "Works on Your Phone",
+    ],
+    cta: "Download Now!",
+    website: "pointifypos.com",
+    phone: "0720 044 055",
+    scanLabel: "Scan to download",
+    footer: "Scan the QR code or visit pointifypos.com",
+  },
+  light: {
+    ...SHARED_TEXTS,
+    brandSubtitle: "Point of Sale",
+    headline: "Your Shop,",
+    accent: "In Your Pocket.",
+    body1:
+      "Do you struggle with stock management, tracking profits, or recording sales in your shop?",
+    body2:
+      "Get Pointify POS today and run your business with confidence.",
+    benefits: [
+      "Easy to Use",
+      "Track Stock & Sales",
+      "Daily Profit Reports",
+      "Affordable Plans",
+    ],
+    cta: "Get Started!",
+    website: "pointifypos.com",
+    phone: "0720 044 055",
+    scanLabel: "Scan to download",
+    footer: "Scan the QR code or visit pointifypos.com",
+  },
+};
+
 interface InvitePosterProps {
   inviteLink: string;
   design: PosterDesign;
