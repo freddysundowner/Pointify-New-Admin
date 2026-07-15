@@ -41,12 +41,45 @@ interface BrevoConfig {
   fromName: string;
 }
 
-function brevoConfig(): BrevoConfig | null {
-  const apiKey = process.env["BREVO_API_KEY"]?.trim();
-  const fromEmail = process.env["EMAIL_FROM"]?.trim();
-  if (!apiKey || !fromEmail) return null;
-  const fromName = process.env["EMAIL_FROM_NAME"]?.trim() || "Pointify POS";
-  return { apiKey, fromEmail, fromName };
+/**
+ * The Brevo credentials live in the platform's global settings upstream
+ * (`EMAIL_CONFIG`: BREVO_API_KEY / BREVO_SENDER_EMAIL / BREVO_SENDER_NAME),
+ * editable from the admin Settings page. Env vars act as an override/fallback.
+ */
+async function brevoConfig(authHeader: string | undefined): Promise<BrevoConfig | null> {
+  const envKey = process.env["BREVO_API_KEY"]?.trim();
+  const envFrom = process.env["EMAIL_FROM"]?.trim();
+  if (envKey && envFrom) {
+    return {
+      apiKey: envKey,
+      fromEmail: envFrom,
+      fromName: process.env["EMAIL_FROM_NAME"]?.trim() || "Pointify POS",
+    };
+  }
+  try {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/settings/",
+      authHeader,
+    });
+    if (result.status >= 400) return null;
+    const settings = (result.data ?? {}) as Record<string, unknown>;
+    const emailCfg = settings["EMAIL_CONFIG"];
+    if (!emailCfg || typeof emailCfg !== "object") return null;
+    const cfg = emailCfg as Record<string, unknown>;
+    const apiKey = typeof cfg["BREVO_API_KEY"] === "string" ? cfg["BREVO_API_KEY"].trim() : "";
+    const fromEmail =
+      typeof cfg["BREVO_SENDER_EMAIL"] === "string" ? cfg["BREVO_SENDER_EMAIL"].trim() : "";
+    if (!apiKey || !fromEmail) return null;
+    const fromName =
+      typeof cfg["BREVO_SENDER_NAME"] === "string" && cfg["BREVO_SENDER_NAME"].trim()
+        ? cfg["BREVO_SENDER_NAME"].trim()
+        : "Pointify POS";
+    return { apiKey, fromEmail, fromName };
+  } catch (err) {
+    logger.warn({ err }, "Bulk email: failed to load EMAIL_CONFIG from settings");
+    return null;
+  }
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -139,6 +172,17 @@ function textToHtml(text: string): string {
 const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
 
 /**
+ * Safety gate: real sends only happen in production, or when explicitly
+ * enabled with EMAIL_SEND_ENABLED=true. Everywhere else the run is a dry run
+ * (recipients are resolved and logged, but nothing is sent), because the dev
+ * environment talks to the live POS API and would otherwise email real users.
+ */
+function sendingEnabled(): boolean {
+  if (process.env["EMAIL_SEND_ENABLED"]?.trim().toLowerCase() === "true") return true;
+  return process.env["NODE_ENV"] === "production";
+}
+
+/**
  * Send emails one at a time via the Brevo transactional API in the background.
  * Sequential sending keeps us well under Brevo's rate limits; failures are
  * logged and skipped so one bad address never aborts the whole run.
@@ -192,8 +236,9 @@ async function sendInBackground(
   );
 }
 
-router.get("/email/status", (_req, res) => {
-  res.status(200).json({ configured: brevoConfig() !== null });
+router.get("/email/status", async (req, res) => {
+  const cfg = await brevoConfig(authHeaderFrom(req));
+  res.status(200).json({ configured: cfg !== null });
 });
 
 router.post("/email/bulk", async (req, res) => {
@@ -203,11 +248,11 @@ router.post("/email/bulk", async (req, res) => {
     return;
   }
 
-  const cfg = brevoConfig();
+  const cfg = await brevoConfig(authHeaderFrom(req));
   if (!cfg) {
     res.status(503).json({
       message:
-        "Email sending is not configured. Set BREVO_API_KEY and EMAIL_FROM on the server.",
+        "Email sending is not configured. Add the Brevo API key and sender email in Settings.",
     });
     return;
   }
@@ -245,6 +290,21 @@ router.post("/email/bulk", async (req, res) => {
       userType,
       status: "empty",
       total: 0,
+    });
+    return;
+  }
+
+  if (!sendingEnabled()) {
+    req.log.info(
+      { userType, total: recipients.length, sender },
+      "Bulk email DRY RUN: sending disabled outside production; nothing sent",
+    );
+    res.status(202).json({
+      message:
+        "Dry run: recipients resolved, but no emails were sent (sending is only enabled in production)",
+      userType,
+      status: "dry_run",
+      total: recipients.length,
     });
     return;
   }

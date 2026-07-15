@@ -2382,7 +2382,7 @@ export const ListCommunicationsResponse = zod.object({
 
 
 /**
- * @summary Whether SMTP email sending is configured on the server
+ * @summary Whether Brevo email sending is configured (from global settings)
  */
 export const GetEmailStatusResponse = zod.object({
   "configured": zod.boolean()
@@ -2390,7 +2390,7 @@ export const GetEmailStatusResponse = zod.object({
 
 
 /**
- * Resolves the audience to user email addresses (deduplicated), then sends via the server's SMTP configuration in the background. A successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * Resolves the audience to user email addresses (deduplicated), then sends via Brevo (credentials from the platform's global settings) in the background. A successful call returns 202 with the recipient `total` and `status: "processing"` (or `status: "dry_run"` outside production when sending is disabled). When no users match the audience it returns 200 with `total: 0`.
  * @summary Start a bulk email to an audience segment
  */
 export const SendBulkEmailBody = zod.object({

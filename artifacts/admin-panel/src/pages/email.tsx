@@ -103,7 +103,12 @@ export default function Email() {
         onSuccess: (result) => {
           setConfirmOpen(false);
           const total = Number(result?.total ?? 0);
-          if (total === 0) {
+          if (result?.status === "dry_run") {
+            toast({
+              title: "Test run only — no emails sent",
+              description: `${total} user${total === 1 ? "" : "s"} matched this audience. Emails are only sent from the live (production) server.`,
+            });
+          } else if (total === 0) {
             toast({
               title: "No recipients",
               description:
@@ -140,8 +145,8 @@ export default function Email() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Email sending isn't set up yet</AlertTitle>
           <AlertDescription>
-            The server needs your Brevo settings (BREVO_API_KEY and EMAIL_FROM
-            — and optionally EMAIL_FROM_NAME) before emails can be sent.
+            Add your Brevo API key and sender email in the Settings page
+            (Email configuration) before emails can be sent.
           </AlertDescription>
         </Alert>
       )}

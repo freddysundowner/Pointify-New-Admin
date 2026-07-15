@@ -21,6 +21,7 @@
 - [Admin-panel mobile filter sheet](admin-mobile-filters.md) — list-page filters collapse into a bottom Sheet on mobile via FilterBar (render children ONCE on a runtime useIsMobile branch, never hidden/md: duplicate).
 - [Sales future-dating](sales-future-dating.md) — "future-dated" sale = EAT calendar-day later than today (not raw instant); keep them inline+badged, never default-hidden.
 - [Leads upstream contract](leads-upstream-contract.md) — /leads needs `affiliate` (single or comma $in list); staging may lag the deliverable zip; admin gate = decoded-JWT admin id.
+- [Bulk email via Brevo](bulk-email-brevo.md) — Brevo creds come from upstream settings EMAIL_CONFIG (not env/SMTP); sends gated to production (dry_run elsewhere).
 - [Revenue range semantics](revenue-range-semantics.md) — custom-range revenue = $sum(amount) over createAt UTC-day range, NO paid filter; composed analytics endpoints must enforce bearer auth (upstream /subscriptions/ is permissive).
 - [Self-hosted deploy & cache provenance](self-hosted-deploy-cache.md) — user self-hosts on a VPS; check /api/healthz buildTime / X-Build-Time before blaming code; probe upstream with the proxy's exact query shapes.
 - [Sub-partners feature](sub-partners-feature.md) — parent+subCommission on Affliate; proxy is the only authz layer (strip parent/subCommission from self-serve writes); sub gets % OF master's award.
