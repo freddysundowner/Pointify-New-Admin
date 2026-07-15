@@ -380,6 +380,24 @@ export default function SubPartners() {
                     <TabsTrigger value="purple">Purple design</TabsTrigger>
                   </TabsList>
                 </Tabs>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Brand name</Label>
+                    <Input
+                      value={currentTexts.brandTitle}
+                      onChange={(e) => setField("brandTitle", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Brand tagline</Label>
+                    <Input
+                      value={currentTexts.brandSubtitle}
+                      onChange={(e) =>
+                        setField("brandSubtitle", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
                 <div className="space-y-1.5">
                   <Label>Headline</Label>
                   <Textarea
@@ -441,6 +459,36 @@ export default function SubPartners() {
                       onChange={(e) => setField("phone", e.target.value)}
                     />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Website line</Label>
+                    <Input
+                      value={currentTexts.website}
+                      onChange={(e) => setField("website", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>"Call us" label</Label>
+                    <Input
+                      value={currentTexts.callLabel}
+                      onChange={(e) => setField("callLabel", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Under the QR code</Label>
+                  <Input
+                    value={currentTexts.scanLabel}
+                    onChange={(e) => setField("scanLabel", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Bottom line</Label>
+                  <Input
+                    value={currentTexts.footer}
+                    onChange={(e) => setField("footer", e.target.value)}
+                  />
                 </div>
               </div>
             </div>

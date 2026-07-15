@@ -5,17 +5,33 @@ import { CheckCircle2, Phone, Smartphone } from "lucide-react";
 export type PosterDesign = "purple" | "light";
 
 export interface PosterTexts {
+  brandTitle: string;
+  brandSubtitle: string;
   headline: string;
   accent: string;
   body1: string;
   body2: string;
   benefits: string[];
   cta: string;
+  website: string;
+  callLabel: string;
   phone: string;
+  scanLabel: string;
+  footer: string;
 }
+
+const SHARED_TEXTS = {
+  brandTitle: "Pointify POS",
+  brandSubtitle: "Partner Program",
+  website: "partner.pointifypos.com",
+  callLabel: "Or Call Us Today",
+  scanLabel: "Scan to join",
+  footer: "Scan the QR code or visit partner.pointifypos.com",
+};
 
 export const DEFAULT_TEXTS: Record<PosterDesign, PosterTexts> = {
   purple: {
+    ...SHARED_TEXTS,
     headline: "Turn Your\nContacts Into",
     accent: "Income.",
     body1:
@@ -32,6 +48,7 @@ export const DEFAULT_TEXTS: Record<PosterDesign, PosterTexts> = {
     phone: "0720 044 055",
   },
   light: {
+    ...SHARED_TEXTS,
     headline: "Looking for",
     accent: "Extra Income?",
     body1:
@@ -96,13 +113,13 @@ function CtaCard({
           {texts.cta}
         </div>
         <div className="mt-5 text-3xl font-bold" style={{ color: "#7c3aed" }}>
-          partner.pointifypos.com
+          {texts.website}
         </div>
         <div
           className="mt-7 text-2xl font-bold uppercase tracking-wider"
           style={{ color: "#6d28d9" }}
         >
-          Or Call Us Today
+          {texts.callLabel}
         </div>
         <div className="mt-3 flex items-center gap-4 text-4xl font-extrabold">
           <span
@@ -128,7 +145,7 @@ function CtaCard({
           />
         </div>
         <div className="text-xl font-bold" style={{ color: "#7c3aed" }}>
-          Scan to join
+          {texts.scanLabel}
         </div>
       </div>
     </div>
@@ -188,10 +205,10 @@ export const InvitePoster = forwardRef<HTMLDivElement, InvitePosterProps>(
               </div>
               <div>
                 <div className="text-5xl font-extrabold tracking-tight">
-                  Pointify POS
+                  {texts.brandTitle}
                 </div>
                 <div className="mt-1 text-2xl font-medium text-violet-200">
-                  Partner Program
+                  {texts.brandSubtitle}
                 </div>
               </div>
             </div>
@@ -228,7 +245,7 @@ export const InvitePoster = forwardRef<HTMLDivElement, InvitePosterProps>(
               <CtaCard inviteLink={inviteLink} texts={texts} />
               <div className="mt-7 flex items-center justify-center gap-3 text-2xl text-violet-200">
                 <Smartphone style={{ width: 28, height: 28 }} />
-                Scan the QR code or visit partner.pointifypos.com
+                {texts.footer}
               </div>
             </div>
           </div>
@@ -289,10 +306,10 @@ export const InvitePoster = forwardRef<HTMLDivElement, InvitePosterProps>(
             </div>
             <div>
               <div className="text-4xl font-extrabold tracking-tight">
-                Pointify POS
+                {texts.brandTitle}
               </div>
               <div className="mt-1 text-2xl font-medium text-violet-200">
-                Partner Program
+                {texts.brandSubtitle}
               </div>
             </div>
           </div>
@@ -353,7 +370,7 @@ export const InvitePoster = forwardRef<HTMLDivElement, InvitePosterProps>(
               style={{ color: "#6b6480" }}
             >
               <Smartphone style={{ width: 28, height: 28 }} />
-              Scan the QR code or visit partner.pointifypos.com
+              {texts.footer}
             </div>
           </div>
         </div>
