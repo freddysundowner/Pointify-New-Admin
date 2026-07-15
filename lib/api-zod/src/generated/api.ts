@@ -742,7 +742,8 @@ export const PortalRegisterBody = zod.object({
   "email": zod.string(),
   "phonenumber": zod.string(),
   "country": zod.string().optional(),
-  "password": zod.string()
+  "password": zod.string(),
+  "ref": zod.string().optional().describe('Optional referral code from a master partner\'s invite link. When it matches a master partner, the new account is linked to them as a sub-partner (default 50% share). Invalid codes are ignored and the account is created as a normal master partner.')
 })
 
 
@@ -766,7 +767,8 @@ export const PortalLoginResponse = zod.object({
   "phone": zod.string().nullish(),
   "wallet": zod.number().nullish(),
   "code": zod.string().nullish()
-}).optional()
+}).optional(),
+  "refApplied": zod.boolean().optional().describe('Present on registration when a `ref` code was supplied — true when the new account was linked to the referring master partner, false when the code was invalid or linking failed.')
 })
 
 

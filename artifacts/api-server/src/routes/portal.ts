@@ -9,6 +9,10 @@ import {
 
 const router: IRouter = Router();
 
+// Share % a sub-partner gets when they join via a master's invite link. The
+// master can change it afterwards from the Sub-partners page.
+const DEFAULT_REFERRAL_SUB_COMMISSION = 50;
+
 /**
  * Partner self-service portal. Every authed endpoint derives the affiliate id
  * from a proxy-signed session token (minted at login/register, verified here),
@@ -103,8 +107,10 @@ router.post("/portal/auth/register", async (req, res) => {
     _id: _id,
     parent: _parent,
     subCommission: _sc,
+    ref: rawRef,
     ...safe
   } = body;
+  const ref = typeof rawRef === "string" ? rawRef.trim() : "";
   try {
     const result = await upstreamFetch({
       method: "POST",
@@ -121,6 +127,76 @@ router.post("/portal/auth/register", async (req, res) => {
       res.status(502).json({ error: "Upstream request failed" });
       return;
     }
+
+    // Invite-link referral: when a valid master partner's code was supplied,
+    // link the new account under them as a sub-partner. Registration itself
+    // never fails because of a bad or unlinkable code — the account simply
+    // stays a normal (master) partner and `refApplied: false` is returned so
+    // the client can tell the user.
+    if (ref) {
+      issued["refApplied"] = false;
+      try {
+        const resultBody = (result.data ?? {}) as Record<string, unknown>;
+        const upstreamToken =
+          typeof resultBody["token"] === "string" ? (resultBody["token"] as string) : undefined;
+        const userdata =
+          resultBody["userdata"] && typeof resultBody["userdata"] === "object"
+            ? (resultBody["userdata"] as Record<string, unknown>)
+            : undefined;
+        const newId = typeof userdata?.["_id"] === "string" ? (userdata["_id"] as string) : "";
+        const authHeader = upstreamToken ? `Bearer ${upstreamToken}` : undefined;
+
+        const listRes = await upstreamFetch({
+          method: "GET",
+          path: "/affiliates/",
+          authHeader,
+        });
+        if (newId && listRes.status < 400) {
+          const all = normalizeList(listRes.data).data as Array<Record<string, unknown>>;
+          const master = all.find(
+            (p) =>
+              String(p["code"] ?? "").toLowerCase() === ref.toLowerCase() &&
+              !parentIdOf(p) &&
+              String(p["_id"] ?? "") !== newId,
+          );
+          if (!master) {
+            req.log.warn({ ref }, "Portal register: referral code did not match a master partner");
+          } else {
+            const linked = await upstreamFetch({
+              method: "PUT",
+              path: `/affiliates/${newId}`,
+              body: {
+                parent: String(master["_id"]),
+                subCommission: DEFAULT_REFERRAL_SUB_COMMISSION,
+              },
+              authHeader,
+            });
+            if (linked.status < 400) {
+              issued["refApplied"] = true;
+              // Keep the client-side profile in sync with the linked record.
+              if (issued["userdata"] && typeof issued["userdata"] === "object") {
+                (issued["userdata"] as Record<string, unknown>)["parent"] = String(master["_id"]);
+                (issued["userdata"] as Record<string, unknown>)["subCommission"] =
+                  DEFAULT_REFERRAL_SUB_COMMISSION;
+              }
+            } else {
+              req.log.error(
+                { status: linked.status },
+                "Portal register: linking referred account to master failed",
+              );
+            }
+          }
+        } else {
+          req.log.warn(
+            { status: listRes.status },
+            "Portal register: could not resolve referral code (list fetch failed)",
+          );
+        }
+      } catch (refErr) {
+        req.log.error({ err: refErr }, "Portal register: referral linking threw");
+      }
+    }
+
     res.status(201).json(issued);
   } catch (err) {
     req.log.error({ err }, "Portal register failed");

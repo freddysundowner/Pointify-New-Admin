@@ -13,5 +13,7 @@ export interface PortalAuthResult {
   token?: string;
   expiresIn?: number;
   userdata?: PortalUserData;
+  /** Present on registration when a `ref` code was supplied — true when the new account was linked to the referring master partner, false when the code was invalid or linking failed. */
+  refApplied?: boolean;
   [key: string]: unknown;
  }

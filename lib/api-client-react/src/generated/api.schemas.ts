@@ -128,6 +128,8 @@ export interface PortalRegisterInput {
   phonenumber: string;
   country?: string;
   password: string;
+  /** Optional referral code from a master partner's invite link. When it matches a master partner, the new account is linked to them as a sub-partner (default 50% share). Invalid codes are ignored and the account is created as a normal master partner. */
+  ref?: string;
 }
 
 export interface PortalProfileUpdate {
@@ -158,6 +160,8 @@ export interface PortalAuthResult {
   token?: string;
   expiresIn?: number;
   userdata?: PortalUserData;
+  /** Present on registration when a `ref` code was supplied — true when the new account was linked to the referring master partner, false when the code was invalid or linking failed. */
+  refApplied?: boolean;
   [key: string]: unknown;
  }
 

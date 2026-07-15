@@ -4,6 +4,7 @@ import {
   getListPortalSubPartnersQueryKey,
   useCreatePortalSubPartner,
   useUpdatePortalSubPartner,
+  useGetPortalProfile,
   type SubPartner,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,9 @@ import {
   Phone,
   Mail,
   Percent,
+  Link2,
+  Copy,
+  Check,
 } from "lucide-react";
 
 function formatKes(n: unknown): string {
@@ -87,6 +91,29 @@ export default function SubPartners() {
   const queryClient = useQueryClient();
 
   const { data: partners, isLoading, isError } = useListPortalSubPartners();
+  const { data: profile } = useGetPortalProfile();
+  const [copied, setCopied] = useState(false);
+
+  const isMaster = Boolean(profile?._id) && !profile?.parent;
+  const inviteLink =
+    isMaster && profile?.code
+      ? `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/register?ref=${encodeURIComponent(profile.code)}`
+      : "";
+
+  const copyInviteLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({
+        title: "Could not copy",
+        description: "Please copy the link manually.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const [createOpen, setCreateOpen] = useState(false);
   const [draft, setDraft] = useState<CreateDraft>(EMPTY_DRAFT);
@@ -212,6 +239,41 @@ export default function SubPartners() {
           Add partner
         </Button>
       </div>
+
+      {inviteLink && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 font-medium">
+                  <Link2 className="h-4 w-4 text-primary" />
+                  Your invite link
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Share this link — anyone who registers through it is automatically
+                  added to your team with a 50% share (you can change it afterwards).
+                </p>
+                <p className="mt-2 break-all rounded-md bg-background px-3 py-2 font-mono text-xs text-foreground border">
+                  {inviteLink}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={copyInviteLink}>
+                {copied ? (
+                  <>
+                    <Check className="mr-1.5 h-4 w-4 text-green-600" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-1.5 h-4 w-4" />
+                    Copy link
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <Card>

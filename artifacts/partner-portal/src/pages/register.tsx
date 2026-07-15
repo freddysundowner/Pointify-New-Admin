@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { usePortalRegister } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,8 @@ export default function Register() {
   const { login } = useAuth();
   const { toast } = useToast();
   const registerMutation = usePortalRegister();
+  const search = useSearch();
+  const ref = new URLSearchParams(search).get("ref")?.trim() || "";
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -31,9 +33,17 @@ export default function Register() {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    registerMutation.mutate({ data: values }, {
+    registerMutation.mutate({ data: ref ? { ...values, ref } : values }, {
       onSuccess: (res) => {
         if (res.token && res.userdata) {
+          if (ref && res.refApplied === false) {
+            toast({
+              title: "Invite link could not be applied",
+              description:
+                "Your account was created, but it was not linked to the partner who invited you. Please ask them to add you from their Sub-partners page.",
+              variant: "destructive",
+            });
+          }
           login(res.token, res.userdata as any);
         } else {
           toast({
@@ -64,6 +74,12 @@ export default function Register() {
           <CardDescription className="text-base">
             Earn commissions by referring shops to Pointify POS
           </CardDescription>
+          {ref && (
+            <div className="mx-auto rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+              You're joining through a partner invite link — your account will
+              be connected to their team.
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>

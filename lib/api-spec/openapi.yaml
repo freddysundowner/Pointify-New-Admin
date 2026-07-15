@@ -1867,6 +1867,13 @@ components:
         phonenumber: { type: string }
         country: { type: string }
         password: { type: string }
+        ref:
+          type: string
+          description: >-
+            Optional referral code from a master partner's invite link. When it
+            matches a master partner, the new account is linked to them as a
+            sub-partner (default 50% share). Invalid codes are ignored and the
+            account is created as a normal master partner.
 
     PortalProfileUpdate:
       type: object
@@ -1887,6 +1894,12 @@ components:
         token: { type: string }
         expiresIn: { type: number }
         userdata: { $ref: "#/components/schemas/PortalUserData" }
+        refApplied:
+          type: boolean
+          description: >-
+            Present on registration when a `ref` code was supplied — true when
+            the new account was linked to the referring master partner, false
+            when the code was invalid or linking failed.
 
     PortalUserData:
       type: object
