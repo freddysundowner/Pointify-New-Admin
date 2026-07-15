@@ -42,6 +42,7 @@
 #   FORCE_NGINX=0                (set to 1 to overwrite existing nginx configs)
 #   SKIP_SSL=0                   (set to 1 to skip the certbot/SSL step)
 #   SKIP_BUILD=0                 (set to 1 to reuse an existing build)
+#   SKIP_PULL=0                  (set to 1 to skip the automatic git pull)
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -199,11 +200,24 @@ if [ "$SKIP_SSL" != "1" ]; then
 fi
 
 # ----------------------------------------------------------------------------
-# 2. Build
+# 2. Pull latest code + build
 # ----------------------------------------------------------------------------
 if [ "$SKIP_BUILD" = "1" ]; then
   log "Skipping build (SKIP_BUILD=1)"
 else
+  # Pull the latest code so the build actually contains new changes. Skipped
+  # with SKIP_PULL=1 or when the directory isn't a git checkout.
+  if [ "${SKIP_PULL:-0}" != "1" ] && [ -d "$REPO_DIR/.git" ] && have git; then
+    log "Pulling latest code from git"
+    if [ -n "$(cd "$REPO_DIR" && git status --porcelain)" ]; then
+      warn "Local uncommitted changes detected; skipping git pull. Commit/stash them or re-run with SKIP_PULL=1 to build as-is."
+    else
+      ( cd "$REPO_DIR" && git pull --ff-only ) \
+        || die "git pull failed. Fix the repo state (e.g. 'git status') or re-run with SKIP_PULL=1 to build the code already on the server."
+      ok "Code is up to date ($(cd "$REPO_DIR" && git rev-parse --short HEAD))"
+    fi
+  fi
+
   log "Installing dependencies"
   ( cd "$REPO_DIR" && pnpm install --frozen-lockfile )
 

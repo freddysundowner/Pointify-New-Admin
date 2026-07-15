@@ -1,0 +1,127 @@
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# ls
+artifacts        deploy-production.sh  lib           package.json    pnpm-workspace.yaml  scripts             tsconfig.json
+attached_assets  exports               node_modules  pnpm-lock.yaml  replit.md            tsconfig.base.json
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin# bash deploy-production.sh
+==> Checking prerequisites
+  ok node v20.19.0 (/opt/node20/bin/node)
+  ok pnpm 10.26.1
+  ok pm2 5.3.1
+  ok nginx present
+  ok certbot present
+==> Installing dependencies
+Scope: all 10 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+└─ Done in 25ms
+Done in 3.7s using pnpm v10.26.1
+==> Building admin panel (rooted at /)
+
+> @workspace/admin-panel@0.0.0 build /var/www/pointify/Pointify-New-Admin/artifacts/admin-panel
+> vite build --config vite.config.ts
+
+vite v7.3.3 building client environment for production...
+src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/label.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/dropdown-menu.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/select.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/command.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/avatar.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/sidebar.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/sheet.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+✓ 2505 modules transformed.
+dist/public/index.html                     1.61 kB │ gzip:   0.60 kB
+dist/public/assets/index-DJgibxCO.css    108.95 kB │ gzip:  17.90 kB
+dist/public/assets/index-DT77K8X5.js   1,116.34 kB │ gzip: 308.66 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 13.96s
+==> Building partner portal (rooted at /)
+
+> @workspace/partner-portal@0.0.0 build /var/www/pointify/Pointify-New-Admin/artifacts/partner-portal
+> vite build --config vite.config.ts
+
+vite v7.3.3 building client environment for production...
+src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/label.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/command.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/select.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/sheet.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+✓ 2186 modules transformed.
+dist/public/index.html                   1.41 kB │ gzip:   0.55 kB
+dist/public/assets/index-C5J4Mfb1.css  106.93 kB │ gzip:  17.59 kB
+dist/public/assets/index-_-RLmld9.js   661.49 kB │ gzip: 200.04 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 13.64s
+==> Building API proxy
+
+> @workspace/api-server@0.0.0 build /var/www/pointify/Pointify-New-Admin/artifacts/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       1.5mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   2.5mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.1kb
+  dist/pino-pretty.mjs.map           204.0kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 2965ms
+==> Preparing API runtime config (/etc/pointify/api.env)
+  ok Reusing existing SESSION_SECRET
+  ok Reusing persisted API_PORT=8082
+==> Resolving API port (desired: 8082)
+  ok Using API_PORT=8082
+==> Starting pointify-api under PM2 (port 8082)
+[PM2] Starting /var/www/pointify/Pointify-New-Admin/artifacts/api-server/dist/index.mjs in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                   │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ app                    │ default     │ 0.0.0   │ fork    │ 232320   │ 5D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 7  │ app                    │ default     │ N/A     │ fork    │ N/A      │ 5D     │ 1    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 8  │ app                    │ default     │ N/A     │ fork    │ N/A      │ 5D     │ 1    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 17 │ pointify-api           │ default     │ 0.0.0   │ fork    │ 1780015  │ 0s     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 1  │ pointify-web           │ default     │ N/A     │ fork    │ 1639918  │ 6h     │ 10   │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 9  │ pointify-website       │ default     │ N/A     │ fork    │ 912      │ 5D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 6  │ reggycodas             │ default     │ 1.0.0   │ fork    │ 841      │ 5D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ sunpay                 │ default     │ 1.0.0   │ fork    │ 827      │ 5D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 5  │ tokshop-admin          │ default     │ 1.0.0   │ cluster │ 834      │ 5D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 3  │ tokshop-doc-web        │ default     │ 1.0.0   │ fork    │ 810      │ 5D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 2  │ tokshop-marketplace    │ default     │ 1.0.0   │ cluster │ 1329474  │ 24h    │ 1    │ online    │ 0%       │ 0b       │ root     │ disabled │
+└────┴────────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+  ok pointify-api is registered with PM2
+  ok API health check passed (/api/healthz)
+  ok nginx config already exists for admin.pointifypos.com (left untouched; set FORCE_NGINX=1 to overwrite)
+  ok nginx config already exists for partner.pointifypos.com (left untouched; set FORCE_NGINX=1 to overwrite)
+==> Testing nginx configuration
+nginx: [warn] conflicting server name "doc.tokshoplive.com" on 0.0.0.0:80, ignored
+nginx: [warn] conflicting server name "tokshoplive.com" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+  ok nginx reloaded
+  ok SSL already enabled for admin.pointifypos.com
+  ok SSL already enabled for partner.pointifypos.com
+
+==> Done.
+  Admin   : https://admin.pointifypos.com
+  Partner : https://partner.pointifypos.com
+  Process : PM2 'pointify-api' on 127.0.0.1:8082 (serves both SPAs + /api)
+
+  Useful checks:
+    pm2 status
+    pm2 logs pointify-api --lines 50
+    curl -I http://127.0.0.1:8082/api/healthz
+    curl -I -H 'Host: admin.pointifypos.com' http://127.0.0.1:8082/
+root@vmi1445488:/var/www/pointify/Pointify-New-Admin#
