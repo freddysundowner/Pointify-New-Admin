@@ -119,6 +119,16 @@ export default function SubPartners() {
     Record<PosterDesign, PosterTexts>
   >(() => JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
 
+  const openPosterDialog = () => {
+    // Backfill any missing fields with defaults so inputs are never empty
+    // (e.g. after new editable fields are added).
+    setPosterTexts((prev) => ({
+      purple: { ...DEFAULT_TEXTS.purple, ...prev.purple },
+      light: { ...DEFAULT_TEXTS.light, ...prev.light },
+    }));
+    setPosterOpen(true);
+  };
+
   const currentTexts = posterTexts[posterDesign];
   const setField = (field: keyof PosterTexts, value: string | string[]) => {
     setPosterTexts((prev) => ({
@@ -326,7 +336,7 @@ export default function SubPartners() {
                     </>
                   )}
                 </Button>
-                <Button size="sm" onClick={() => setPosterOpen(true)}>
+                <Button size="sm" onClick={openPosterDialog}>
                   <ImageDown className="mr-1.5 h-4 w-4" />
                   Get my poster
                 </Button>
