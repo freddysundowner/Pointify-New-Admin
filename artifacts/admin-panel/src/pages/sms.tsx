@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListSmsLogs,
   useSendBulkSms,
+  useSendTestSms,
   getListSmsLogsQueryKey,
   type BulkSmsInput,
 } from "@workspace/api-client-react";
@@ -18,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -83,8 +85,36 @@ export default function SMS() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const sendBulk = useSendBulkSms();
+  const sendTest = useSendTestSms();
+  const [testPhone, setTestPhone] = useState("");
 
   const trimmed = message.trim();
+  const trimmedTestPhone = testPhone.trim();
+  const canTest =
+    trimmedTestPhone.length >= 9 && trimmed.length > 0 && !sendTest.isPending;
+
+  const handleTest = () => {
+    if (!canTest) return;
+    sendTest.mutate(
+      { data: { phone: trimmedTestPhone, message: trimmed } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Test SMS sent",
+            description: `Check the phone ${trimmedTestPhone}.`,
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Test SMS failed",
+            description:
+              "The SMS could not be sent. Check the phone number (e.g. 07XXXXXXXX) and try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
   const canSend = Boolean(audience) && trimmed.length > 0 && !sendBulk.isPending;
   const selectedAudience = AUDIENCES.find((a) => a.value === audience);
 
@@ -187,7 +217,33 @@ export default function SMS() {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex flex-col gap-3 border-t pt-4 md:flex-row md:items-end md:justify-between">
+            <div className="w-full space-y-2 md:max-w-sm">
+              <Label htmlFor="test-phone">Send a test to yourself first</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="test-phone"
+                  type="tel"
+                  placeholder="07XXXXXXXX"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canTest}
+                  onClick={handleTest}
+                >
+                  {sendTest.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Send test
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sends this exact message to one phone number only.
+              </p>
+            </div>
             <Button disabled={!canSend} onClick={() => setConfirmOpen(true)}>
               {sendBulk.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

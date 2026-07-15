@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import {
   useGetEmailStatus,
   useSendBulkEmail,
+  useSendTestEmail,
   type BulkEmailInput,
 } from "@workspace/api-client-react";
 import {
@@ -78,6 +79,8 @@ export default function Email() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const sendBulk = useSendBulkEmail();
+  const sendTest = useSendTestEmail();
+  const [testEmail, setTestEmail] = useState("");
 
   const trimmedSubject = subject.trim();
   const trimmedMessage = message.trim();
@@ -88,6 +91,37 @@ export default function Email() {
     trimmedMessage.length > 0 &&
     !sendBulk.isPending;
   const selectedAudience = AUDIENCES.find((a) => a.value === audience);
+
+  const trimmedTestEmail = testEmail.trim();
+  const canTest =
+    configured &&
+    trimmedTestEmail.length > 3 &&
+    trimmedTestEmail.includes("@") &&
+    trimmedSubject.length > 0 &&
+    trimmedMessage.length > 0 &&
+    !sendTest.isPending;
+
+  const handleTest = () => {
+    if (!canTest) return;
+    sendTest.mutate(
+      { data: { to: trimmedTestEmail, subject: trimmedSubject, message: trimmedMessage } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Test email sent",
+            description: `Check the inbox of ${trimmedTestEmail}.`,
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Test email failed",
+            description: "The provider rejected the send. Check the address and Brevo settings.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
 
   const handleSend = () => {
     if (!audience || !trimmedSubject || !trimmedMessage) return;
@@ -215,7 +249,33 @@ export default function Email() {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex flex-col gap-3 border-t pt-4 md:flex-row md:items-end md:justify-between">
+            <div className="w-full space-y-2 md:max-w-sm">
+              <Label htmlFor="test-email">Send a test to yourself first</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="test-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canTest}
+                  onClick={handleTest}
+                >
+                  {sendTest.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Send test
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sends this exact email to one address only.
+              </p>
+            </div>
             <Button disabled={!canSend} onClick={() => setConfirmOpen(true)}>
               {sendBulk.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1753,6 +1753,56 @@ paths:
         "503":
           description: Email sending is not configured on the server
 
+  /email/test:
+    post:
+      operationId: sendTestEmail
+      tags: [email]
+      summary: Send a single test email to one address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TestEmailInput" }
+      responses:
+        "200":
+          description: Test email result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TestSendResult" }
+        "400":
+          description: Invalid email, missing subject, or missing message
+        "401":
+          description: Authentication required
+        "502":
+          description: The email provider rejected the send
+        "503":
+          description: Email sending is not configured on the server
+
+  /sms/test:
+    post:
+      operationId: sendTestSms
+      tags: [sms]
+      summary: Send a single test SMS to one phone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TestSmsInput" }
+      responses:
+        "200":
+          description: Test SMS result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TestSendResult" }
+        "400":
+          description: Invalid phone or missing message
+        "401":
+          description: Authentication required
+        "502":
+          description: The SMS provider rejected the send
+        "503":
+          description: SMS sending is not configured on the server
+
   /settings:
     get:
       operationId: getSettings
@@ -3061,6 +3111,29 @@ components:
         userType: { type: string }
         status: { type: string }
         total: { type: number }
+
+    TestEmailInput:
+      type: object
+      required: [to, subject, message]
+      properties:
+        to: { type: string }
+        subject: { type: string }
+        message: { type: string }
+
+    TestSmsInput:
+      type: object
+      required: [phone, message]
+      properties:
+        phone: { type: string }
+        message: { type: string }
+
+    TestSendResult:
+      type: object
+      additionalProperties: true
+      required: [success]
+      properties:
+        success: { type: boolean }
+        message: { type: string }
 
     BulkSmsResult:
       type: object

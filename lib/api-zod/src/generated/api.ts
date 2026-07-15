@@ -2407,6 +2407,35 @@ export const SendBulkEmailResponse = zod.object({
 })
 
 
+/**
+ * @summary Send a single test email to one address
+ */
+export const SendTestEmailBody = zod.object({
+  "to": zod.string(),
+  "subject": zod.string(),
+  "message": zod.string()
+})
+
+export const SendTestEmailResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Send a single test SMS to one phone number
+ */
+export const SendTestSmsBody = zod.object({
+  "phone": zod.string(),
+  "message": zod.string()
+})
+
+export const SendTestSmsResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string().optional()
+})
+
+
 export const GetSettingsQueryParams = zod.object({
   "type": zod.coerce.string().optional()
 })

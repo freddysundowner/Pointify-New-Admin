@@ -1310,6 +1310,23 @@ export interface BulkEmailResult {
   [key: string]: unknown;
  }
 
+export interface TestEmailInput {
+  to: string;
+  subject: string;
+  message: string;
+}
+
+export interface TestSmsInput {
+  phone: string;
+  message: string;
+}
+
+export interface TestSendResult {
+  success: boolean;
+  message?: string;
+  [key: string]: unknown;
+ }
+
 export interface BulkSmsResult {
   message?: string;
   userType?: string;

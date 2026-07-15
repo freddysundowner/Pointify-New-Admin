@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
 import { logger } from "../lib/logger";
+import { checkSendRateLimit } from "../lib/sendRateLimit";
 
 const router: IRouter = Router();
 
@@ -182,6 +183,38 @@ function sendingEnabled(): boolean {
   return process.env["NODE_ENV"] === "production";
 }
 
+/** Send a single email via the Brevo transactional API. */
+async function sendOneEmail(
+  cfg: BrevoConfig,
+  to: string,
+  subject: string,
+  message: string,
+): Promise<{ ok: boolean; detail?: string }> {
+  try {
+    const resp = await fetch(BREVO_SEND_URL, {
+      method: "POST",
+      headers: {
+        "api-key": cfg.apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: { email: cfg.fromEmail, name: cfg.fromName },
+        to: [{ email: to }],
+        subject,
+        htmlContent: textToHtml(message),
+        textContent: message,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (resp.ok) return { ok: true };
+    const body = await resp.text().catch(() => "");
+    return { ok: false, detail: `Brevo responded ${resp.status}: ${body.slice(0, 300)}` };
+  } catch (err) {
+    return { ok: false, detail: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /**
  * Send emails one at a time via the Brevo transactional API in the background.
  * Sequential sending keeps us well under Brevo's rate limits; failures are
@@ -194,40 +227,15 @@ async function sendInBackground(
   message: string,
   audience: Audience,
 ): Promise<void> {
-  const html = textToHtml(message);
   let sent = 0;
   let failed = 0;
   for (const to of recipients) {
-    try {
-      const resp = await fetch(BREVO_SEND_URL, {
-        method: "POST",
-        headers: {
-          "api-key": cfg.apiKey,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          sender: { email: cfg.fromEmail, name: cfg.fromName },
-          to: [{ email: to }],
-          subject,
-          htmlContent: html,
-          textContent: message,
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (resp.ok) {
-        sent++;
-      } else {
-        failed++;
-        const body = await resp.text().catch(() => "");
-        logger.warn(
-          { to, status: resp.status, body: body.slice(0, 300) },
-          "Bulk email: Brevo rejected the send for recipient",
-        );
-      }
-    } catch (err) {
+    const result = await sendOneEmail(cfg, to, subject, message);
+    if (result.ok) {
+      sent++;
+    } else {
       failed++;
-      logger.warn({ err, to }, "Bulk email: send failed for recipient");
+      logger.warn({ to, detail: result.detail }, "Bulk email: send failed for recipient");
     }
   }
   logger.info(
@@ -241,10 +249,71 @@ router.get("/email/status", async (req, res) => {
   res.status(200).json({ configured: cfg !== null });
 });
 
+router.post("/email/test", async (req, res) => {
+  const sender = adminIdFromAuth(req.headers.authorization);
+  if (!sender) {
+    res.status(401).json({ message: "Authentication required" });
+    return;
+  }
+
+  const rl = checkSendRateLimit(`email-test:${sender}:${req.ip}`, 5, 10 * 60_000);
+  if (!rl.allowed) {
+    res.status(429).json({
+      message: `Too many test emails. Try again in ${rl.retryAfterSec}s.`,
+    });
+    return;
+  }
+
+  const cfg = await brevoConfig(authHeaderFrom(req));
+  if (!cfg) {
+    res.status(503).json({
+      message:
+        "Email sending is not configured. Add the Brevo API key and sender email in Settings.",
+    });
+    return;
+  }
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const to = typeof body["to"] === "string" ? body["to"].trim().toLowerCase() : "";
+  const subject = typeof body["subject"] === "string" ? body["subject"].trim() : "";
+  const message = typeof body["message"] === "string" ? body["message"].trim() : "";
+
+  if (!EMAIL_RE.test(to)) {
+    res.status(400).json({ message: "A valid recipient email address is required" });
+    return;
+  }
+  if (!subject) {
+    res.status(400).json({ message: "Subject is required" });
+    return;
+  }
+  if (!message) {
+    res.status(400).json({ message: "Message is required" });
+    return;
+  }
+
+  // Test sends are deliberate, single-recipient, and typed in by the operator,
+  // so they are allowed in every environment (no production-only gate).
+  const result = await sendOneEmail(cfg, to, subject, message);
+  req.log.info({ to, ok: result.ok, sender }, "Test email send attempted");
+  if (result.ok) {
+    res.status(200).json({ success: true, message: `Test email sent to ${to}` });
+  } else {
+    res.status(502).json({ success: false, message: result.detail ?? "The email provider rejected the send" });
+  }
+});
+
 router.post("/email/bulk", async (req, res) => {
   const sender = adminIdFromAuth(req.headers.authorization);
   if (!sender) {
     res.status(401).json({ message: "Authentication required" });
+    return;
+  }
+
+  const rl = checkSendRateLimit(`email-bulk:${sender}:${req.ip}`, 3, 10 * 60_000);
+  if (!rl.allowed) {
+    res.status(429).json({
+      message: `Too many bulk email requests. Try again in ${rl.retryAfterSec}s.`,
+    });
     return;
   }
 
