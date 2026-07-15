@@ -2381,6 +2381,32 @@ export const ListCommunicationsResponse = zod.object({
 })
 
 
+/**
+ * @summary Whether SMTP email sending is configured on the server
+ */
+export const GetEmailStatusResponse = zod.object({
+  "configured": zod.boolean()
+})
+
+
+/**
+ * Resolves the audience to user email addresses (deduplicated), then sends via the server's SMTP configuration in the background. A successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * @summary Start a bulk email to an audience segment
+ */
+export const SendBulkEmailBody = zod.object({
+  "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired']),
+  "subject": zod.string(),
+  "message": zod.string()
+})
+
+export const SendBulkEmailResponse = zod.object({
+  "message": zod.string().optional(),
+  "userType": zod.string().optional(),
+  "status": zod.string().optional(),
+  "total": zod.number().optional()
+})
+
+
 export const GetSettingsQueryParams = zod.object({
   "type": zod.coerce.string().optional()
 })

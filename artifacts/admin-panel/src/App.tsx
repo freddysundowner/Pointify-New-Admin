@@ -25,6 +25,7 @@ import Purchases from "@/pages/purchases";
 import Packages from "@/pages/packages";
 import Subscriptions from "@/pages/subscriptions";
 import SMS from "@/pages/sms";
+import Email from "@/pages/email";
 import AiLogs from "@/pages/ai-logs";
 import Settings from "@/pages/settings";
 
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/packages"><ProtectedRoute component={Packages} /></Route>
       <Route path="/subscriptions"><ProtectedRoute component={Subscriptions} /></Route>
       <Route path="/sms"><ProtectedRoute component={SMS} /></Route>
+      <Route path="/email"><ProtectedRoute component={Email} /></Route>
       <Route path="/ai-logs"><ProtectedRoute component={AiLogs} /></Route>
       <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
       <Route component={NotFound} />

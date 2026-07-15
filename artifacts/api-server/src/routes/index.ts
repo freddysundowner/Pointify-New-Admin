@@ -15,6 +15,7 @@ import packagesRouter from "./packages";
 import subscriptionsRouter from "./subscriptions";
 import paymentsRouter from "./payments";
 import smsRouter from "./sms";
+import emailRouter from "./email";
 import aiLogsRouter from "./ai-logs";
 import settingsRouter from "./settings";
 
@@ -36,6 +37,7 @@ router.use(packagesRouter);
 router.use(subscriptionsRouter);
 router.use(paymentsRouter);
 router.use(smsRouter);
+router.use(emailRouter);
 router.use(aiLogsRouter);
 router.use(settingsRouter);
 

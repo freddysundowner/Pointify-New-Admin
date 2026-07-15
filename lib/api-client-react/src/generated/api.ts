@@ -33,9 +33,12 @@ import type {
   AttendantListResult,
   AttendantPasswordReset,
   AttendantUpdate,
+  BulkEmailInput,
+  BulkEmailResult,
   BulkSmsInput,
   BulkSmsResult,
   CommunicationListResult,
+  EmailStatusResult,
   ErrorResponse,
   GenericObject,
   GetAiLogStatsParams,
@@ -6888,6 +6891,155 @@ export function useListCommunications<TData = Awaited<ReturnType<typeof listComm
 
 
 
+
+export const getGetEmailStatusUrl = () => {
+
+
+
+
+  return `/api/email/status`
+}
+
+/**
+ * @summary Whether SMTP email sending is configured on the server
+ */
+export const getEmailStatus = async ( options?: RequestInit): Promise<EmailStatusResult> => {
+
+  return customFetch<EmailStatusResult>(getGetEmailStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEmailStatusQueryKey = () => {
+    return [
+    `/api/email/status`
+    ] as const;
+    }
+
+
+export const getGetEmailStatusQueryOptions = <TData = Awaited<ReturnType<typeof getEmailStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEmailStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEmailStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEmailStatus>>> = ({ signal }) => getEmailStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEmailStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEmailStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getEmailStatus>>>
+export type GetEmailStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether SMTP email sending is configured on the server
+ */
+
+export function useGetEmailStatus<TData = Awaited<ReturnType<typeof getEmailStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEmailStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEmailStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSendBulkEmailUrl = () => {
+
+
+
+
+  return `/api/email/bulk`
+}
+
+/**
+ * Resolves the audience to user email addresses (deduplicated), then sends via the server's SMTP configuration in the background. A successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * @summary Start a bulk email to an audience segment
+ */
+export const sendBulkEmail = async (bulkEmailInput: BulkEmailInput, options?: RequestInit): Promise<BulkEmailResult> => {
+
+  return customFetch<BulkEmailResult>(getSendBulkEmailUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkEmailInput,)
+  }
+);}
+
+
+
+
+export const getSendBulkEmailMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBulkEmail>>, TError,{data: BodyType<BulkEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendBulkEmail>>, TError,{data: BodyType<BulkEmailInput>}, TContext> => {
+
+const mutationKey = ['sendBulkEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendBulkEmail>>, {data: BodyType<BulkEmailInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendBulkEmail(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendBulkEmailMutationResult = NonNullable<Awaited<ReturnType<typeof sendBulkEmail>>>
+    export type SendBulkEmailMutationBody = BodyType<BulkEmailInput>
+    export type SendBulkEmailMutationError = ErrorType<void>
+
+    /**
+ * @summary Start a bulk email to an audience segment
+ */
+export const useSendBulkEmail = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBulkEmail>>, TError,{data: BodyType<BulkEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendBulkEmail>>,
+        TError,
+        {data: BodyType<BulkEmailInput>},
+        TContext
+      > => {
+      return useMutation(getSendBulkEmailMutationOptions(options));
+    }
 
 export const getGetSettingsUrl = (params?: GetSettingsParams,) => {
   const normalizedParams = new URLSearchParams();

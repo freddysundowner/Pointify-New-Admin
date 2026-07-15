@@ -30,6 +30,8 @@ tags:
     description: Subscription packages
   - name: subscriptions
     description: Subscriptions
+  - name: email
+    description: Bulk email
   - name: sms
     description: SMS and bulk messaging
   - name: settings
@@ -1704,6 +1706,50 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CommunicationListResult" }
 
+  /email/status:
+    get:
+      operationId: getEmailStatus
+      tags: [email]
+      summary: Whether SMTP email sending is configured on the server
+      responses:
+        "200":
+          description: Email configuration status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailStatusResult" }
+
+  /email/bulk:
+    post:
+      operationId: sendBulkEmail
+      tags: [email]
+      summary: Start a bulk email to an audience segment
+      description: >-
+        Resolves the audience to user email addresses (deduplicated), then
+        sends via the server's SMTP configuration in the background. A
+        successful call returns 202 with the recipient `total` and
+        `status: "processing"`. When no users match the audience it returns
+        200 with `total: 0`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BulkEmailInput" }
+      responses:
+        "200":
+          description: No recipients matched the audience
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkEmailResult" }
+        "202":
+          description: Bulk email accepted and sending in the background
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkEmailResult" }
+        "400":
+          description: Invalid audience, missing subject, or missing message
+        "503":
+          description: Email sending is not configured on the server
+
   /settings:
     get:
       operationId: getSettings
@@ -2987,6 +3033,31 @@ components:
           type: string
           enum: [all, trial_active, trial_expired, production_active, production_expired]
         message: { type: string }
+
+    EmailStatusResult:
+      type: object
+      required: [configured]
+      properties:
+        configured: { type: boolean }
+
+    BulkEmailInput:
+      type: object
+      required: [userType, subject, message]
+      properties:
+        userType:
+          type: string
+          enum: [all, trial_active, trial_expired, production_active, production_expired]
+        subject: { type: string }
+        message: { type: string }
+
+    BulkEmailResult:
+      type: object
+      additionalProperties: true
+      properties:
+        message: { type: string }
+        userType: { type: string }
+        status: { type: string }
+        total: { type: number }
 
     BulkSmsResult:
       type: object

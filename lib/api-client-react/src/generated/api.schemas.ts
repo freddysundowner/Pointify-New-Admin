@@ -1281,6 +1281,35 @@ export interface BulkSmsInput {
   message: string;
 }
 
+export interface EmailStatusResult {
+  configured: boolean;
+}
+
+export type BulkEmailInputUserType = typeof BulkEmailInputUserType[keyof typeof BulkEmailInputUserType];
+
+
+export const BulkEmailInputUserType = {
+  all: 'all',
+  trial_active: 'trial_active',
+  trial_expired: 'trial_expired',
+  production_active: 'production_active',
+  production_expired: 'production_expired',
+} as const;
+
+export interface BulkEmailInput {
+  userType: BulkEmailInputUserType;
+  subject: string;
+  message: string;
+}
+
+export interface BulkEmailResult {
+  message?: string;
+  userType?: string;
+  status?: string;
+  total?: number;
+  [key: string]: unknown;
+ }
+
 export interface BulkSmsResult {
   message?: string;
   userType?: string;
