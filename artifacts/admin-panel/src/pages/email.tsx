@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import {
   Select,
   SelectContent,
@@ -66,6 +66,51 @@ const AUDIENCES: { value: Audience; label: string; description: string }[] = [
     label: "Paid · Expired",
     description: "Users whose paid plan has lapsed",
   },
+  {
+    value: "partners",
+    label: "Partners",
+    description: "Every registered partner (affiliate)",
+  },
+];
+
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  html: string;
+}
+
+const TEMPLATES: EmailTemplate[] = [
+  {
+    id: "grow-sales",
+    name: "Grow your sales",
+    subject: "Your shop could be selling more — here's how",
+    html: `<p>Hi there,</p><p><b>Every sale you don't track is money you can't see.</b></p><p>With Pointify POS you always know what's selling, what's running low, and how much you made today — right from your phone.</p><ul><li>Record sales in seconds</li><li>Track stock automatically</li><li>See your profit at a glance</li></ul><p>Log in today and take control of your shop.</p><p>— The Pointify Team</p>`,
+  },
+  {
+    id: "trial-upgrade",
+    name: "Trial → Paid upgrade",
+    subject: "Don't lose your shop data — upgrade today",
+    html: `<p>Hello,</p><p><b>Your business deserves more than a trial.</b></p><p>You've seen what Pointify POS can do. Upgrade now and keep your sales history, stock records, and reports growing with your business — without interruption.</p><p>Upgrading takes less than 2 minutes with M-Pesa.</p><p>Karibu tena,<br/>The Pointify Team</p>`,
+  },
+  {
+    id: "win-back",
+    name: "Win back expired users",
+    subject: "We kept your shop data safe — come back anytime",
+    html: `<p>Hi,</p><p><b>Your shop hasn't stopped. Neither should your records.</b></p><p>Your Pointify account is paused, but all your data is still safe. Renew today and pick up exactly where you left off — same products, same reports, zero setup.</p><p>Renew in minutes with M-Pesa and get back to business.</p><p>— The Pointify Team</p>`,
+  },
+  {
+    id: "new-feature",
+    name: "New feature announcement",
+    subject: "New in Pointify: made for shops like yours",
+    html: `<p>Hello,</p><p><b>We just made running your shop even easier.</b></p><p>We're always improving Pointify POS based on what shop owners like you ask for. Log in to see the latest updates — built to save you time and help you sell more.</p><p>Have an idea for us? Just reply to this email.</p><p>Asante,<br/>The Pointify Team</p>`,
+  },
+  {
+    id: "partner-referral",
+    name: "Partner push",
+    subject: "Earn with every shop you bring to Pointify",
+    html: `<p>Hi partner,</p><p><b>Your network is your net worth — literally.</b></p><p>Every shop you refer to Pointify POS earns you commission on their subscription. The more shops you sign up, the more you earn — month after month.</p><ul><li>Share your referral code</li><li>Help the shop get started</li><li>Watch your wallet grow</li></ul><p>Log in to your partner portal to grab your referral link.</p><p>— The Pointify Team</p>`,
+  },
 ];
 
 export default function Email() {
@@ -75,7 +120,9 @@ export default function Email() {
 
   const [audience, setAudience] = useState<Audience | "">("");
   const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+  const [html, setHtml] = useState("");
+  const [plainText, setPlainText] = useState("");
+  const [templateId, setTemplateId] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const sendBulk = useSendBulkEmail();
@@ -83,7 +130,20 @@ export default function Email() {
   const [testEmail, setTestEmail] = useState("");
 
   const trimmedSubject = subject.trim();
-  const trimmedMessage = message.trim();
+  const trimmedMessage = plainText.trim();
+  const trimmedHtml = trimmedMessage ? html : "";
+
+  const applyTemplate = (id: string) => {
+    const tpl = TEMPLATES.find((t) => t.id === id);
+    if (!tpl) return;
+    setTemplateId(id);
+    setSubject(tpl.subject);
+    setHtml(tpl.html);
+    // Derive plain text from the template HTML for the text-only fallback.
+    const el = document.createElement("div");
+    el.innerHTML = tpl.html;
+    setPlainText(el.innerText);
+  };
   const canSend =
     configured &&
     Boolean(audience) &&
@@ -104,7 +164,14 @@ export default function Email() {
   const handleTest = () => {
     if (!canTest) return;
     sendTest.mutate(
-      { data: { to: trimmedTestEmail, subject: trimmedSubject, message: trimmedMessage } },
+      {
+        data: {
+          to: trimmedTestEmail,
+          subject: trimmedSubject,
+          message: trimmedMessage,
+          ...(trimmedHtml ? { html: trimmedHtml } : {}),
+        },
+      },
       {
         onSuccess: () => {
           toast({
@@ -131,6 +198,7 @@ export default function Email() {
           userType: audience,
           subject: trimmedSubject,
           message: trimmedMessage,
+          ...(trimmedHtml ? { html: trimmedHtml } : {}),
         },
       },
       {
@@ -155,7 +223,9 @@ export default function Email() {
             });
           }
           setSubject("");
-          setMessage("");
+          setHtml("");
+          setPlainText("");
+          setTemplateId("");
           setAudience("");
         },
         onError: () => {
@@ -234,18 +304,39 @@ export default function Email() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="template">Start from a template (optional)</Label>
+            <Select value={templateId} onValueChange={applyTemplate}>
+              <SelectTrigger id="template">
+                <SelectValue placeholder="Pick a marketing template, then edit it below" />
+              </SelectTrigger>
+              <SelectContent>
+                {TEMPLATES.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    <span className="flex flex-col">
+                      <span>{t.name}</span>
+                      <span className="text-xs text-muted-foreground">{t.subject}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="message">Message</Label>
               <span className="text-xs text-muted-foreground">
                 {trimmedMessage.length} characters
               </span>
             </div>
-            <Textarea
+            <RichTextEditor
               id="message"
-              rows={8}
-              placeholder="Type the email your recipients will receive… Line breaks are kept."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              value={html}
+              placeholder="Type the email your recipients will receive… Use the toolbar for bold, lists and links."
+              onChange={(nextHtml, nextText) => {
+                setHtml(nextHtml);
+                setPlainText(nextText);
+              }}
             />
           </div>
 
@@ -302,7 +393,7 @@ export default function Email() {
               This can't be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
+          <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border bg-muted/40 p-3 text-sm">
             <p className="font-medium">{trimmedSubject}</p>
             <p className="whitespace-pre-wrap text-muted-foreground">
               {trimmedMessage}

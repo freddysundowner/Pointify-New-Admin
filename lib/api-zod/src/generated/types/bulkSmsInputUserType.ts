@@ -15,4 +15,5 @@ export const BulkSmsInputUserType = {
   trial_expired: 'trial_expired',
   production_active: 'production_active',
   production_expired: 'production_expired',
+  partners: 'partners',
 } as const;

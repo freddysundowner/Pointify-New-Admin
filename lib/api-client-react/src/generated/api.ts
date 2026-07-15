@@ -6754,7 +6754,7 @@ export const getSendBulkSmsUrl = () => {
 }
 
 /**
- * Enqueues a bulk SMS, deduplicated to one message per user. Upstream accepts the job and sends in the background, so a successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * Enqueues a bulk SMS, deduplicated to one message per user. User audiences are forwarded upstream, which accepts the job and sends in the background, so a successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`. The `partners` audience is handled by the proxy itself (the upstream does not know it): partners are resolved by paging the affiliate list, and outside production (unless SMS_SEND_ENABLED=true) the call returns 202 with `status: "dry_run"` and nothing is sent. For `partners` a 503 is returned when the SMS provider is not configured in Settings, and a 429 when the per-operator rate limit is exceeded.
  * @summary Start a bulk SMS to an audience segment
  */
 export const sendBulkSms = async (bulkSmsInput: BulkSmsInput, options?: RequestInit): Promise<BulkSmsResult> => {

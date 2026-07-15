@@ -70,3 +70,8 @@ open). The proxy must enforce a Bearer-token gate itself on every `/partners`
 route (mirror the statistics/sms `requireBearer` 401 pattern); never rely on
 upstream protection. Also strip the partner auth `token` from the register
 response before returning it to the admin client.
+
+## Bulk email/SMS "partners" audience (proxy-side)
+- Upstream has no partners audience; proxy resolves it by paging `/affiliates/` (page/limit until exhausted, MAX 200 pages).
+- Affiliate phone field is **`phonenumber`** (NOT `phone`); email is `email`. Normalize phones with `normalizeKenyanMsisdn` before use.
+**Why:** reading `phone` silently yields 0 recipients — the field name is the whole bug class.

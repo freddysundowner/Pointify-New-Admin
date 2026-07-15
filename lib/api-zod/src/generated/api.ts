@@ -2341,11 +2341,11 @@ export const TopupSmsResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
- * Enqueues a bulk SMS, deduplicated to one message per user. Upstream accepts the job and sends in the background, so a successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`.
+ * Enqueues a bulk SMS, deduplicated to one message per user. User audiences are forwarded upstream, which accepts the job and sends in the background, so a successful call returns 202 with the recipient `total` and `status: "processing"`. When no users match the audience it returns 200 with `total: 0`. The `partners` audience is handled by the proxy itself (the upstream does not know it): partners are resolved by paging the affiliate list, and outside production (unless SMS_SEND_ENABLED=true) the call returns 202 with `status: "dry_run"` and nothing is sent. For `partners` a 503 is returned when the SMS provider is not configured in Settings, and a 429 when the per-operator rate limit is exceeded.
  * @summary Start a bulk SMS to an audience segment
  */
 export const SendBulkSmsBody = zod.object({
-  "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired']),
+  "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired', 'partners']),
   "message": zod.string()
 })
 
@@ -2394,9 +2394,10 @@ export const GetEmailStatusResponse = zod.object({
  * @summary Start a bulk email to an audience segment
  */
 export const SendBulkEmailBody = zod.object({
-  "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired']),
+  "userType": zod.enum(['all', 'trial_active', 'trial_expired', 'production_active', 'production_expired', 'partners']),
   "subject": zod.string(),
-  "message": zod.string()
+  "message": zod.string(),
+  "html": zod.string().optional().describe('Optional rich-text HTML body. When present it is used as the email HTML content and `message` is used as the plain-text fallback.')
 })
 
 export const SendBulkEmailResponse = zod.object({
@@ -2413,7 +2414,8 @@ export const SendBulkEmailResponse = zod.object({
 export const SendTestEmailBody = zod.object({
   "to": zod.string(),
   "subject": zod.string(),
-  "message": zod.string()
+  "message": zod.string(),
+  "html": zod.string().optional().describe('Optional rich-text HTML body. When present it is used as the email HTML content and `message` is used as the plain-text fallback.')
 })
 
 export const SendTestEmailResponse = zod.object({

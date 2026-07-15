@@ -70,6 +70,11 @@ const AUDIENCES: { value: Audience; label: string; description: string }[] = [
     label: "Paid · Expired",
     description: "Users whose paid plan has lapsed",
   },
+  {
+    value: "partners",
+    label: "Partners",
+    description: "Every registered partner (affiliate)",
+  },
 ];
 
 export default function SMS() {
@@ -131,7 +136,12 @@ export default function SMS() {
         onSuccess: (result) => {
           setConfirmOpen(false);
           const total = Number(result?.total ?? 0);
-          if (total === 0) {
+          if (result?.status === "dry_run") {
+            toast({
+              title: "Test run only — no SMS sent",
+              description: `${total} recipient${total === 1 ? "" : "s"} matched this audience. SMS are only sent from the live (production) server.`,
+            });
+          } else if (total === 0) {
             toast({
               title: "No recipients",
               description: "No users matched this audience, so nothing was sent.",

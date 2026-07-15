@@ -10,4 +10,6 @@ export interface TestEmailInput {
   to: string;
   subject: string;
   message: string;
+  /** Optional rich-text HTML body. When present it is used as the email HTML content and `message` is used as the plain-text fallback. */
+  html?: string;
 }

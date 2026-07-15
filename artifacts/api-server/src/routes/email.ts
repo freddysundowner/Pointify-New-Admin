@@ -11,6 +11,7 @@ const AUDIENCES = [
   "trial_expired",
   "production_active",
   "production_expired",
+  "partners",
 ] as const;
 type Audience = (typeof AUDIENCES)[number];
 
@@ -99,6 +100,7 @@ function collectEmails(rows: unknown[], into: Set<string>): void {
  * Resolve an audience to a deduplicated list of user email addresses.
  *
  * - "all" pages through the full admin list (upstream /admin/).
+ * - "partners" pages through the affiliate list (upstream /affiliates/).
  * - Segments page through upstream /admin/users/subscriptions with
  *   subscriptionType + subscriptionStatus, which classifies users the same way
  *   the platform's own subscription statistics do.
@@ -110,6 +112,26 @@ async function resolveAudienceEmails(
   const emails = new Set<string>();
   const PAGE_LIMIT = 500;
   const MAX_PAGES = 200; // hard stop: 100k users
+
+  if (audience === "partners") {
+    // Query page by page until every partner has been collected.
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const result = await upstreamFetch({
+        method: "GET",
+        path: "/affiliates/",
+        query: { page, limit: PAGE_LIMIT },
+        authHeader,
+      });
+      if (result.status >= 400) {
+        throw new Error(`Upstream partner list failed with status ${result.status}`);
+      }
+      const norm = normalizeList(result.data);
+      collectEmails(norm.data, emails);
+      if (norm.data.length < PAGE_LIMIT) break;
+      if (norm.totalPages && page >= norm.totalPages) break;
+    }
+    return [...emails];
+  }
 
   if (audience === "all") {
     for (let page = 1; page <= MAX_PAGES; page++) {
@@ -161,6 +183,24 @@ async function resolveAudienceEmails(
   return [...emails];
 }
 
+/**
+ * Minimal server-side hardening for operator-authored rich-text HTML: strip
+ * script/style blocks, inline event handlers, and javascript: URLs. The author
+ * is a trusted admin, but the mail must never carry active content.
+ */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<\s*(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*\/?\s*(script|iframe|object|embed|form|meta|link|base)\b[^>]*>/gi, "")
+    .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/(href|src)\s*=\s*(["']?)\s*(?:javascript|vbscript|data):[^"'\s>]*\2/gi, "");
+}
+
+/** Wrap rich-text body in the same base styling used for plain-text emails. */
+function wrapHtmlBody(inner: string): string {
+  return `<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1f2937;">${inner}</div>`;
+}
+
 /** Very small text→HTML conversion: escape, then preserve line breaks. */
 function textToHtml(text: string): string {
   const escaped = text
@@ -189,6 +229,7 @@ async function sendOneEmail(
   to: string,
   subject: string,
   message: string,
+  html?: string,
 ): Promise<{ ok: boolean; detail?: string }> {
   try {
     const resp = await fetch(BREVO_SEND_URL, {
@@ -202,7 +243,7 @@ async function sendOneEmail(
         sender: { email: cfg.fromEmail, name: cfg.fromName },
         to: [{ email: to }],
         subject,
-        htmlContent: textToHtml(message),
+        htmlContent: html ? wrapHtmlBody(sanitizeHtml(html)) : textToHtml(message),
         textContent: message,
       }),
       signal: AbortSignal.timeout(15_000),
@@ -226,11 +267,12 @@ async function sendInBackground(
   subject: string,
   message: string,
   audience: Audience,
+  html?: string,
 ): Promise<void> {
   let sent = 0;
   let failed = 0;
   for (const to of recipients) {
-    const result = await sendOneEmail(cfg, to, subject, message);
+    const result = await sendOneEmail(cfg, to, subject, message, html);
     if (result.ok) {
       sent++;
     } else {
@@ -277,6 +319,7 @@ router.post("/email/test", async (req, res) => {
   const to = typeof body["to"] === "string" ? body["to"].trim().toLowerCase() : "";
   const subject = typeof body["subject"] === "string" ? body["subject"].trim() : "";
   const message = typeof body["message"] === "string" ? body["message"].trim() : "";
+  const html = typeof body["html"] === "string" && body["html"].trim() ? body["html"] : undefined;
 
   if (!EMAIL_RE.test(to)) {
     res.status(400).json({ message: "A valid recipient email address is required" });
@@ -293,7 +336,7 @@ router.post("/email/test", async (req, res) => {
 
   // Test sends are deliberate, single-recipient, and typed in by the operator,
   // so they are allowed in every environment (no production-only gate).
-  const result = await sendOneEmail(cfg, to, subject, message);
+  const result = await sendOneEmail(cfg, to, subject, message, html);
   req.log.info({ to, ok: result.ok, sender }, "Test email send attempted");
   if (result.ok) {
     res.status(200).json({ success: true, message: `Test email sent to ${to}` });
@@ -330,6 +373,7 @@ router.post("/email/bulk", async (req, res) => {
   const userType = body["userType"];
   const subject = typeof body["subject"] === "string" ? body["subject"].trim() : "";
   const message = typeof body["message"] === "string" ? body["message"].trim() : "";
+  const html = typeof body["html"] === "string" && body["html"].trim() ? body["html"] : undefined;
 
   if (!isAudience(userType)) {
     res.status(400).json({ message: "Invalid userType" });
@@ -389,7 +433,7 @@ router.post("/email/bulk", async (req, res) => {
     total: recipients.length,
   });
 
-  void sendInBackground(cfg, recipients, subject, message, userType).catch((err) => {
+  void sendInBackground(cfg, recipients, subject, message, userType, html).catch((err) => {
     logger.error({ err, userType }, "Bulk email background run crashed");
   });
 });

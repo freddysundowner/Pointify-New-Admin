@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { proxy, proxyList, upstreamFetch, authHeaderFrom } from "../lib/upstream";
+import { proxy, proxyList, upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
+import { logger } from "../lib/logger";
 import { normalizeKenyanMsisdn } from "../lib/phone";
 import { checkSendRateLimit } from "../lib/sendRateLimit";
 
@@ -35,6 +36,52 @@ router.post("/sms/topup", async (req, res) => {
   await proxy(req, res, { method: "POST", path: "/sms/topup", body: req.body });
 });
 
+/**
+ * Same safety gate as bulk email: real proxy-side SMS sends only happen in
+ * production or when SMS_SEND_ENABLED=true; everywhere else the run is a dry
+ * run (recipients resolved and counted, nothing sent), because dev talks to
+ * the live POS API and would otherwise SMS real partners.
+ */
+function smsSendingEnabled(): boolean {
+  if (process.env["SMS_SEND_ENABLED"]?.trim().toLowerCase() === "true") return true;
+  return process.env["NODE_ENV"] === "production";
+}
+
+/**
+ * Resolve all partner phone numbers by querying the affiliate list page by
+ * page, incrementing the page number until every partner has been fetched.
+ */
+async function resolvePartnerPhones(authHeader: string | undefined): Promise<string[]> {
+  const phones = new Set<string>();
+  const PAGE_LIMIT = 200;
+  const MAX_PAGES = 200;
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/affiliates/",
+      query: { page, limit: PAGE_LIMIT },
+      authHeader,
+    });
+    if (result.status >= 400) {
+      throw new Error(`Upstream partner list failed with status ${result.status}`);
+    }
+    const norm = normalizeList(result.data);
+    for (const row of norm.data) {
+      if (!row || typeof row !== "object") continue;
+      // Affiliates store their phone as `phonenumber` (fall back to `phone`
+      // defensively in case the upstream shape ever changes).
+      const rec = row as Record<string, unknown>;
+      const raw = typeof rec["phonenumber"] === "string" ? rec["phonenumber"] : rec["phone"];
+      if (typeof raw !== "string") continue;
+      const normalized = normalizeKenyanMsisdn(raw.trim());
+      if (normalized) phones.add(normalized);
+    }
+    if (norm.data.length < PAGE_LIMIT) break;
+    if (norm.totalPages && page >= norm.totalPages) break;
+  }
+  return [...phones];
+}
+
 router.post("/sms/bulk", async (req, res) => {
   // Require a bearer token that decodes to an admin id. This is the strongest
   // gate possible from a stateless proxy that does not hold the upstream JWT
@@ -46,10 +93,98 @@ router.post("/sms/bulk", async (req, res) => {
     return;
   }
   // Strip any client-supplied `user` and inject the server-derived sender.
-  // Upstream now handles every audience natively (including "all"), dedupes to
-  // one message per user, and returns 202 immediately while sending in the
+  // Upstream now handles every user audience natively (including "all"), dedupes
+  // to one message per user, and returns 202 immediately while sending in the
   // background — so we simply forward and pass its status/body straight through.
   const { user: _ignored, ...rest } = (req.body ?? {}) as Record<string, unknown>;
+
+  // The "partners" audience is NOT known upstream — the proxy resolves the
+  // affiliate list itself and sends via the platform's SMS provider directly.
+  if (rest["userType"] === "partners") {
+    const rl = checkSendRateLimit(`sms-bulk:${user}:${req.ip}`, 3, 10 * 60_000);
+    if (!rl.allowed) {
+      res.status(429).json({
+        message: `Too many bulk SMS requests. Try again in ${rl.retryAfterSec}s.`,
+      });
+      return;
+    }
+
+    const message = typeof rest["message"] === "string" ? rest["message"].trim() : "";
+    if (!message) {
+      res.status(400).json({ message: "Message is required" });
+      return;
+    }
+
+    let phones: string[];
+    try {
+      phones = await resolvePartnerPhones(authHeaderFrom(req));
+    } catch (err) {
+      req.log.error({ err }, "Bulk partner SMS: partner resolution failed");
+      res.status(502).json({ message: "Failed to load the partner list from the POS API" });
+      return;
+    }
+
+    if (phones.length === 0) {
+      res.status(200).json({
+        message: "No partners with a valid phone number were found",
+        userType: "partners",
+        status: "empty",
+        total: 0,
+      });
+      return;
+    }
+
+    if (!smsSendingEnabled()) {
+      req.log.info(
+        { total: phones.length, user },
+        "Bulk partner SMS DRY RUN: sending disabled outside production; nothing sent",
+      );
+      res.status(202).json({
+        message:
+          "Dry run: partners resolved, but no SMS were sent (sending is only enabled in production)",
+        userType: "partners",
+        status: "dry_run",
+        total: phones.length,
+      });
+      return;
+    }
+
+    const cfg = await smsProviderConfig(authHeaderFrom(req));
+    if (!cfg) {
+      res.status(503).json({
+        message: "SMS sending is not configured. Check the SMS settings in the Settings page.",
+      });
+      return;
+    }
+
+    req.log.info(
+      { total: phones.length, user },
+      "Bulk partner SMS accepted; sending in background",
+    );
+    res.status(202).json({
+      message: "Bulk SMS to partners is being sent in the background",
+      userType: "partners",
+      status: "processing",
+      total: phones.length,
+    });
+
+    void (async () => {
+      let sent = 0;
+      let failed = 0;
+      for (const phone of phones) {
+        const result = await sendOneSms(cfg, phone, message);
+        if (result.ok) sent++;
+        else {
+          failed++;
+          logger.warn({ phone, detail: result.detail }, "Bulk partner SMS: send failed");
+        }
+      }
+      logger.info({ total: phones.length, sent, failed }, "Bulk partner SMS run finished");
+    })().catch((err) => {
+      logger.error({ err }, "Bulk partner SMS background run crashed");
+    });
+    return;
+  }
 
   await proxy(req, res, {
     method: "POST",
@@ -87,6 +222,38 @@ async function smsProviderConfig(
     return { apiKey, endpoint, shortCode };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Send one SMS via the platform's provider (blessedtexts-style API). The
+ * provider reports per-message status codes in the body ("1000" = success)
+ * and may return HTTP 200 even on failure, so branch on the body.
+ */
+async function sendOneSms(
+  cfg: SmsProviderConfig,
+  phone: string,
+  message: string,
+): Promise<{ ok: boolean; detail?: string }> {
+  try {
+    const resp = await fetch(cfg.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        api_key: cfg.apiKey,
+        sender_id: cfg.shortCode,
+        phone,
+        message,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await resp.text().catch(() => "");
+    const ok = resp.ok && (/"?status_?code"?\s*:\s*"?1000"?/i.test(text) || /success/i.test(text));
+    return ok
+      ? { ok: true }
+      : { ok: false, detail: text.slice(0, 300) || `HTTP ${resp.status}` };
+  } catch (err) {
+    return { ok: false, detail: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -128,34 +295,15 @@ router.post("/sms/test", async (req, res) => {
   }
 
   // Test sends are deliberate, single-recipient, and typed in by the operator.
-  try {
-    const resp = await fetch(cfg.endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        api_key: cfg.apiKey,
-        sender_id: cfg.shortCode,
-        phone,
-        message,
-      }),
-      signal: AbortSignal.timeout(15_000),
+  const result = await sendOneSms(cfg, phone, message);
+  req.log.info({ phone, ok: result.ok, user }, "Test SMS send attempted");
+  if (result.ok) {
+    res.status(200).json({ success: true, message: `Test SMS sent to ${phone}` });
+  } else {
+    res.status(502).json({
+      success: false,
+      message: `The SMS provider rejected the send: ${result.detail}`,
     });
-    const text = await resp.text().catch(() => "");
-    // The provider (blessedtexts-style API) reports per-message status codes in
-    // the body ("1000" = success) and may return HTTP 200 even on failure.
-    const ok = resp.ok && (/"?status_?code"?\s*:\s*"?1000"?/i.test(text) || /success/i.test(text));
-    req.log.info({ phone, ok, status: resp.status, user }, "Test SMS send attempted");
-    if (ok) {
-      res.status(200).json({ success: true, message: `Test SMS sent to ${phone}` });
-    } else {
-      res.status(502).json({
-        success: false,
-        message: `The SMS provider rejected the send: ${text.slice(0, 300) || `HTTP ${resp.status}`}`,
-      });
-    }
-  } catch (err) {
-    req.log.error({ err, phone }, "Test SMS send failed");
-    res.status(502).json({ success: false, message: "Could not reach the SMS provider" });
   }
 });
 

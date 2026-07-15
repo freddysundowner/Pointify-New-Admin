@@ -1274,6 +1274,7 @@ export const BulkSmsInputUserType = {
   trial_expired: 'trial_expired',
   production_active: 'production_active',
   production_expired: 'production_expired',
+  partners: 'partners',
 } as const;
 
 export interface BulkSmsInput {
@@ -1294,12 +1295,15 @@ export const BulkEmailInputUserType = {
   trial_expired: 'trial_expired',
   production_active: 'production_active',
   production_expired: 'production_expired',
+  partners: 'partners',
 } as const;
 
 export interface BulkEmailInput {
   userType: BulkEmailInputUserType;
   subject: string;
   message: string;
+  /** Optional rich-text HTML body. When present it is used as the email HTML content and `message` is used as the plain-text fallback. */
+  html?: string;
 }
 
 export interface BulkEmailResult {
@@ -1314,6 +1318,8 @@ export interface TestEmailInput {
   to: string;
   subject: string;
   message: string;
+  /** Optional rich-text HTML body. When present it is used as the email HTML content and `message` is used as the plain-text fallback. */
+  html?: string;
 }
 
 export interface TestSmsInput {
