@@ -140,8 +140,8 @@ export default function Email() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Email sending isn't set up yet</AlertTitle>
           <AlertDescription>
-            The server needs SMTP settings (SMTP_HOST, SMTP_USER, SMTP_PASS —
-            and optionally SMTP_PORT and EMAIL_FROM) before emails can be sent.
+            The server needs your Brevo settings (BREVO_API_KEY and EMAIL_FROM
+            — and optionally EMAIL_FROM_NAME) before emails can be sent.
           </AlertDescription>
         </Alert>
       )}

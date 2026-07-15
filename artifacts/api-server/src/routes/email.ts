@@ -1,5 +1,4 @@
 import { Router, type IRouter } from "express";
-import nodemailer from "nodemailer";
 import { upstreamFetch, authHeaderFrom, normalizeList } from "../lib/upstream";
 import { logger } from "../lib/logger";
 
@@ -36,24 +35,18 @@ function adminIdFromAuth(header: string | undefined): string | undefined {
   }
 }
 
-interface SmtpConfig {
-  host: string;
-  port: number;
-  user: string;
-  pass: string;
-  from: string;
+interface BrevoConfig {
+  apiKey: string;
+  fromEmail: string;
+  fromName: string;
 }
 
-function smtpConfig(): SmtpConfig | null {
-  const host = process.env["SMTP_HOST"]?.trim();
-  const portRaw = process.env["SMTP_PORT"]?.trim();
-  const user = process.env["SMTP_USER"]?.trim();
-  const pass = process.env["SMTP_PASS"]?.trim();
-  if (!host || !user || !pass) return null;
-  const port = portRaw ? parseInt(portRaw, 10) : 587;
-  if (!Number.isFinite(port) || port <= 0) return null;
-  const from = process.env["EMAIL_FROM"]?.trim() || user;
-  return { host, port, user, pass, from };
+function brevoConfig(): BrevoConfig | null {
+  const apiKey = process.env["BREVO_API_KEY"]?.trim();
+  const fromEmail = process.env["EMAIL_FROM"]?.trim();
+  if (!apiKey || !fromEmail) return null;
+  const fromName = process.env["EMAIL_FROM_NAME"]?.trim() || "Pointify POS";
+  return { apiKey, fromEmail, fromName };
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -143,37 +136,56 @@ function textToHtml(text: string): string {
   return `<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1f2937; white-space: pre-wrap;">${escaped}</div>`;
 }
 
+const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
+
 /**
- * Send emails one at a time in the background. Sequential sending keeps us
- * well under typical SMTP rate limits; failures are logged and skipped so one
- * bad address never aborts the whole run.
+ * Send emails one at a time via the Brevo transactional API in the background.
+ * Sequential sending keeps us well under Brevo's rate limits; failures are
+ * logged and skipped so one bad address never aborts the whole run.
  */
 async function sendInBackground(
-  cfg: SmtpConfig,
+  cfg: BrevoConfig,
   recipients: string[],
   subject: string,
   message: string,
   audience: Audience,
 ): Promise<void> {
-  const transport = nodemailer.createTransport({
-    host: cfg.host,
-    port: cfg.port,
-    secure: cfg.port === 465,
-    auth: { user: cfg.user, pass: cfg.pass },
-  });
   const html = textToHtml(message);
   let sent = 0;
   let failed = 0;
   for (const to of recipients) {
     try {
-      await transport.sendMail({ from: cfg.from, to, subject, text: message, html });
-      sent++;
+      const resp = await fetch(BREVO_SEND_URL, {
+        method: "POST",
+        headers: {
+          "api-key": cfg.apiKey,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender: { email: cfg.fromEmail, name: cfg.fromName },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+          textContent: message,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (resp.ok) {
+        sent++;
+      } else {
+        failed++;
+        const body = await resp.text().catch(() => "");
+        logger.warn(
+          { to, status: resp.status, body: body.slice(0, 300) },
+          "Bulk email: Brevo rejected the send for recipient",
+        );
+      }
     } catch (err) {
       failed++;
       logger.warn({ err, to }, "Bulk email: send failed for recipient");
     }
   }
-  transport.close();
   logger.info(
     { audience, total: recipients.length, sent, failed },
     "Bulk email run finished",
@@ -181,7 +193,7 @@ async function sendInBackground(
 }
 
 router.get("/email/status", (_req, res) => {
-  res.status(200).json({ configured: smtpConfig() !== null });
+  res.status(200).json({ configured: brevoConfig() !== null });
 });
 
 router.post("/email/bulk", async (req, res) => {
@@ -191,11 +203,11 @@ router.post("/email/bulk", async (req, res) => {
     return;
   }
 
-  const cfg = smtpConfig();
+  const cfg = brevoConfig();
   if (!cfg) {
     res.status(503).json({
       message:
-        "Email sending is not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS on the server.",
+        "Email sending is not configured. Set BREVO_API_KEY and EMAIL_FROM on the server.",
     });
     return;
   }
