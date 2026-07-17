@@ -4,7 +4,7 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { logger } from "../lib/logger";
 import { upstreamFetch, normalizeList } from "../lib/upstream";
-import { claimsFromAuth, isRealAdmin } from "../lib/adminAuth";
+import { verifyAdminSession } from "../lib/adminAuth";
 
 const router: IRouter = Router();
 
@@ -127,12 +127,7 @@ router.get("/whats-new", (_req, res) => {
 });
 
 router.put("/whats-new", async (req, res) => {
-  const claims = claimsFromAuth(req.headers.authorization);
-  if (!claims) {
-    res.status(401).json({ message: "Authentication required" });
-    return;
-  }
-  if (!(await isRealAdmin(claims, req.headers.authorization))) {
+  if (!verifyAdminSession(req.headers.authorization)) {
     res.status(401).json({ message: "Authentication required" });
     return;
   }

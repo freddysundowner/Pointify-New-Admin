@@ -1,22 +1,20 @@
 import { Router, type IRouter } from "express";
 import { proxy, proxyList, upstreamFetch, authHeaderFrom } from "../lib/upstream";
-import { isVerifiedAdminRequest } from "../lib/adminAuth";
+import { verifyAdminSession } from "../lib/adminAuth";
 
 const router: IRouter = Router();
 
 /**
- * "Current subscriptions" composition (?current=true).
+ * "Current subscriptions" view (?current=true).
  *
  * The upstream subscriptions collection keeps EVERY payment attempt (a row is
  * created before the M-Pesa STK push, so failed/abandoned attempts pile up).
- * The authoritative "in use" link is the SHOP record's `subscription` field,
- * which upstream only (re)points on successful payment/verify/extend/assign.
- * So the current view is composed from the shop list: each shop's populated
- * `subscription` (with packageId), deduplicated across shops (one subscription
- * can cover several shops), filtered and paginated proxy-side.
+ * The authoritative "in use" link is the SHOP record's `subscription` field.
+ * The upstream now exposes GET /subscriptions/current/list which returns one
+ * row per current subscription (with `shops` populated); the proxy fetches the
+ * full set from it, then filters/paginates proxy-side so the UI filters work.
  */
-const SHOPS_PAGE_LIMIT = 200;
-const MAX_SHOP_PAGES = 50;
+const CURRENT_FETCH_LIMIT = 100000;
 
 type Rec = Record<string, unknown>;
 
@@ -32,58 +30,44 @@ router.get("/subscriptions", async (req, res) => {
     return;
   }
 
-  // Composed endpoint: enforce real admin auth ourselves (upstream is
-  // permissive) — decode the token claims and cross-check them against the
-  // upstream admin directory.
-  const authHeader = authHeaderFrom(req);
-  if (!(await isVerifiedAdminRequest(authHeader))) {
+  // Composed endpoint: enforce auth ourselves (upstream is permissive) by
+  // verifying the proxy-signed session token minted at login.
+  const session = verifyAdminSession(authHeaderFrom(req));
+  if (!session) {
     res.status(401).json({ message: "Authorization required" });
     return;
   }
 
   try {
-    // 1. Collect every shop (paged) with its populated current subscription.
-    const byId = new Map<string, { sub: Rec; shops: Rec[] }>();
-    for (let pageNum = 1; pageNum <= MAX_SHOP_PAGES; pageNum++) {
-      const result = await upstreamFetch({
-        method: "GET",
-        path: "/shop/",
-        query: { page: pageNum, limit: SHOPS_PAGE_LIMIT },
-        authHeader,
-      });
-      if (result.status >= 400) {
-        res.status(result.status).json(result.data);
-        return;
-      }
-      const body = asRec(result.data) ?? {};
-      // Upstream /shop/ returns { shops, totalShops, totalPages, currentPage }.
-      const rows: unknown[] = Array.isArray(body["shops"])
-        ? (body["shops"] as unknown[])
-        : Array.isArray(body["data"])
-          ? (body["data"] as unknown[])
-          : Array.isArray(result.data)
-            ? (result.data as unknown[])
-            : [];
-      for (const raw of rows) {
-        const shop = asRec(raw);
-        if (!shop) continue;
-        const sub = asRec(shop["subscription"]);
-        const subId = sub ? String(sub["_id"] ?? "") : "";
-        if (!sub || !subId) continue;
-        const entry = byId.get(subId);
-        if (entry) entry.shops.push(shop);
-        else byId.set(subId, { sub, shops: [shop] });
-      }
-      if (rows.length < SHOPS_PAGE_LIMIT) break;
+    // 1. Fetch the full current-subscriptions set from the upstream endpoint.
+    const result = await upstreamFetch({
+      method: "GET",
+      path: "/subscriptions/current/list",
+      query: { page: 1, limit: CURRENT_FETCH_LIMIT },
+      authHeader: session.ut ? `Bearer ${session.ut}` : undefined,
+    });
+    if (result.status >= 400) {
+      res.status(result.status).json(result.data);
+      return;
     }
+    const body = asRec(result.data) ?? {};
+    const rows: unknown[] = Array.isArray(body["data"])
+      ? (body["data"] as unknown[])
+      : Array.isArray(result.data)
+        ? (result.data as unknown[])
+        : [];
 
     // 2. Shape rows like the normal list (shops populated for rendering).
     const now = new Date();
-    let subs: Rec[] = Array.from(byId.values()).map(({ sub, shops }) => ({
-      ...sub,
-      shops,
-      shop: shops[0] ?? sub["shop"],
-    }));
+    let subs: Rec[] = [];
+    for (const raw of rows) {
+      const sub = asRec(raw);
+      if (!sub) continue;
+      const shops = Array.isArray(sub["shops"])
+        ? (sub["shops"] as unknown[]).flatMap((s) => (asRec(s) ? [asRec(s) as Rec] : []))
+        : [];
+      subs.push({ ...sub, shops, shop: shops[0] ?? sub["shop"] });
+    }
 
     // 3. Proxy-side filters mirroring the upstream list semantics.
     const status = typeof q["status"] === "string" ? q["status"] : "";
