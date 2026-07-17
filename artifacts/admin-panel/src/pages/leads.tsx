@@ -5,6 +5,7 @@ import {
   getListLeadsQueryKey,
   useListPartners,
   getListPartnersQueryKey,
+  listLeads,
   type Lead,
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,7 +52,9 @@ import {
   ChevronsUpDown,
   Check,
   CalendarClock,
+  Download,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const PAGE_SIZE = 20;
 
@@ -85,6 +88,15 @@ function StageBadge({ stage }: { stage: string }) {
       {stage}
     </Badge>
   );
+}
+
+// Quote a value for CSV: wrap in quotes and double any embedded quotes.
+// Cells starting with =, +, - or @ get a leading apostrophe so spreadsheet
+// apps treat them as text instead of executing them as formulas.
+function csvCell(v: unknown): string {
+  let s = v === null || v === undefined ? "" : String(v);
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
 }
 
 function fmtDate(raw: unknown): string {
@@ -125,6 +137,8 @@ export default function Leads() {
   // Lead opened in the read-only detail sheet.
   const [detailId, setDetailId] = useState<string | null>(null);
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -184,6 +198,95 @@ export default function Leads() {
 
   const hasFilters =
     search !== "" || stageFilter !== "all" || partnerFilter !== "all";
+
+  // Download every lead matching the current filters as a CSV file. Fetches
+  // all pages (200 per request) so the report is complete, not just the
+  // visible page.
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const all: Lead[] = [];
+      const baseParams = {
+        ...(partnerFilter !== "all" ? { partnerId: partnerFilter } : {}),
+        ...(search ? { search } : {}),
+        ...(stageFilter !== "all" ? { stage: stageFilter } : {}),
+      };
+      let pageNum = 1;
+      // Hard cap of 50 pages (10,000 leads) as a safety valve.
+      for (;;) {
+        const res = await listLeads({ ...baseParams, page: pageNum, limit: 200 });
+        const rows = (res.data as Lead[]) ?? [];
+        all.push(...rows);
+        const total = res.totalPages ?? 1;
+        if (pageNum >= total || rows.length === 0 || pageNum >= 50) break;
+        pageNum += 1;
+      }
+
+      const header = [
+        "Business",
+        "Contact person",
+        "Phone",
+        "Business type",
+        "Location",
+        "Partner",
+        "Source",
+        "Stage",
+        "Next follow-up",
+        "Notes",
+        "Created",
+        "Last updated",
+      ];
+      const lines = [header.map(csvCell).join(",")];
+      for (const lead of all) {
+        const rec = lead as Record<string, unknown>;
+        lines.push(
+          [
+            lead.businessName ?? "",
+            lead.contactPerson ?? "",
+            lead.phonenumber ?? "",
+            lead.businessType ?? "",
+            lead.location ?? "",
+            partnerLabel(lead) === "—" ? "" : partnerLabel(lead),
+            lead.source ?? "",
+            lead.stage ?? "New Lead",
+            lead.nextFollowUpDate ? String(lead.nextFollowUpDate).slice(0, 10) : "",
+            lead.notes ?? "",
+            rec["createAt"] ? String(rec["createAt"]).slice(0, 10) : "",
+            lead.updatedAt ? String(lead.updatedAt).slice(0, 10) : "",
+          ]
+            .map(csvCell)
+            .join(","),
+        );
+      }
+
+      // \ufeff BOM so Excel opens it with correct UTF-8 accents/emoji.
+      const blob = new Blob(["\ufeff" + lines.join("\r\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `pointify-leads-${today}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Report downloaded",
+        description: `${all.length} lead${all.length === 1 ? "" : "s"} exported to CSV.`,
+      });
+    } catch {
+      toast({
+        title: "Export failed",
+        description: "Could not download the leads report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -307,6 +410,20 @@ export default function Leads() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleExport}
+          disabled={exporting || isLoading || totalCount === 0}
+          className="w-full lg:w-auto"
+        >
+          {exporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          {exporting ? "Exporting…" : "Export CSV"}
+        </Button>
       </div>
 
       <Card className="page-card">
