@@ -27,3 +27,5 @@ POS_API_BASE_URL = "https://api.pointifypos.com"
 [userenv.development]
 SMS_SEND_ENABLED = "true"
 EMAIL_SEND_ENABLED = "true"
+
+[userenv.production]
