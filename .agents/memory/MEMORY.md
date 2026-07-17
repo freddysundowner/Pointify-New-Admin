@@ -37,3 +37,4 @@
 - [Shop categories upstream](shop-categories-upstream.md) — /shop/category list is a bare array (use plain proxy not proxyList); create returns 201 even on duplicate with body {error}; detect result.error in onSuccess.
 - [Admin-panel mobile nav](admin-mobile-nav.md) — phone UI = top app bar + fixed bottom tab bar (NOT hamburger drawer); nav items shared via nav-items.ts; "More" active = no primary route matches.
 - [Admin-panel mobile page headers](admin-mobile-page-headers.md) — non-dashboard pages use <PageHeader> (publishes title via MobileHeaderProvider context); mobile shows title+back in top bar, NOT a big in-page header.
+- [Current subscription pointer](current-subscription-pointer.md) — "current" sub = shop.subscription pointer (set only on payment success), NOT latest row; latest rows are often unpaid attempts.

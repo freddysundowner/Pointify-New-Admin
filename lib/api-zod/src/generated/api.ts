@@ -2093,6 +2093,7 @@ export const CreateSubscriptionResponse = zod.object({
 
 
 export const ListSubscriptionsQueryParams = zod.object({
+  "current": zod.coerce.boolean().optional().describe('When true, returns only each shop\'s CURRENT subscription (the one the shop record points at — the authoritative \"in use\" link set on successful payment\/extend\/assign), deduplicated across shops. Composed by the proxy from the upstream shop list; filters are applied proxy-side in this mode.\n'),
   "status": zod.enum(['Active', 'Expired', 'Cancelled']).optional(),
   "type": zod.enum(['trial', 'production']).optional(),
   "shop": zod.coerce.string().optional(),

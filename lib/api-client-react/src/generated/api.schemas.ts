@@ -1608,6 +1608,11 @@ id: string;
 };
 
 export type ListSubscriptionsParams = {
+/**
+ * When true, returns only each shop's CURRENT subscription (the one the shop record points at — the authoritative "in use" link set on successful payment/extend/assign), deduplicated across shops. Composed by the proxy from the upstream shop list; filters are applied proxy-side in this mode.
+
+ */
+current?: boolean;
 status?: ListSubscriptionsStatus;
 type?: ListSubscriptionsType;
 shop?: string;

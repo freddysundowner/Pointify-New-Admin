@@ -138,6 +138,7 @@ export default function Subscriptions() {
   const type = (sp.get("type") as TypeFilter) || "all";
   const shopname = sp.get("shopname") ?? "";
   const invoiceNo = sp.get("invoiceNo") ?? "";
+  const view = sp.get("view") === "all" ? "all" : "current";
   const createAt = sp.get("createAt") ?? "";
   const expFrom = sp.get("expiryperiodFrom") ?? "";
   const expTo = sp.get("expiryperiodTo") ?? "";
@@ -200,6 +201,7 @@ export default function Subscriptions() {
   const params = {
     page,
     limit: LIMIT,
+    ...(view === "current" ? { current: true } : {}),
     ...(shopId ? { shop: shopId } : {}),
     ...(status !== "all" ? { status: ListSubscriptionsStatus[status] } : {}),
     ...(type !== "all" ? { type: ListSubscriptionsType[type] } : {}),
@@ -231,7 +233,7 @@ export default function Subscriptions() {
     setInvoiceInput("");
     // Preserve the shop-scoping params (shop/shopName/from) if present.
     const next = new URLSearchParams();
-    for (const k of ["shop", "shopName", "from"]) {
+    for (const k of ["shop", "shopName", "from", "view"]) {
       const v = sp.get(k);
       if (v) next.set(k, v);
     }
@@ -253,6 +255,32 @@ export default function Subscriptions() {
         </CardHeader>
         <CardContent>
           {shopId && <ShopFilterBanner shopName={shopName} backHref={from} />}
+
+          <div className="flex flex-col gap-2 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex w-fit rounded-md border p-0.5">
+              <Button
+                size="sm"
+                variant={view === "current" ? "secondary" : "ghost"}
+                className="h-8"
+                onClick={() => goto({ view: undefined, page: 1 })}
+              >
+                Current only
+              </Button>
+              <Button
+                size="sm"
+                variant={view === "all" ? "secondary" : "ghost"}
+                className="h-8"
+                onClick={() => goto({ view: "all", page: 1 })}
+              >
+                Full history
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {view === "current"
+                ? "Showing each shop's subscription currently in use."
+                : "Showing every subscription record, including unpaid payment attempts."}
+            </p>
+          </div>
 
           <FilterBar
             className="flex flex-col gap-3 pb-4 sm:flex-row sm:flex-wrap sm:items-end"
