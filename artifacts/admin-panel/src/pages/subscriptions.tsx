@@ -150,7 +150,14 @@ export default function Subscriptions() {
   const buildUrl = (overrides: Record<string, string | number | undefined>) => {
     const next = new URLSearchParams(searchString);
     for (const [k, v] of Object.entries(overrides)) {
-      if (v === undefined || v === "" || v === "all" || (k === "page" && Number(v) <= 1)) {
+      // "all" means default (drop) for the filter params, but NOT for the view
+      // toggle, whose default is "current" — view=all must stay in the URL.
+      if (
+        v === undefined ||
+        v === "" ||
+        (v === "all" && k !== "view") ||
+        (k === "page" && Number(v) <= 1)
+      ) {
         next.delete(k);
       } else {
         next.set(k, String(v));
