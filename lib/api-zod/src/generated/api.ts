@@ -734,6 +734,43 @@ export const GetLeadResponse = zod.object({
 
 
 /**
+ * Appends a free-text note to a lead's activity timeline. Admin-only; the proxy gates the request with bearer + decoded admin id and passes the full affiliate scope so any lead is reachable.
+ * @summary Add a note to any lead (platform admin view)
+ */
+export const AddLeadActivityParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AddLeadActivityBody = zod.object({
+  "note": zod.string().describe('Free-text note appended to the lead\'s activity timeline.')
+})
+
+export const AddLeadActivityResponse = zod.object({
+  "_id": zod.string().optional(),
+  "businessName": zod.string().optional(),
+  "contactPerson": zod.string().nullish(),
+  "phonenumber": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "source": zod.string().nullish(),
+  "stage": zod.string().nullish(),
+  "nextFollowUpDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish(),
+  "affiliate": zod.unknown().optional(),
+  "activities": zod.array(zod.object({
+  "_id": zod.string().nullish(),
+  "action": zod.string().optional(),
+  "from": zod.string().nullish(),
+  "to": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "at": zod.string().nullish()
+})).optional()
+})
+
+
+/**
  * Public endpoint. Creates a partner via the upstream affiliate registration (hashes the password, generates a referral code, and emails a welcome message) and returns an auth token plus the partner profile. A duplicate email returns 400.
  * @summary Partner self-registration
  */

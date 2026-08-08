@@ -1982,6 +1982,79 @@ export function useGetLead<TData = Awaited<ReturnType<typeof getLead>>, TError =
 
 
 
+export const getAddLeadActivityUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/activities`
+}
+
+/**
+ * Appends a free-text note to a lead's activity timeline. Admin-only; the proxy gates the request with bearer + decoded admin id and passes the full affiliate scope so any lead is reachable.
+ * @summary Add a note to any lead (platform admin view)
+ */
+export const addLeadActivity = async (id: string,
+    leadActivityInput: LeadActivityInput, options?: RequestInit): Promise<Lead> => {
+
+  return customFetch<Lead>(getAddLeadActivityUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      leadActivityInput,)
+  }
+);}
+
+
+
+
+export const getAddLeadActivityMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addLeadActivity>>, TError,{id: string;data: BodyType<LeadActivityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addLeadActivity>>, TError,{id: string;data: BodyType<LeadActivityInput>}, TContext> => {
+
+const mutationKey = ['addLeadActivity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addLeadActivity>>, {id: string;data: BodyType<LeadActivityInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addLeadActivity(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddLeadActivityMutationResult = NonNullable<Awaited<ReturnType<typeof addLeadActivity>>>
+    export type AddLeadActivityMutationBody = BodyType<LeadActivityInput>
+    export type AddLeadActivityMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add a note to any lead (platform admin view)
+ */
+export const useAddLeadActivity = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addLeadActivity>>, TError,{id: string;data: BodyType<LeadActivityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addLeadActivity>>,
+        TError,
+        {id: string;data: BodyType<LeadActivityInput>},
+        TContext
+      > => {
+      return useMutation(getAddLeadActivityMutationOptions(options));
+    }
+
 export const getPortalRegisterUrl = () => {
 
 

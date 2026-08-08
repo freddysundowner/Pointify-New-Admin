@@ -426,6 +426,57 @@ router.get("/leads/:id", async (req, res) => {
   }
 });
 
+// POST /leads/:id/activities — append a free-text note to any lead (admin).
+// Uses the same affiliate-list scoping as GET /leads/:id so the upstream can
+// locate the document regardless of which partner owns it.
+router.post("/leads/:id/activities", async (req, res) => {
+  if (!requireBearer(req, res)) return;
+  if (!adminIdFromAuth(authHeaderFrom(req))) {
+    res.status(401).json({ message: "Authentication required" });
+    return;
+  }
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const note = typeof body["note"] === "string" ? body["note"].trim() : "";
+  if (!note) {
+    res.status(400).json({ error: "Note is required" });
+    return;
+  }
+  try {
+    const partners = await upstreamFetch({
+      method: "GET",
+      path: "/affiliates/",
+      authHeader: authHeaderFrom(req),
+    });
+    if (partners.status >= 400) {
+      res.status(partners.status).json(partners.data);
+      return;
+    }
+    const ids = normalizeList(partners.data)
+      .data.map((p) =>
+        p && typeof p === "object"
+          ? String((p as Record<string, unknown>)["_id"] ?? "")
+          : "",
+      )
+      .filter((id) => id !== "");
+    if (ids.length === 0) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+    const result = await upstreamFetch({
+      method: "POST",
+      path: `/leads/${req.params.id}/activities`,
+      query: { affiliate: ids.join(",") },
+      body: { note },
+      authHeader: authHeaderFrom(req),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, "Failed to add lead note");
+    res.status(502).json({ message: "Upstream request failed" });
+  }
+});
+
 router.delete("/partners/:id", async (req, res) => {
   if (!requireBearer(req, res)) return;
   try {

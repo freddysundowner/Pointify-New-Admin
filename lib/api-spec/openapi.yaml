@@ -461,6 +461,44 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /leads/{id}/activities:
+    post:
+      operationId: addLeadActivity
+      tags: [partners]
+      summary: Add a note to any lead (platform admin view)
+      description: >-
+        Appends a free-text note to a lead's activity timeline. Admin-only;
+        the proxy gates the request with bearer + decoded admin id and passes
+        the full affiliate scope so any lead is reachable.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadActivityInput" }
+      responses:
+        "200":
+          description: Updated lead including the new activity entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "400":
+          description: Missing or empty note
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /portal/auth/register:
     post:
       operationId: portalRegister

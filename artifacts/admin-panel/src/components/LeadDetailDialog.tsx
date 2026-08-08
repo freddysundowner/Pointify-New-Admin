@@ -1,6 +1,8 @@
+import { useState } from "react";
 import {
   useGetLead,
   getGetLeadQueryKey,
+  useAddLeadActivity,
   type Lead,
 } from "@workspace/api-client-react";
 import {
@@ -12,6 +14,8 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Loader2,
   Phone,
@@ -27,7 +31,10 @@ import {
   Handshake,
   AlertCircle,
   Clock,
+  SendHorizonal,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import {
   StageBadge,
   fmtDate,
@@ -129,7 +136,6 @@ function DetailRow({
   );
 }
 
-/** Follow-up date with overdue / today colour coding. */
 function FollowUpDetail({ raw }: { raw: unknown }) {
   const status = followUpStatus(raw);
   const label = fmtDate(raw);
@@ -138,7 +144,7 @@ function FollowUpDetail({ raw }: { raw: unknown }) {
 
   if (status === "overdue") {
     return (
-      <span className="flex items-center gap-1.5 text-red-600 font-medium">
+      <span className="flex items-center gap-1.5 font-medium text-red-600">
         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
         {label}
         <span className="text-xs font-normal text-red-500">(overdue)</span>
@@ -147,7 +153,7 @@ function FollowUpDetail({ raw }: { raw: unknown }) {
   }
   if (status === "today") {
     return (
-      <span className="flex items-center gap-1.5 text-amber-600 font-medium">
+      <span className="flex items-center gap-1.5 font-medium text-amber-600">
         <Clock className="h-3.5 w-3.5 shrink-0" />
         {label}
         <span className="text-xs font-normal text-amber-500">(today)</span>
@@ -157,9 +163,8 @@ function FollowUpDetail({ raw }: { raw: unknown }) {
   return <span>{label}</span>;
 }
 
-// Read-only lead detail sheet for the admin panel: full lead info plus the
-// partner's activity timeline. Shared by the Leads page and the partner
-// detail page's Leads tab.
+// Read-only lead detail sheet for the admin panel: full lead info, activity
+// timeline, and an admin note input.
 export default function LeadDetailDialog({
   leadId,
   onOpenChange,
@@ -167,9 +172,12 @@ export default function LeadDetailDialog({
 }: {
   leadId: string | null;
   onOpenChange: (open: boolean) => void;
-  // Optional fallback when the lead's `affiliate` isn't populated.
   partnerName?: string;
 }) {
+  const [noteText, setNoteText] = useState("");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const {
     data: lead,
     isLoading,
@@ -180,6 +188,32 @@ export default function LeadDetailDialog({
       queryKey: getGetLeadQueryKey(leadId ?? ""),
     },
   });
+
+  const { mutate: addNote, isPending: submitting } = useAddLeadActivity({
+    mutation: {
+      onSuccess: () => {
+        setNoteText("");
+        // Refresh the lead so the new activity shows immediately.
+        void queryClient.invalidateQueries({
+          queryKey: getGetLeadQueryKey(leadId ?? ""),
+        });
+        toast({ title: "Note added" });
+      },
+      onError: () => {
+        toast({
+          title: "Failed to add note",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+      },
+    },
+  });
+
+  function handleSubmitNote() {
+    const trimmed = noteText.trim();
+    if (!trimmed || !leadId) return;
+    addNote({ id: leadId, data: { note: trimmed } });
+  }
 
   const activities = ((lead as Record<string, unknown> | undefined)?.[
     "activities"
@@ -219,6 +253,7 @@ export default function LeadDetailDialog({
             </SheetHeader>
 
             <div className="space-y-5 px-6 py-5">
+              {/* Lead details */}
               <div className="grid gap-3">
                 <DetailRow
                   icon={<Handshake className="h-4 w-4" />}
@@ -278,6 +313,46 @@ export default function LeadDetailDialog({
 
               <Separator />
 
+              {/* Add a note */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Add a note</p>
+                <Textarea
+                  placeholder="Write an internal note…"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Ctrl/Cmd+Enter submits
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      handleSubmitNote();
+                    }
+                  }}
+                  rows={3}
+                  className="resize-none text-sm"
+                  disabled={submitting}
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Ctrl+Enter to submit
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={handleSubmitNote}
+                    disabled={submitting || !noteText.trim()}
+                  >
+                    {submitting ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <SendHorizonal className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    Add note
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Activity timeline */}
               <div className="space-y-3">
                 <p className="flex items-center gap-1.5 text-sm font-medium">
                   <History className="h-4 w-4 text-muted-foreground" />
