@@ -56,7 +56,9 @@ import {
   X,
   AlertCircle,
   Clock,
+  Sparkles,
 } from "lucide-react";
+import LeadAnalysisPanel from "@/components/LeadAnalysisPanel";
 import { useToast } from "@/hooks/use-toast";
 import {
   STAGES,
@@ -117,6 +119,7 @@ export default function Leads() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -411,6 +414,16 @@ export default function Leads() {
         <Button
           type="button"
           variant="outline"
+          onClick={() => setAnalysisOpen(true)}
+          disabled={isLoading || totalCount === 0}
+          className="w-full lg:w-auto"
+        >
+          <Sparkles className="mr-2 h-4 w-4 text-violet-500" />
+          Analyze
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
           onClick={handleExport}
           disabled={exporting || isLoading || totalCount === 0}
           className="w-full lg:w-auto"
@@ -662,6 +675,29 @@ export default function Leads() {
                   leads.find((l) => l._id === detailId) ?? ({} as Lead),
                 ).id,
               )
+            : undefined
+        }
+      />
+
+      <LeadAnalysisPanel
+        open={analysisOpen}
+        onOpenChange={setAnalysisOpen}
+        filters={{
+          ...(partnerFilter !== "all" ? { partnerId: partnerFilter } : {}),
+          ...(stageFilter !== "all" ? { stage: stageFilter } : {}),
+          ...(search ? { search } : {}),
+        }}
+        filterLabel={
+          hasFilters
+            ? [
+                partnerFilter !== "all"
+                  ? `partner: ${partnerNameById.get(partnerFilter) ?? partnerFilter}`
+                  : null,
+                stageFilter !== "all" ? `stage: ${stageFilter}` : null,
+                search ? `search: "${search}"` : null,
+              ]
+                .filter(Boolean)
+                .join(", ")
             : undefined
         }
       />

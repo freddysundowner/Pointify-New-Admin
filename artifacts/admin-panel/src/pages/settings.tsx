@@ -41,7 +41,137 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Plus, X, Trash2, ExternalLink, Sparkles } from "lucide-react";
+import { Pencil, Plus, X, Trash2, ExternalLink, Sparkles, Eye, EyeOff, Check } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// AI Settings section
+// ---------------------------------------------------------------------------
+function AISection() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useGetSettings({});
+  const saveMutation = useSaveSettings();
+
+  const settings = (data as Record<string, unknown> | undefined) ?? {};
+  const aiCfg = (settings["AI_CONFIG"] as Record<string, unknown> | undefined) ?? {};
+  const savedKey = typeof aiCfg["OPENAI_API_KEY"] === "string" ? aiCfg["OPENAI_API_KEY"] : "";
+
+  const [draft, setDraft] = useState<string | null>(null); // null = not editing
+  const [showKey, setShowKey] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const isEditing = draft !== null;
+
+  function startEdit() {
+    setDraft(savedKey);
+    setShowKey(false);
+    setSaved(false);
+  }
+
+  function cancelEdit() {
+    setDraft(null);
+    setShowKey(false);
+  }
+
+  function saveKey() {
+    const key = (draft ?? "").trim();
+    saveMutation.mutate(
+      { data: { name: "AI_CONFIG", setting: { ...aiCfg, OPENAI_API_KEY: key } } as SettingsInput },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey({}) });
+          setDraft(null);
+          setShowKey(false);
+          setSaved(true);
+          setTimeout(() => setSaved(false), 3000);
+          toast({ title: "AI settings saved" });
+        },
+        onError: () => toast({ title: "Save failed", variant: "destructive" }),
+      },
+    );
+  }
+
+  const maskedDisplay = savedKey
+    ? savedKey.slice(0, 7) + "•".repeat(Math.max(0, savedKey.length - 11)) + savedKey.slice(-4)
+    : "";
+
+  return (
+    <Card className="page-card">
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+        <CardTitle className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-violet-500" />
+          AI Integration
+        </CardTitle>
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={cancelEdit} disabled={saveMutation.isPending}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={saveKey} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        ) : (
+          <Button variant="outline" size="sm" onClick={startEdit} disabled={isLoading}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            Edit
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">OpenAI API Key</p>
+          <p className="text-xs text-muted-foreground">
+            Used to power the AI pipeline analysis on the Leads page. Set via{" "}
+            <span className="font-mono">AI_CONFIG → OPENAI_API_KEY</span> in platform settings, or the{" "}
+            <span className="font-mono">OPENAI_API_KEY</span> environment variable as a fallback.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="h-9 w-full rounded-md border bg-muted animate-pulse" />
+        ) : isEditing ? (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type={showKey ? "text" : "password"}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring pr-9 font-mono"
+                value={draft ?? ""}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="sk-…"
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowKey((v) => !v)}
+                tabIndex={-1}
+              >
+                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            {savedKey ? (
+              <>
+                <span className="font-mono text-sm text-foreground tracking-widest">{maskedDisplay}</span>
+                {saved && (
+                  <span className="flex items-center gap-1 text-xs text-emerald-600">
+                    <Check className="h-3.5 w-3.5" /> Saved
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground italic">Not configured</span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function WhatsNewSection() {
   const { toast } = useToast();
@@ -949,6 +1079,8 @@ export default function Settings() {
           })}
         </Tabs>
       )}
+
+      <AISection />
 
       <WhatsNewSection />
 

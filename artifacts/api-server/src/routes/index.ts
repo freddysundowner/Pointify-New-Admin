@@ -19,6 +19,7 @@ import emailRouter from "./email";
 import aiLogsRouter from "./ai-logs";
 import settingsRouter from "./settings";
 import whatsNewRouter from "./whats-new";
+import leadAnalysisRouter from "./lead-analysis";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(emailRouter);
 router.use(aiLogsRouter);
 router.use(settingsRouter);
 router.use(whatsNewRouter);
+router.use(leadAnalysisRouter);
 
 export default router;
