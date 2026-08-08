@@ -53,42 +53,20 @@ import {
   Check,
   CalendarClock,
   Download,
+  X,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  STAGES,
+  StageBadge,
+  fmtDate,
+  leadPartnerName,
+  followUpStatus,
+} from "@/lib/leads-utils";
 
 const PAGE_SIZE = 20;
-
-// Kept in sync with the partner portal pipeline and the upstream lead store.
-const STAGES = [
-  "New Lead",
-  "Contacted",
-  "Interested",
-  "Visit/Demo Scheduled",
-  "Negotiating",
-  "Won (Converted)",
-  "Lost",
-] as const;
-
-const STAGE_STYLES: Record<string, string> = {
-  "New Lead": "bg-slate-100 text-slate-700 hover:bg-slate-100",
-  Contacted: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  Interested: "bg-indigo-100 text-indigo-700 hover:bg-indigo-100",
-  "Visit/Demo Scheduled": "bg-amber-100 text-amber-800 hover:bg-amber-100",
-  Negotiating: "bg-purple-100 text-purple-700 hover:bg-purple-100",
-  "Won (Converted)": "bg-green-100 text-green-700 hover:bg-green-100",
-  Lost: "bg-red-100 text-red-700 hover:bg-red-100",
-};
-
-function StageBadge({ stage }: { stage: string }) {
-  return (
-    <Badge
-      variant="secondary"
-      className={STAGE_STYLES[stage] ?? "bg-muted text-foreground"}
-    >
-      {stage}
-    </Badge>
-  );
-}
 
 // Quote a value for CSV: wrap in quotes and double any embedded quotes.
 // Cells starting with =, +, - or @ get a leading apostrophe so spreadsheet
@@ -99,28 +77,29 @@ function csvCell(v: unknown): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-function fmtDate(raw: unknown): string {
-  if (!raw) return "—";
-  const d = new Date(String(raw));
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-KE", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+/** Renders a follow-up date with colour coding for overdue / today. */
+function FollowUpCell({ raw }: { raw: unknown }) {
+  const status = followUpStatus(raw);
+  if (!status) return <span className="text-muted-foreground">—</span>;
 
-// `affiliate` is a populated object ({ _id, name, … }) or a bare id string.
-export function leadPartnerName(lead: Lead): { id: string; name: string } {
-  const aff = (lead as Record<string, unknown>)["affiliate"];
-  if (aff && typeof aff === "object") {
-    const obj = aff as Record<string, unknown>;
-    return {
-      id: String(obj["_id"] ?? ""),
-      name: String(obj["name"] ?? "") || "—",
-    };
+  const label = fmtDate(raw);
+  if (status === "overdue") {
+    return (
+      <span className="flex items-center gap-1 text-red-600 font-medium">
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        {label}
+      </span>
+    );
   }
-  return { id: String(aff ?? ""), name: "—" };
+  if (status === "today") {
+    return (
+      <span className="flex items-center gap-1 text-amber-600 font-medium">
+        <Clock className="h-3.5 w-3.5 shrink-0" />
+        {label}
+      </span>
+    );
+  }
+  return <span className="text-sm">{label}</span>;
 }
 
 export default function Leads() {
@@ -198,6 +177,14 @@ export default function Leads() {
 
   const hasFilters =
     search !== "" || stageFilter !== "all" || partnerFilter !== "all";
+
+  function clearFilters() {
+    setSearchInput("");
+    setSearch("");
+    setStageFilter("all");
+    setPartnerFilter("all");
+    setPage(1);
+  }
 
   // Download every lead matching the current filters as a CSV file. Fetches
   // all pages (200 per request) so the report is complete, not just the
@@ -410,6 +397,17 @@ export default function Leads() {
             ))}
           </SelectContent>
         </Select>
+        {hasFilters && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={clearFilters}
+            className="w-full lg:w-auto text-muted-foreground hover:text-foreground"
+          >
+            <X className="mr-1.5 h-4 w-4" />
+            Clear filters
+          </Button>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -449,60 +447,91 @@ export default function Leads() {
                   ? "Try adjusting your search or filters."
                   : "Leads captured by partners will appear here."}
               </p>
+              {hasFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
               {/* Mobile: card list */}
               <div className="space-y-3 md:hidden">
-                {leads.map((lead) => (
-                  <div
-                    key={lead._id}
-                    className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                    onClick={() => setDetailId(lead._id ?? null)}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="truncate font-medium text-foreground">
-                          {lead.businessName}
+                {leads.map((lead) => {
+                  const fuStatus = followUpStatus(lead.nextFollowUpDate);
+                  return (
+                    <div
+                      key={lead._id}
+                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                      onClick={() => setDetailId(lead._id ?? null)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="truncate font-medium text-foreground">
+                            {lead.businessName}
+                          </div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {partnerLabel(lead)}
+                          </div>
                         </div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {partnerLabel(lead)}
-                        </div>
+                        <StageBadge stage={lead.stage ?? "New Lead"} />
                       </div>
-                      <StageBadge stage={lead.stage ?? "New Lead"} />
-                    </div>
-                    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-                      {lead.contactPerson && (
-                        <div className="truncate">{lead.contactPerson}</div>
-                      )}
-                      {lead.phonenumber && (
-                        <div className="flex items-center gap-1.5">
-                          <Phone className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{lead.phonenumber}</span>
-                        </div>
-                      )}
-                      {lead.location && (
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{lead.location}</span>
-                        </div>
-                      )}
-                      {lead.nextFollowUpDate && (
-                        <div className="flex items-center gap-1.5">
-                          <CalendarClock className="h-3.5 w-3.5 shrink-0" />
-                          <span>{fmtDate(lead.nextFollowUpDate)}</span>
-                        </div>
-                      )}
-                    </div>
-                    {lead.source && (
-                      <div className="mt-3">
-                        <Badge variant="outline" className="text-[10px]">
-                          {lead.source}
-                        </Badge>
+                      <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                        {lead.contactPerson && (
+                          <div className="truncate">{lead.contactPerson}</div>
+                        )}
+                        {lead.phonenumber && (
+                          <a
+                            href={`tel:${lead.phonenumber}`}
+                            className="flex items-center gap-1.5 hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Phone className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{lead.phonenumber}</span>
+                          </a>
+                        )}
+                        {lead.location && (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{lead.location}</span>
+                          </div>
+                        )}
+                        {lead.nextFollowUpDate && (
+                          <div
+                            className={`flex items-center gap-1.5 font-medium ${
+                              fuStatus === "overdue"
+                                ? "text-red-600"
+                                : fuStatus === "today"
+                                  ? "text-amber-600"
+                                  : ""
+                            }`}
+                          >
+                            {fuStatus === "overdue" ? (
+                              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            ) : fuStatus === "today" ? (
+                              <Clock className="h-3.5 w-3.5 shrink-0" />
+                            ) : (
+                              <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            <span>{fmtDate(lead.nextFollowUpDate)}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {lead.source && (
+                        <div className="mt-3">
+                          <Badge variant="outline" className="text-[10px]">
+                            {lead.source}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Desktop: table */}
@@ -549,10 +578,14 @@ export default function Leads() {
                               </span>
                             )}
                             {lead.phonenumber && (
-                              <span className="flex items-center gap-1.5">
+                              <a
+                                href={`tel:${lead.phonenumber}`}
+                                className="flex items-center gap-1.5 hover:text-foreground"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <Phone className="h-3.5 w-3.5" />
                                 {lead.phonenumber}
-                              </span>
+                              </a>
                             )}
                           </div>
                         </TableCell>
@@ -566,8 +599,8 @@ export default function Leads() {
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {fmtDate(lead.nextFollowUpDate)}
+                        <TableCell>
+                          <FollowUpCell raw={lead.nextFollowUpDate} />
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {fmtDate(lead.createAt)}
@@ -578,11 +611,16 @@ export default function Leads() {
                 </Table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between gap-4 pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages} · {totalCount} leads
-                  </p>
+              {/* Footer: count + pagination */}
+              <div className="flex items-center justify-between gap-4 pt-4">
+                <p className="text-sm text-muted-foreground">
+                  {totalPages > 1
+                    ? `Page ${currentPage} of ${totalPages} · `
+                    : ""}
+                  {totalCount} lead{totalCount === 1 ? "" : "s"}
+                  {hasFilters ? " matching filters" : ""}
+                </p>
+                {totalPages > 1 && (
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -596,15 +634,17 @@ export default function Leads() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={currentPage >= totalPages}
                     >
                       Next
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
         </CardContent>

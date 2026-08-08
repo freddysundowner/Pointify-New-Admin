@@ -25,42 +25,15 @@ import {
   FileEdit,
   History,
   Handshake,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
-
-// Stage badge styles, kept in sync with pages/leads.tsx and the portal.
-const STAGE_STYLES: Record<string, string> = {
-  "New Lead": "bg-slate-100 text-slate-700 hover:bg-slate-100",
-  Contacted: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  Interested: "bg-indigo-100 text-indigo-700 hover:bg-indigo-100",
-  "Visit/Demo Scheduled": "bg-amber-100 text-amber-800 hover:bg-amber-100",
-  Negotiating: "bg-purple-100 text-purple-700 hover:bg-purple-100",
-  "Won (Converted)": "bg-green-100 text-green-700 hover:bg-green-100",
-  Lost: "bg-red-100 text-red-700 hover:bg-red-100",
-};
-
-function fmtDate(raw: unknown): string {
-  if (!raw) return "—";
-  const d = new Date(String(raw));
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-KE", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function fmtDateTime(raw: unknown): string {
-  if (!raw) return "";
-  const d = new Date(String(raw));
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("en-KE", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+import {
+  StageBadge,
+  fmtDate,
+  fmtDateTime,
+  followUpStatus,
+} from "@/lib/leads-utils";
 
 function partnerNameOf(lead: Lead): string {
   const aff = (lead as Record<string, unknown>)["affiliate"];
@@ -112,7 +85,8 @@ function ActivityLabel({ activity }: { activity: Activity }) {
   if (action === "stage_changed") {
     return (
       <span>
-        Stage changed from <span className="font-medium">{activity.from || "—"}</span> to{" "}
+        Stage changed from{" "}
+        <span className="font-medium">{activity.from || "—"}</span> to{" "}
         <span className="font-medium">{activity.to || "—"}</span>
       </span>
     );
@@ -121,7 +95,8 @@ function ActivityLabel({ activity }: { activity: Activity }) {
     if (!activity.to) return <span>Follow-up date cleared</span>;
     return (
       <span>
-        Follow-up set for <span className="font-medium">{fmtDate(activity.to)}</span>
+        Follow-up set for{" "}
+        <span className="font-medium">{fmtDate(activity.to)}</span>
       </span>
     );
   }
@@ -152,6 +127,34 @@ function DetailRow({
       </div>
     </div>
   );
+}
+
+/** Follow-up date with overdue / today colour coding. */
+function FollowUpDetail({ raw }: { raw: unknown }) {
+  const status = followUpStatus(raw);
+  const label = fmtDate(raw);
+
+  if (!status) return <span>{label}</span>;
+
+  if (status === "overdue") {
+    return (
+      <span className="flex items-center gap-1.5 text-red-600 font-medium">
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        {label}
+        <span className="text-xs font-normal text-red-500">(overdue)</span>
+      </span>
+    );
+  }
+  if (status === "today") {
+    return (
+      <span className="flex items-center gap-1.5 text-amber-600 font-medium">
+        <Clock className="h-3.5 w-3.5 shrink-0" />
+        {label}
+        <span className="text-xs font-normal text-amber-500">(today)</span>
+      </span>
+    );
+  }
+  return <span>{label}</span>;
 }
 
 // Read-only lead detail sheet for the admin panel: full lead info plus the
@@ -206,12 +209,7 @@ export default function LeadDetailDialog({
                 Lead details and activity history
               </SheetDescription>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="secondary"
-                  className={STAGE_STYLES[lead.stage ?? ""] ?? "bg-muted text-foreground"}
-                >
-                  {lead.stage ?? "New Lead"}
-                </Badge>
+                <StageBadge stage={lead.stage ?? "New Lead"} />
                 {lead.source && (
                   <Badge variant="outline" className="text-xs">
                     {lead.source}
@@ -222,26 +220,53 @@ export default function LeadDetailDialog({
 
             <div className="space-y-5 px-6 py-5">
               <div className="grid gap-3">
-                <DetailRow icon={<Handshake className="h-4 w-4" />} label="Partner">
+                <DetailRow
+                  icon={<Handshake className="h-4 w-4" />}
+                  label="Partner"
+                >
                   {owner || "—"}
                 </DetailRow>
-                <DetailRow icon={<User className="h-4 w-4" />} label="Contact person">
+                <DetailRow
+                  icon={<User className="h-4 w-4" />}
+                  label="Contact person"
+                >
                   {lead.contactPerson || "—"}
                 </DetailRow>
                 <DetailRow icon={<Phone className="h-4 w-4" />} label="Phone">
-                  {lead.phonenumber || "—"}
+                  {lead.phonenumber ? (
+                    <a
+                      href={`tel:${lead.phonenumber}`}
+                      className="hover:underline"
+                    >
+                      {lead.phonenumber}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
                 </DetailRow>
-                <DetailRow icon={<Tag className="h-4 w-4" />} label="Business type">
+                <DetailRow
+                  icon={<Tag className="h-4 w-4" />}
+                  label="Business type"
+                >
                   {lead.businessType || "—"}
                 </DetailRow>
-                <DetailRow icon={<MapPin className="h-4 w-4" />} label="Location">
+                <DetailRow
+                  icon={<MapPin className="h-4 w-4" />}
+                  label="Location"
+                >
                   {lead.location || "—"}
                 </DetailRow>
-                <DetailRow icon={<CalendarClock className="h-4 w-4" />} label="Next follow-up">
-                  {fmtDate(lead.nextFollowUpDate)}
+                <DetailRow
+                  icon={<CalendarClock className="h-4 w-4" />}
+                  label="Next follow-up"
+                >
+                  <FollowUpDetail raw={lead.nextFollowUpDate} />
                 </DetailRow>
                 {lead.notes && (
-                  <DetailRow icon={<StickyNote className="h-4 w-4" />} label="Notes">
+                  <DetailRow
+                    icon={<StickyNote className="h-4 w-4" />}
+                    label="Notes"
+                  >
                     <span className="whitespace-pre-wrap">{lead.notes}</span>
                   </DetailRow>
                 )}
