@@ -12,7 +12,7 @@ version = "1.0.0"
 [[services]]
 name = "web"
 paths = [ "/partner/" ]
-localPort = 25041
+localPort = 3001
 
 [services.development]
 run = "pnpm --filter @workspace/partner-portal run dev"
@@ -27,5 +27,5 @@ from = "/*"
 to = "/index.html"
 
 [services.env]
-PORT = "25041"
+PORT = "3001"
 BASE_PATH = "/partner/"
