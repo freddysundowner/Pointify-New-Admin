@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11"]
+modules = ["nodejs-20", "bash", "web"]
 
 [deployment]
 router = "application"
@@ -29,3 +29,6 @@ SMS_SEND_ENABLED = "true"
 EMAIL_SEND_ENABLED = "true"
 
 [userenv.production]
+
+[nix]
+channel = "stable-25_05"
