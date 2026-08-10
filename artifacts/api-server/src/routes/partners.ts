@@ -477,6 +477,66 @@ router.post("/leads/:id/activities", async (req, res) => {
   }
 });
 
+// Helper: resolve all affiliate ids then proxy a scoped leads write.
+async function scopedLeadsWrite(
+  req: Request,
+  res: Response,
+  method: "PUT" | "DELETE",
+  path: string,
+  body?: Record<string, unknown>,
+) {
+  if (!requireBearer(req, res)) return;
+  if (!adminIdFromAuth(authHeaderFrom(req))) {
+    res.status(401).json({ message: "Authentication required" });
+    return;
+  }
+  try {
+    const partners = await upstreamFetch({
+      method: "GET",
+      path: "/affiliates/",
+      authHeader: authHeaderFrom(req),
+    });
+    if (partners.status >= 400) {
+      res.status(partners.status).json(partners.data);
+      return;
+    }
+    const ids = normalizeList(partners.data)
+      .data.map((p) =>
+        p && typeof p === "object"
+          ? String((p as Record<string, unknown>)["_id"] ?? "")
+          : "",
+      )
+      .filter((id) => id !== "");
+    if (ids.length === 0) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+    const result = await upstreamFetch({
+      method,
+      path,
+      query: { affiliate: ids.join(",") },
+      ...(body !== undefined ? { body } : {}),
+      authHeader: authHeaderFrom(req),
+      headers: leadsProxyHeaders(),
+    });
+    res.status(result.status).json(result.data);
+  } catch (err) {
+    req.log.error({ err }, `Failed to ${method.toLowerCase()} lead`);
+    res.status(502).json({ message: "Upstream request failed" });
+  }
+}
+
+// PUT /leads/:id — update stage or any field on a lead (admin).
+router.put("/leads/:id", (req, res) => {
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  void scopedLeadsWrite(req, res, "PUT", `/leads/${req.params.id}`, body);
+});
+
+// DELETE /leads/:id — permanently remove a lead (admin).
+router.delete("/leads/:id", (req, res) => {
+  void scopedLeadsWrite(req, res, "DELETE", `/leads/${req.params.id}`);
+});
+
 router.delete("/partners/:id", async (req, res) => {
   if (!requireBearer(req, res)) return;
   try {

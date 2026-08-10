@@ -461,6 +461,62 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+    put:
+      operationId: updateLead
+      tags: [partners]
+      summary: Update a lead's stage or details (platform admin view)
+      description: >-
+        Updates any field on a lead. The proxy scopes the upstream write to the
+        full set of partner ids so any lead is reachable by a platform admin.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadInput" }
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      operationId: deleteLead
+      tags: [partners]
+      summary: Delete a lead (platform admin view)
+      description: >-
+        Permanently removes a lead. Admin-only; the proxy scopes the upstream
+        delete to the full set of partner ids.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Deleted lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /leads/{id}/activities:
     post:
       operationId: addLeadActivity

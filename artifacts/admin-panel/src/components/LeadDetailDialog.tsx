@@ -2,7 +2,10 @@ import { useState } from "react";
 import {
   useGetLead,
   getGetLeadQueryKey,
+  getListLeadsQueryKey,
   useAddLeadActivity,
+  useUpdateLead,
+  useDeleteLead,
   type Lead,
 } from "@workspace/api-client-react";
 import {
@@ -12,6 +15,23 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,10 +52,13 @@ import {
   AlertCircle,
   Clock,
   SendHorizonal,
+  Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
+  STAGES,
   StageBadge,
   fmtDate,
   fmtDateTime,
@@ -163,8 +186,6 @@ function FollowUpDetail({ raw }: { raw: unknown }) {
   return <span>{label}</span>;
 }
 
-// Read-only lead detail sheet for the admin panel: full lead info, activity
-// timeline, and an admin note input.
 export default function LeadDetailDialog({
   leadId,
   onOpenChange,
@@ -175,6 +196,7 @@ export default function LeadDetailDialog({
   partnerName?: string;
 }) {
   const [noteText, setNoteText] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -189,11 +211,11 @@ export default function LeadDetailDialog({
     },
   });
 
-  const { mutate: addNote, isPending: submitting } = useAddLeadActivity({
+  // ── Add note ──────────────────────────────────────────────────────────────
+  const { mutate: addNote, isPending: submittingNote } = useAddLeadActivity({
     mutation: {
       onSuccess: () => {
         setNoteText("");
-        // Refresh the lead so the new activity shows immediately.
         void queryClient.invalidateQueries({
           queryKey: getGetLeadQueryKey(leadId ?? ""),
         });
@@ -209,10 +231,68 @@ export default function LeadDetailDialog({
     },
   });
 
+  // ── Change stage ──────────────────────────────────────────────────────────
+  const { mutate: updateLead, isPending: updatingStage } = useUpdateLead({
+    mutation: {
+      onSuccess: (updated) => {
+        // Refresh both the detail and the list
+        void queryClient.invalidateQueries({
+          queryKey: getGetLeadQueryKey(leadId ?? ""),
+        });
+        void queryClient.invalidateQueries({ queryKey: getListLeadsQueryKey({}) });
+        const newStage =
+          (updated as Record<string, unknown>)?.["stage"] ?? "—";
+        toast({ title: `Stage updated to "${newStage}"` });
+      },
+      onError: () => {
+        toast({ title: "Failed to update stage", variant: "destructive" });
+      },
+    },
+  });
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  const { mutate: deleteLead, isPending: deleting } = useDeleteLead({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getListLeadsQueryKey({}) });
+        toast({ title: "Lead deleted" });
+        onOpenChange(false);
+      },
+      onError: () => {
+        toast({ title: "Failed to delete lead", variant: "destructive" });
+      },
+    },
+  });
+
   function handleSubmitNote() {
     const trimmed = noteText.trim();
     if (!trimmed || !leadId) return;
     addNote({ id: leadId, data: { note: trimmed } });
+  }
+
+  function handleStageChange(newStage: string) {
+    if (!leadId || !lead) return;
+    // Send all existing fields along with the new stage (LeadInput requires businessName)
+    const l = lead as Record<string, unknown>;
+    updateLead({
+      id: leadId,
+      data: {
+        businessName: String(l["businessName"] ?? ""),
+        contactPerson: (l["contactPerson"] as string | null) ?? null,
+        phonenumber: (l["phonenumber"] as string | null) ?? null,
+        businessType: (l["businessType"] as string | null) ?? null,
+        location: (l["location"] as string | null) ?? null,
+        source: (l["source"] as string | null) ?? null,
+        stage: newStage,
+        nextFollowUpDate: (l["nextFollowUpDate"] as string | null) ?? null,
+        notes: (l["notes"] as string | null) ?? null,
+      },
+    });
+  }
+
+  function handleDeleteConfirm() {
+    if (!leadId) return;
+    deleteLead({ id: leadId });
   }
 
   const activities = ((lead as Record<string, unknown> | undefined)?.[
@@ -222,168 +302,236 @@ export default function LeadDetailDialog({
   const owner =
     lead && partnerNameOf(lead) !== "—" ? partnerNameOf(lead) : partnerName;
 
+  const isBusy = updatingStage || deleting;
+
   return (
-    <Sheet open={!!leadId} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : isError || !lead ? (
-          <div className="flex flex-1 items-center justify-center px-6 py-16 text-center text-sm text-destructive">
-            Could not load this lead. It may have been deleted.
-          </div>
-        ) : (
-          <>
-            <SheetHeader className="space-y-2 border-b px-6 py-4 text-left">
-              <SheetTitle className="pr-8 text-lg leading-snug">
-                {lead.businessName}
-              </SheetTitle>
-              <SheetDescription className="sr-only">
-                Lead details and activity history
-              </SheetDescription>
-              <div className="flex flex-wrap items-center gap-2">
-                <StageBadge stage={lead.stage ?? "New Lead"} />
-                {lead.source && (
-                  <Badge variant="outline" className="text-xs">
-                    {lead.source}
-                  </Badge>
-                )}
-              </div>
-            </SheetHeader>
-
-            <div className="space-y-5 px-6 py-5">
-              {/* Lead details */}
-              <div className="grid gap-3">
-                <DetailRow
-                  icon={<Handshake className="h-4 w-4" />}
-                  label="Partner"
-                >
-                  {owner || "—"}
-                </DetailRow>
-                <DetailRow
-                  icon={<User className="h-4 w-4" />}
-                  label="Contact person"
-                >
-                  {lead.contactPerson || "—"}
-                </DetailRow>
-                <DetailRow icon={<Phone className="h-4 w-4" />} label="Phone">
-                  {lead.phonenumber ? (
-                    <a
-                      href={`tel:${lead.phonenumber}`}
-                      className="hover:underline"
-                    >
-                      {lead.phonenumber}
-                    </a>
-                  ) : (
-                    "—"
-                  )}
-                </DetailRow>
-                <DetailRow
-                  icon={<Tag className="h-4 w-4" />}
-                  label="Business type"
-                >
-                  {lead.businessType || "—"}
-                </DetailRow>
-                <DetailRow
-                  icon={<MapPin className="h-4 w-4" />}
-                  label="Location"
-                >
-                  {lead.location || "—"}
-                </DetailRow>
-                <DetailRow
-                  icon={<CalendarClock className="h-4 w-4" />}
-                  label="Next follow-up"
-                >
-                  <FollowUpDetail raw={lead.nextFollowUpDate} />
-                </DetailRow>
-                {lead.notes && (
-                  <DetailRow
-                    icon={<StickyNote className="h-4 w-4" />}
-                    label="Notes"
-                  >
-                    <span className="whitespace-pre-wrap">{lead.notes}</span>
-                  </DetailRow>
-                )}
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Added {fmtDate(lead.createAt)}
-              </p>
-
-              <Separator />
-
-              {/* Add a note */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Add a note</p>
-                <Textarea
-                  placeholder="Write an internal note…"
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  onKeyDown={(e) => {
-                    // Ctrl/Cmd+Enter submits
-                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                      e.preventDefault();
-                      handleSubmitNote();
-                    }
-                  }}
-                  rows={3}
-                  className="resize-none text-sm"
-                  disabled={submitting}
-                />
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    Ctrl+Enter to submit
-                  </p>
+    <>
+      <Sheet open={!!leadId} onOpenChange={onOpenChange}>
+        <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
+          {isLoading ? (
+            <div className="flex flex-1 items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : isError || !lead ? (
+            <div className="flex flex-1 items-center justify-center px-6 py-16 text-center text-sm text-destructive">
+              Could not load this lead. It may have been deleted.
+            </div>
+          ) : (
+            <>
+              {/* ── Header ── */}
+              <SheetHeader className="space-y-2 border-b px-6 py-4 text-left">
+                <div className="flex items-start justify-between gap-2">
+                  <SheetTitle className="pr-2 text-lg leading-snug">
+                    {lead.businessName}
+                  </SheetTitle>
                   <Button
+                    variant="ghost"
                     size="sm"
-                    onClick={handleSubmitNote}
-                    disabled={submitting || !noteText.trim()}
+                    className="shrink-0 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteOpen(true)}
+                    disabled={isBusy}
+                    title="Delete lead"
                   >
-                    {submitting ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <SendHorizonal className="mr-1.5 h-3.5 w-3.5" />
-                    )}
-                    Add note
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
+                <SheetDescription className="sr-only">
+                  Lead details and activity history
+                </SheetDescription>
 
-              <Separator />
+                {/* Stage selector */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    value={lead.stage ?? "New Lead"}
+                    onValueChange={handleStageChange}
+                    disabled={isBusy}
+                  >
+                    <SelectTrigger className="h-7 w-auto gap-1.5 border-0 bg-transparent px-0 py-0 text-sm font-normal shadow-none focus:ring-0 [&>span]:flex [&>span]:items-center [&>span]:gap-1.5">
+                      <SelectValue>
+                        <StageBadge stage={lead.stage ?? "New Lead"} />
+                      </SelectValue>
+                      {updatingStage ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STAGES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          <StageBadge stage={s} />
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {lead.source && (
+                    <Badge variant="outline" className="text-xs">
+                      {lead.source}
+                    </Badge>
+                  )}
+                </div>
+              </SheetHeader>
 
-              {/* Activity timeline */}
-              <div className="space-y-3">
-                <p className="flex items-center gap-1.5 text-sm font-medium">
-                  <History className="h-4 w-4 text-muted-foreground" />
-                  Activity
+              <div className="space-y-5 px-6 py-5">
+                {/* ── Lead details ── */}
+                <div className="grid gap-3">
+                  <DetailRow
+                    icon={<Handshake className="h-4 w-4" />}
+                    label="Partner"
+                  >
+                    {owner || "—"}
+                  </DetailRow>
+                  <DetailRow
+                    icon={<User className="h-4 w-4" />}
+                    label="Contact person"
+                  >
+                    {lead.contactPerson || "—"}
+                  </DetailRow>
+                  <DetailRow icon={<Phone className="h-4 w-4" />} label="Phone">
+                    {lead.phonenumber ? (
+                      <a
+                        href={`tel:${lead.phonenumber}`}
+                        className="hover:underline"
+                      >
+                        {lead.phonenumber}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </DetailRow>
+                  <DetailRow
+                    icon={<Tag className="h-4 w-4" />}
+                    label="Business type"
+                  >
+                    {lead.businessType || "—"}
+                  </DetailRow>
+                  <DetailRow
+                    icon={<MapPin className="h-4 w-4" />}
+                    label="Location"
+                  >
+                    {lead.location || "—"}
+                  </DetailRow>
+                  <DetailRow
+                    icon={<CalendarClock className="h-4 w-4" />}
+                    label="Next follow-up"
+                  >
+                    <FollowUpDetail raw={lead.nextFollowUpDate} />
+                  </DetailRow>
+                  {lead.notes && (
+                    <DetailRow
+                      icon={<StickyNote className="h-4 w-4" />}
+                      label="Notes"
+                    >
+                      <span className="whitespace-pre-wrap">{lead.notes}</span>
+                    </DetailRow>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Added {fmtDate(lead.createAt)}
                 </p>
-                {timeline.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No activity recorded for this lead yet.
+
+                <Separator />
+
+                {/* ── Add a note ── */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Add a note</p>
+                  <Textarea
+                    placeholder="Write an internal note…"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        handleSubmitNote();
+                      }
+                    }}
+                    rows={3}
+                    className="resize-none text-sm"
+                    disabled={submittingNote}
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Ctrl+Enter to submit
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={handleSubmitNote}
+                      disabled={submittingNote || !noteText.trim()}
+                    >
+                      {submittingNote ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <SendHorizonal className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Add note
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* ── Activity timeline ── */}
+                <div className="space-y-3">
+                  <p className="flex items-center gap-1.5 text-sm font-medium">
+                    <History className="h-4 w-4 text-muted-foreground" />
+                    Activity
                   </p>
-                ) : (
-                  <ol className="relative ml-2 space-y-4 border-l pl-5">
-                    {timeline.map((activity, i) => (
-                      <li key={activity._id ?? i} className="relative">
-                        <span className="absolute -left-[27px] flex h-5 w-5 items-center justify-center rounded-full border bg-background text-muted-foreground">
-                          {activityIcon(activity.action ?? "")}
-                        </span>
-                        <div className="text-sm text-foreground">
-                          <ActivityLabel activity={activity} />
-                        </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {fmtDateTime(activity.at)}
-                        </p>
-                      </li>
-                    ))}
-                  </ol>
-                )}
+                  {timeline.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No activity recorded for this lead yet.
+                    </p>
+                  ) : (
+                    <ol className="relative ml-2 space-y-4 border-l pl-5">
+                      {timeline.map((activity, i) => (
+                        <li key={activity._id ?? i} className="relative">
+                          <span className="absolute -left-[27px] flex h-5 w-5 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                            {activityIcon(activity.action ?? "")}
+                          </span>
+                          <div className="text-sm text-foreground">
+                            <ActivityLabel activity={activity} />
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {fmtDateTime(activity.at)}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* ── Delete confirmation ── */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{lead?.businessName}</strong> and all its activity history
+              will be permanently removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
