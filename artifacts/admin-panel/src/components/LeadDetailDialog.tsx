@@ -235,7 +235,6 @@ export default function LeadDetailDialog({
   const { mutate: updateLead, isPending: updatingStage } = useUpdateLead({
     mutation: {
       onSuccess: (updated) => {
-        // Refresh both the detail and the list
         void queryClient.invalidateQueries({
           queryKey: getGetLeadQueryKey(leadId ?? ""),
         });
@@ -246,6 +245,22 @@ export default function LeadDetailDialog({
       },
       onError: () => {
         toast({ title: "Failed to update stage", variant: "destructive" });
+      },
+    },
+  });
+
+  // ── Change follow-up date ─────────────────────────────────────────────────
+  const { mutate: updateFollowUp, isPending: updatingFollowUp } = useUpdateLead({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: getGetLeadQueryKey(leadId ?? ""),
+        });
+        void queryClient.invalidateQueries({ queryKey: getListLeadsQueryKey({}) });
+        toast({ title: "Follow-up date updated" });
+      },
+      onError: () => {
+        toast({ title: "Failed to update follow-up date", variant: "destructive" });
       },
     },
   });
@@ -268,6 +283,36 @@ export default function LeadDetailDialog({
     const trimmed = noteText.trim();
     if (!trimmed || !leadId) return;
     addNote({ id: leadId, data: { note: trimmed } });
+  }
+
+  /** Convert an upstream ISO date string → YYYY-MM-DD for <input type="date"> */
+  function toDateInputValue(raw: unknown): string {
+    if (!raw) return "";
+    const d = new Date(String(raw));
+    if (Number.isNaN(d.getTime())) return "";
+    // Shift to EAT (UTC+3) so the displayed day matches what fmtDate shows.
+    const eat = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+    return eat.toISOString().slice(0, 10);
+  }
+
+  function handleFollowUpChange(value: string) {
+    if (!leadId || !lead) return;
+    const l = lead as Record<string, unknown>;
+    updateFollowUp({
+      id: leadId,
+      data: {
+        businessName: String(l["businessName"] ?? ""),
+        contactPerson: (l["contactPerson"] as string | null) ?? null,
+        phonenumber: (l["phonenumber"] as string | null) ?? null,
+        businessType: (l["businessType"] as string | null) ?? null,
+        location: (l["location"] as string | null) ?? null,
+        source: (l["source"] as string | null) ?? null,
+        stage: (l["stage"] as string | null) ?? null,
+        // Send the YYYY-MM-DD string upstream, or null to clear.
+        nextFollowUpDate: value || null,
+        notes: (l["notes"] as string | null) ?? null,
+      },
+    });
   }
 
   function handleStageChange(newStage: string) {
@@ -415,7 +460,29 @@ export default function LeadDetailDialog({
                     icon={<CalendarClock className="h-4 w-4" />}
                     label="Next follow-up"
                   >
-                    <FollowUpDetail raw={lead.nextFollowUpDate} />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={toDateInputValue(lead.nextFollowUpDate)}
+                        onChange={(e) => handleFollowUpChange(e.target.value)}
+                        disabled={updatingFollowUp}
+                        className="h-7 rounded border border-input bg-background px-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                      />
+                      {lead.nextFollowUpDate && (
+                        <button
+                          type="button"
+                          onClick={() => handleFollowUpChange("")}
+                          disabled={updatingFollowUp}
+                          title="Clear follow-up date"
+                          className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+                        >
+                          ×
+                        </button>
+                      )}
+                      {updatingFollowUp && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
                   </DetailRow>
                   {lead.notes && (
                     <DetailRow
