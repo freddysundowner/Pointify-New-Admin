@@ -426,9 +426,33 @@ router.get("/leads/:id", async (req, res) => {
   }
 });
 
+// Upstream write operations (POST activities, PUT, DELETE) require a SINGLE
+// affiliate id, not a comma-separated list. Resolve it by fetching the lead
+// with the broad all-affiliates scope first, then extracting its owner id.
+async function resolveLeadAffiliate(
+  leadId: string,
+  allIds: string[],
+  authHeader: string | undefined,
+): Promise<string | null> {
+  const result = await upstreamFetch({
+    method: "GET",
+    path: `/leads/${leadId}`,
+    query: { affiliate: allIds.join(",") },
+    authHeader,
+    headers: leadsProxyHeaders(),
+  });
+  if (result.status >= 400) return null;
+  const lead = result.data as Record<string, unknown> | null;
+  if (!lead) return null;
+  // `affiliate` may be a populated object or a bare id string.
+  const aff = lead["affiliate"];
+  if (aff && typeof aff === "object") {
+    return String((aff as Record<string, unknown>)["_id"] ?? "") || null;
+  }
+  return typeof aff === "string" && aff ? aff : null;
+}
+
 // POST /leads/:id/activities — append a free-text note to any lead (admin).
-// Uses the same affiliate-list scoping as GET /leads/:id so the upstream can
-// locate the document regardless of which partner owns it.
 router.post("/leads/:id/activities", async (req, res) => {
   if (!requireBearer(req, res)) return;
   if (!adminIdFromAuth(authHeaderFrom(req))) {
@@ -451,21 +475,32 @@ router.post("/leads/:id/activities", async (req, res) => {
       res.status(partners.status).json(partners.data);
       return;
     }
-    const ids = normalizeList(partners.data)
+    const allIds = normalizeList(partners.data)
       .data.map((p) =>
         p && typeof p === "object"
           ? String((p as Record<string, unknown>)["_id"] ?? "")
           : "",
       )
       .filter((id) => id !== "");
-    if (ids.length === 0) {
+    if (allIds.length === 0) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+    // Resolve the single affiliate that owns this lead (upstream rejects a
+    // comma-separated list for write operations).
+    const ownerAffiliateId = await resolveLeadAffiliate(
+      req.params.id,
+      allIds,
+      authHeaderFrom(req),
+    );
+    if (!ownerAffiliateId) {
       res.status(404).json({ message: "Lead not found" });
       return;
     }
     const result = await upstreamFetch({
       method: "POST",
       path: `/leads/${req.params.id}/activities`,
-      query: { affiliate: ids.join(",") },
+      query: { affiliate: ownerAffiliateId },
       body: { note },
       authHeader: authHeaderFrom(req),
       headers: leadsProxyHeaders(),
@@ -477,12 +512,14 @@ router.post("/leads/:id/activities", async (req, res) => {
   }
 });
 
-// Helper: resolve all affiliate ids then proxy a scoped leads write.
+// Helper: resolve all affiliate ids, find the lead's owner, then proxy a
+// scoped leads write using that single affiliate id (upstream rejects lists
+// for write operations).
 async function scopedLeadsWrite(
   req: Request,
   res: Response,
   method: "PUT" | "DELETE",
-  path: string,
+  leadId: string,
   body?: Record<string, unknown>,
 ) {
   if (!requireBearer(req, res)) return;
@@ -500,21 +537,30 @@ async function scopedLeadsWrite(
       res.status(partners.status).json(partners.data);
       return;
     }
-    const ids = normalizeList(partners.data)
+    const allIds = normalizeList(partners.data)
       .data.map((p) =>
         p && typeof p === "object"
           ? String((p as Record<string, unknown>)["_id"] ?? "")
           : "",
       )
       .filter((id) => id !== "");
-    if (ids.length === 0) {
+    if (allIds.length === 0) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+    const ownerAffiliateId = await resolveLeadAffiliate(
+      leadId,
+      allIds,
+      authHeaderFrom(req),
+    );
+    if (!ownerAffiliateId) {
       res.status(404).json({ message: "Lead not found" });
       return;
     }
     const result = await upstreamFetch({
       method,
-      path,
-      query: { affiliate: ids.join(",") },
+      path: `/leads/${leadId}`,
+      query: { affiliate: ownerAffiliateId },
       ...(body !== undefined ? { body } : {}),
       authHeader: authHeaderFrom(req),
       headers: leadsProxyHeaders(),
@@ -529,12 +575,12 @@ async function scopedLeadsWrite(
 // PUT /leads/:id — update stage or any field on a lead (admin).
 router.put("/leads/:id", (req, res) => {
   const body = (req.body ?? {}) as Record<string, unknown>;
-  void scopedLeadsWrite(req, res, "PUT", `/leads/${req.params.id}`, body);
+  void scopedLeadsWrite(req, res, "PUT", req.params.id, body);
 });
 
 // DELETE /leads/:id — permanently remove a lead (admin).
 router.delete("/leads/:id", (req, res) => {
-  void scopedLeadsWrite(req, res, "DELETE", `/leads/${req.params.id}`);
+  void scopedLeadsWrite(req, res, "DELETE", req.params.id);
 });
 
 router.delete("/partners/:id", async (req, res) => {

@@ -39,3 +39,4 @@
 - [Admin-panel mobile page headers](admin-mobile-page-headers.md) — non-dashboard pages use <PageHeader> (publishes title via MobileHeaderProvider context); mobile shows title+back in top bar, NOT a big in-page header.
 - [Admin session tokens](admin-session-tokens.md) — operator auth = proxy-minted HS256 (SESSION_SECRET); staff aren’t in the admin directory, never cross-check it; upstream /subscriptions/current/list feeds current mode.
 - [Current subscription pointer](current-subscription-pointer.md) — "current" sub = shop.subscription pointer (set only on payment success), NOT latest row; latest rows are often unpaid attempts.
+- [Leads write affiliate scope](leads-write-affiliate-scope.md) — upstream accepts comma-separated affiliate list for reads but rejects it for writes (POST/PUT/DELETE); resolve owner ID first via GET.
