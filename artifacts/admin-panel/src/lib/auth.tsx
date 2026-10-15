@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Admin, setAuthTokenGetter } from "@workspace/api-client-react";
+import { Admin, setAuthTokenGetter, setUnauthorizedHandler } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 
 interface AuthState {
@@ -23,6 +23,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAuthTokenGetter(() => localStorage.getItem("pointify_token"));
+    // session expired (or rejected by the POS API): sign out and go to the login page
+    setUnauthorizedHandler(() => {
+      if (!localStorage.getItem("pointify_token")) return;
+      localStorage.removeItem("pointify_token");
+      localStorage.removeItem("pointify_userdata");
+      setToken(null);
+      setUserdata(null);
+      setLocation("/login");
+    });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const login = (newToken: string, data: Admin) => {

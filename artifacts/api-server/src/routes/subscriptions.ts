@@ -32,7 +32,7 @@ router.get("/subscriptions", async (req, res) => {
 
   // Composed endpoint: enforce auth ourselves (upstream is permissive) by
   // verifying the proxy-signed session token minted at login.
-  const session = verifyAdminSession(authHeaderFrom(req));
+  const session = verifyAdminSession(req.headers.authorization);
   if (!session) {
     res.status(401).json({ message: "Authorization required" });
     return;

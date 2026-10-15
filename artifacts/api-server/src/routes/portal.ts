@@ -966,19 +966,22 @@ router.post("/portal/sub-partners", async (req, res) => {
       return;
     }
 
-    // 1. Register the account upstream (hashes password, generates referral
-    //    code, emails welcome — with the generated password when none given).
-    const registerBody: Record<string, unknown> = { name, email, phonenumber };
+    // Create and link in ONE upstream call made with the master partner's own token. The API creates the
+    // account under the caller (parent + share %), hashes the password, generates the referral code and
+    // emails the welcome message. (The old flow registered publicly, then edited the new record with the
+    // parent's token, which the API no longer allows because the parent does not own it yet.)
+    const createBody: Record<string, unknown> = { name, email, phonenumber, subCommission };
     if (typeof body["country"] === "string" && body["country"].trim()) {
-      registerBody["country"] = body["country"].trim();
+      createBody["country"] = body["country"].trim();
     }
     if (typeof body["password"] === "string" && body["password"]) {
-      registerBody["password"] = body["password"];
+      createBody["password"] = body["password"];
     }
     const created = await upstreamFetch({
       method: "POST",
-      path: "/affiliates/auth/register",
-      body: registerBody,
+      path: "/affiliates/sub-partners",
+      body: createBody,
+      authHeader: upstreamAuth(session),
     });
     if (created.status >= 400) {
       res.status(created.status).json(created.data);
@@ -991,34 +994,17 @@ router.post("/portal/sub-partners", async (req, res) => {
         : undefined;
     const newId = typeof userdata?.["_id"] === "string" ? (userdata["_id"] as string) : undefined;
     if (!newId) {
-      req.log.error("Sub-partner create: upstream register returned no id");
+      req.log.error("Sub-partner create: upstream returned no id");
       res.status(502).json({ error: "Upstream request failed" });
       return;
     }
-
-    // 2. Link it to the caller. If this fails the account would be a stray
-    //    MASTER partner, so roll it back rather than leave it dangling.
     const linked = await upstreamFetch({
-      method: "PUT",
+      method: "GET",
       path: `/affiliates/${newId}`,
-      body: { parent: session.aid, subCommission },
       authHeader: upstreamAuth(session),
     });
     if (linked.status >= 400) {
-      req.log.error(
-        { status: linked.status },
-        "Sub-partner create: linking failed, rolling back registration",
-      );
-      try {
-        await upstreamFetch({
-          method: "DELETE",
-          path: `/affiliates/${newId}`,
-          authHeader: upstreamAuth(session),
-        });
-      } catch (rollbackErr) {
-        req.log.error({ err: rollbackErr }, "Sub-partner create: rollback delete failed");
-      }
-      res.status(502).json({ error: "Could not finish creating the sub-partner. Please try again." });
+      res.status(502).json({ error: "Sub-partner created but could not be loaded. Please refresh." });
       return;
     }
 

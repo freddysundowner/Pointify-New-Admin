@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { verifyAdminSession } from "./adminAuth";
 
 const DEFAULT_BASE = "https://api.pointifypos.com";
 
@@ -87,10 +88,20 @@ export async function upstreamFetch(
   return { status: resp.status, data };
 }
 
+/**
+ * Authorization header to send to the POS API.
+ *
+ * After login the browser holds THIS proxy's own session token (signed with SESSION_SECRET, see
+ * lib/adminAuth.ts). The POS API now verifies tokens with its own secret, so forwarding the session
+ * token verbatim is rejected (401). The session carries the upstream staff token (`ut`): send that.
+ * Anything that is not one of our sessions is forwarded unchanged.
+ */
 export function authHeaderFrom(req: Request): string | undefined {
   const header = req.headers["authorization"];
-  if (typeof header === "string" && header.length > 0) return header;
-  return undefined;
+  if (typeof header !== "string" || header.length === 0) return undefined;
+  const session = verifyAdminSession(header);
+  if (session) return session.ut ? `Bearer ${session.ut}` : undefined;
+  return header;
 }
 
 /**

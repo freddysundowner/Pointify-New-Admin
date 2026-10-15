@@ -44,6 +44,17 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
+let _unauthorizedHandler: (() => void) | null = null;
+
+/**
+ * Called once when an authenticated request comes back 401 (expired or invalid session), so the
+ * app can sign the user out instead of leaving every screen showing errors. Login requests are
+ * excluded (a 401 there just means a wrong password).
+ */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  _unauthorizedHandler = handler;
+}
+
 function isRequest(input: RequestInfo | URL): input is Request {
   return typeof Request !== "undefined" && input instanceof Request;
 }
@@ -363,6 +374,9 @@ export async function customFetch<T = unknown>(
   const response = await fetch(input, { ...init, method, headers });
 
   if (!response.ok) {
+    if (response.status === 401 && headers.has("authorization") && !/\/auth\/login(\?|$)/.test(requestInfo.url)) {
+      _unauthorizedHandler?.();
+    }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);
   }
